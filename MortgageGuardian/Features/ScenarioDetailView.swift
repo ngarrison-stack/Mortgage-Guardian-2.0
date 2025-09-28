@@ -57,6 +57,62 @@ struct ScenarioDetailView: View {
                     .background(AppTheme.Colors.light.surface)
                     .cornerRadius(AppTheme.cornerRadiusMedium)
                     
+                    // AI Analysis Section
+                    VStack(spacing: 16) {
+                        NavigationLink(destination: AIScenarioAnalyzer(scenario: scenario)) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Label("AI Analysis", systemImage: "brain.head.profile")
+                                        .font(.headline)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                if let risk = scenario.riskAssessment {
+                                    HStack {
+                                        Image(systemName: risk.riskScore > 70 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                            .foregroundStyle(risk.riskScore > 70 ? .green : .orange)
+                                        Text("Risk Score: \(Int(risk.riskScore))/100")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                if let prediction = scenario.propertyValuePrediction {
+                                    let change = prediction.predictedValue - scenario.principalAmount
+                                    let percentage = (change / scenario.principalAmount) * 100
+                                    
+                                    HStack {
+                                        Image(systemName: change >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                                            .foregroundStyle(change >= 0 ? .green : .red)
+                                        Text("Projected Value: \(prediction.predictedValue, format: .currency(code: "USD")) (\(percentage, format: .percent.precision(.fractionLength(1))))")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                if let recommendations = scenario.aiRecommendations {
+                                    HStack {
+                                        Image(systemName: "lightbulb.fill")
+                                            .foregroundStyle(.yellow)
+                                        Text("\(recommendations.reasoning.count) Recommendations Available")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(AppTheme.Colors.light.surface)
+                            .cornerRadius(AppTheme.cornerRadiusMedium)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        NavigationLink(destination: AIMonitoringDashboard(aiCoordinator: aiCoordinator)) {
+                            Label("View AI System Status", systemImage: "gauge")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
                     if let notes = scenario.notes {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Notes")

@@ -1,18 +1,20 @@
 import Foundation
+import SwiftUI
 import CryptoKit
 
-struct User: Identifiable, Codable {
+@MainActor
+class User: Identifiable, Codable, ObservableObject {
     let id = UUID()
-    var firstName: String
-    var lastName: String
-    var email: String
-    var address: UserAddress?
-    var phoneNumber: String?
-    var mortgageAccounts: [MortgageAccount]
-    var plaidAccessToken: String?
-    var isPlaidConnected: Bool
-    var securitySettings: SecuritySettings
-    var preferences: UserPreferences
+    @Published var firstName: String
+    @Published var lastName: String
+    @Published var email: String
+    @Published var address: UserAddress?
+    @Published var phoneNumber: String?
+    @Published var mortgageAccounts: [MortgageAccount]
+    @Published var plaidAccessToken: String?
+    @Published var isPlaidConnected: Bool
+    @Published var securitySettings: SecuritySettings
+    @Published var preferences: UserPreferences
     var createdDate: Date
     var lastLoginDate: Date?
 
@@ -41,6 +43,7 @@ struct User: Identifiable, Codable {
         var currentBalance: Double?
         var interestRate: Double
         var loanTerm: Int
+        var loanOriginationDate: Date
         var monthlyPayment: Double
         var escrowAccount: Bool
         var documents: [UUID]
@@ -105,6 +108,74 @@ struct User: Identifiable, Codable {
         }
     }
 
+    init(
+        firstName: String,
+        lastName: String,
+        email: String,
+        address: UserAddress? = nil,
+        phoneNumber: String? = nil,
+        mortgageAccounts: [MortgageAccount] = [],
+        plaidAccessToken: String? = nil,
+        isPlaidConnected: Bool = false,
+        securitySettings: SecuritySettings = .default,
+        preferences: UserPreferences = .default,
+        createdDate: Date = Date(),
+        lastLoginDate: Date? = nil
+    ) {
+        self.firstName = firstName
+        self.lastName = lastName
+        self.email = email
+        self.address = address
+        self.phoneNumber = phoneNumber
+        self.mortgageAccounts = mortgageAccounts
+        self.plaidAccessToken = plaidAccessToken
+        self.isPlaidConnected = isPlaidConnected
+        self.securitySettings = securitySettings
+        self.preferences = preferences
+        self.createdDate = createdDate
+        self.lastLoginDate = lastLoginDate
+    }
+
+    // MARK: - Codable Implementation
+    private enum CodingKeys: String, CodingKey {
+        case id, firstName, lastName, email, address, phoneNumber
+        case mortgageAccounts, plaidAccessToken, isPlaidConnected
+        case securitySettings, preferences, createdDate, lastLoginDate
+    }
+
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.firstName = try container.decode(String.self, forKey: .firstName)
+        self.lastName = try container.decode(String.self, forKey: .lastName)
+        self.email = try container.decode(String.self, forKey: .email)
+        self.address = try container.decodeIfPresent(UserAddress.self, forKey: .address)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        self.mortgageAccounts = try container.decode([MortgageAccount].self, forKey: .mortgageAccounts)
+        self.plaidAccessToken = try container.decodeIfPresent(String.self, forKey: .plaidAccessToken)
+        self.isPlaidConnected = try container.decode(Bool.self, forKey: .isPlaidConnected)
+        self.securitySettings = try container.decode(SecuritySettings.self, forKey: .securitySettings)
+        self.preferences = try container.decode(UserPreferences.self, forKey: .preferences)
+        self.createdDate = try container.decode(Date.self, forKey: .createdDate)
+        self.lastLoginDate = try container.decodeIfPresent(Date.self, forKey: .lastLoginDate)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(firstName, forKey: .firstName)
+        try container.encode(lastName, forKey: .lastName)
+        try container.encode(email, forKey: .email)
+        try container.encodeIfPresent(address, forKey: .address)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try container.encode(mortgageAccounts, forKey: .mortgageAccounts)
+        try container.encodeIfPresent(plaidAccessToken, forKey: .plaidAccessToken)
+        try container.encode(isPlaidConnected, forKey: .isPlaidConnected)
+        try container.encode(securitySettings, forKey: .securitySettings)
+        try container.encode(preferences, forKey: .preferences)
+        try container.encode(createdDate, forKey: .createdDate)
+        try container.encodeIfPresent(lastLoginDate, forKey: .lastLoginDate)
+    }
+
     static var sampleUser: User {
         User(
             firstName: "John",
@@ -127,6 +198,7 @@ struct User: Identifiable, Codable {
                     currentBalance: 325000.00,
                     interestRate: 0.0375,
                     loanTerm: 30,
+                    loanOriginationDate: Date(),
                     monthlyPayment: 1750.00,
                     escrowAccount: true,
                     documents: [],

@@ -632,6 +632,187 @@ public enum MockError: Error, LocalizedError {
     }
 }
 
+// MARK: - Mock Secure Key Manager
+
+@MainActor
+public final class MockSecureKeyManager: ObservableObject {
+
+    @Published public var hasClaudeKey = false
+    @Published public var hasPlaidKeys = false
+    @Published public var hasMarketDataKey = false
+
+    // Test configuration
+    public var shouldFailSave = false
+    public var shouldFailRetrieve = false
+    public var shouldFailUpdate = false
+    public var shouldFailDelete = false
+    public var simulateKeyNotFound = false
+    public var simulateInvalidData = false
+    public var simulateDuplicateItem = false
+
+    // Mock storage
+    private var mockKeychain: [String: String] = [:]
+
+    public init() {}
+
+    // MARK: - Save API Keys
+
+    public func saveAPIKey(_ key: String, forService service: APIService) throws {
+        if shouldFailSave {
+            throw KeychainError.unexpectedStatus(errSecDuplicateItem)
+        }
+
+        if simulateDuplicateItem && mockKeychain[service.rawValue] != nil {
+            throw KeychainError.duplicateItem
+        }
+
+        mockKeychain[service.rawValue] = key
+        updatePublishedStatus()
+    }
+
+    // MARK: - Retrieve API Keys
+
+    public func getAPIKey(forService service: APIService) throws -> String {
+        if shouldFailRetrieve {
+            throw KeychainError.unexpectedStatus(errSecAuthFailed)
+        }
+
+        if simulateKeyNotFound {
+            throw KeychainError.itemNotFound
+        }
+
+        if simulateInvalidData {
+            throw KeychainError.invalidData
+        }
+
+        guard let key = mockKeychain[service.rawValue] else {
+            throw KeychainError.itemNotFound
+        }
+
+        return key
+    }
+
+    // MARK: - Update API Keys
+
+    public func updateAPIKey(_ key: String, forService service: APIService) throws {
+        if shouldFailUpdate {
+            throw KeychainError.unexpectedStatus(errSecWritePerm)
+        }
+
+        // If key doesn't exist, create it (matching real implementation)
+        if mockKeychain[service.rawValue] == nil {
+            try saveAPIKey(key, forService: service)
+        } else {
+            mockKeychain[service.rawValue] = key
+        }
+
+        updatePublishedStatus()
+    }
+
+    // MARK: - Delete API Keys
+
+    public func deleteAPIKey(forService service: APIService) {
+        if shouldFailDelete {
+            // In real implementation, delete doesn't throw, so we just ignore the failure
+            return
+        }
+
+        mockKeychain.removeValue(forKey: service.rawValue)
+        updatePublishedStatus()
+    }
+
+    // MARK: - Check Status
+
+    public func checkAPIKeysStatus() {
+        updatePublishedStatus()
+    }
+
+    // MARK: - Convenience Methods
+
+    public func hasAllRequiredKeys() -> Bool {
+        return hasClaudeKey && hasPlaidKeys
+    }
+
+    public func getMissingKeys() -> [APIService] {
+        var missing: [APIService] = []
+
+        if !hasClaudeKey {
+            missing.append(.claude)
+        }
+
+        if (try? getAPIKey(forService: .plaidClientId)) == nil {
+            missing.append(.plaidClientId)
+        }
+
+        if (try? getAPIKey(forService: .plaidSecret)) == nil {
+            missing.append(.plaidSecret)
+        }
+
+        return missing
+    }
+
+    // MARK: - Test Helpers
+
+    public func setMockKey(_ key: String, forService service: APIService) {
+        mockKeychain[service.rawValue] = key
+        updatePublishedStatus()
+    }
+
+    public func clearAllKeys() {
+        mockKeychain.removeAll()
+        updatePublishedStatus()
+    }
+
+    public func getMockKeychain() -> [String: String] {
+        return mockKeychain
+    }
+
+    public func simulateError(_ error: KeychainError, for operation: MockOperation) {
+        switch operation {
+        case .save:
+            shouldFailSave = true
+        case .retrieve:
+            shouldFailRetrieve = true
+        case .update:
+            shouldFailUpdate = true
+        case .delete:
+            shouldFailDelete = true
+        }
+
+        switch error {
+        case .itemNotFound:
+            simulateKeyNotFound = true
+        case .duplicateItem:
+            simulateDuplicateItem = true
+        case .invalidData:
+            simulateInvalidData = true
+        case .unexpectedStatus:
+            break // Handled by specific operation flags
+        }
+    }
+
+    public func resetErrorSimulation() {
+        shouldFailSave = false
+        shouldFailRetrieve = false
+        shouldFailUpdate = false
+        shouldFailDelete = false
+        simulateKeyNotFound = false
+        simulateInvalidData = false
+        simulateDuplicateItem = false
+    }
+
+    private func updatePublishedStatus() {
+        hasClaudeKey = mockKeychain[APIService.claude.rawValue] != nil
+        hasPlaidKeys = mockKeychain[APIService.plaidClientId.rawValue] != nil &&
+                       mockKeychain[APIService.plaidSecret.rawValue] != nil
+        hasMarketDataKey = mockKeychain[APIService.marketData.rawValue] != nil
+    }
+
+    public enum MockOperation {
+        case save, retrieve, update, delete
+    }
+}
+
 // MARK: - Service Factory for Tests
 
 public class MockServiceFactory {
@@ -678,5 +859,25 @@ public class MockServiceFactory {
         service.mockAccounts = accounts.isEmpty ? [PlaidAccount(id: "ACC123", name: "Test Account", type: "depository", subtype: "checking", balance: 1000.00)] : accounts
         service.mockTransactions = transactions.isEmpty ? MockTransactions.mortgagePayments : transactions
         return service
+    }
+
+    public static func createSecureKeyManager(
+        withKeys keys: [APIService: String] = [:],
+        shouldFail: Bool = false
+    ) -> MockSecureKeyManager {
+        let manager = MockSecureKeyManager()
+
+        // Set up mock keys
+        for (service, key) in keys {
+            manager.setMockKey(key, forService: service)
+        }
+
+        // Configure failure modes if needed
+        if shouldFail {
+            manager.shouldFailRetrieve = true
+            manager.shouldFailSave = true
+        }
+
+        return manager
     }
 }

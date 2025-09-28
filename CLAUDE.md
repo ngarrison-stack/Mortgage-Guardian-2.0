@@ -4,149 +4,110 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mortgage Guardian 2.0 is a comprehensive iOS application that helps homeowners detect errors in mortgage loan servicing through AI-powered document analysis and automated audit algorithms. The app combines Claude AI's document analysis with manual verification algorithms to identify discrepancies and generate RESPA-compliant dispute letters.
+Mortgage Guardian 2.0 is an iOS application for detecting errors in mortgage loan servicing through AI-powered document analysis and automated audit algorithms. It combines Claude AI analysis with manual verification to identify discrepancies and generate RESPA-compliant dispute letters.
 
 ## Architecture
 
-### Frontend (iOS App)
+### iOS App
 - **Language**: Swift 5.9+
 - **UI Framework**: SwiftUI
-- **Minimum iOS Version**: 17.0
-- **Project File**: `MortgageGuardian.xcodeproj`
+- **Minimum iOS**: 17.0
+- **Project**: `MortgageGuardian.xcodeproj`
+- **Core Services**: Located in `MortgageGuardian/Services/`
+  - AIAnalysisService, DocumentProcessor, AuditEngine, PlaidService, SecurityService, LetterGenerationService
 
-### Backend (AWS Serverless)
-- **Infrastructure**: AWS SAM (Serverless Application Model)
-- **Runtime**: Node.js 18.x
+### Backend (AWS SAM)
 - **Template**: `mortgage-guardian-backend/template.yaml`
-- **Functions**: Claude Analysis, Plaid Integration
+- **Runtime**: Node.js 18.x
+- **Functions**: `src/claude-analysis/`, `src/plaid/`
+- **API Gateway**: `/v1/ai/claude/analyze`, `/v1/plaid/{proxy+}`
 
-## Core Services
+## Build Commands
 
-### iOS Services (in MortgageGuardian/)
-- **AIAnalysisService**: Claude AI integration for document analysis
-- **DocumentProcessor**: OCR and text extraction using Vision Framework
-- **AuditEngine**: Manual verification algorithms and calculations
-- **PlaidService**: Bank account linking and transaction correlation
-- **SecurityService**: Biometric auth, encryption, secure storage
-- **LetterGenerationService**: RESPA-compliant letter creation
-
-## Build and Test Commands
-
-### iOS Development
-
-Build for simulator:
+### iOS Build & Test
 ```bash
+# Quick build test (uses iPhone 17 Pro simulator)
+./test-build.sh
+
+# Full build
 xcodebuild -scheme MortgageGuardian \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
   -configuration Debug build
-```
 
-Run all tests:
-```bash
+# Run all tests
 xcodebuild test -scheme MortgageGuardian \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
-```
 
-Run specific test categories:
-```bash
 # Unit tests only
 xcodebuild test -scheme MortgageGuardian \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
   -only-testing:MortgageGuardianTests/UnitTests
 
-# Integration tests only
+# Integration tests
 xcodebuild test -scheme MortgageGuardian \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
   -only-testing:MortgageGuardianTests/IntegrationTests
 ```
 
-Quick test build:
-```bash
-./test-build.sh
-```
-
-### Backend Development
-
-Deploy backend (requires AWS CLI and SAM CLI):
+### Backend Deployment
 ```bash
 cd mortgage-guardian-backend
 sam build
 sam deploy --guided
-```
 
-Install backend dependencies:
-```bash
-cd mortgage-guardian-backend/src/plaid && npm install
+# Install dependencies
+cd src/plaid && npm install
 cd ../claude-analysis && npm install
 ```
 
 ### Developer Setup
-
-Configure Xcode project for development:
 ```bash
+# Interactive setup with bundle ID configuration
 ./scripts/setup-developer.sh
-```
 
-Quick setup for new developers:
-```bash
+# Quick setup with defaults
 ./scripts/quick-setup.sh
 ```
 
-## Key Implementation Details
+## Code Architecture
 
-### Service Integration Pattern
-All services follow a singleton pattern with published properties for SwiftUI integration:
-```swift
-@StateObject private var service = ServiceName.shared
-```
+### Service Layer Pattern
+- Singleton pattern: `ServiceName.shared`
+- Published properties for SwiftUI: `@Published var property`
+- Combine framework for reactive updates
+- MainActor for UI safety: `@MainActor`
 
-### Security Requirements
-- All sensitive data must be encrypted using SecurityService
-- API keys stored in Keychain, never in code
-- Biometric authentication required for sensitive operations
-- Use AES-GCM encryption for data at rest
+### Document Processing Pipeline
+1. **Capture**: Camera/file import → DocumentProcessor
+2. **OCR**: Vision Framework text extraction
+3. **Audit**: AuditEngine manual calculations
+4. **AI**: AIAnalysisService Claude integration
+5. **Verify**: Cross-reference bank data via PlaidService
+6. **Output**: LetterGenerationService for RESPA letters
 
-### Document Processing Flow
-1. Document capture/import → DocumentProcessor
-2. OCR text extraction → Vision Framework
-3. Manual audit → AuditEngine
-4. AI analysis → AIAnalysisService
-5. Results correlation → Cross-verification
-6. Letter generation → LetterGenerationService
+### Test Structure
+- `Tests/UnitTests/`: Service-level tests (90% coverage required)
+- `Tests/IntegrationTests/`: End-to-end workflows
+- `Tests/UITests/`: UI automation tests
+- `Tests/MockData/`: Mock services and test data
+- `Tests/TestHelpers/`: Test utilities and base classes
 
-### Testing Standards
-- Minimum 90% code coverage for all services
-- Critical paths require 95% coverage
-- Security code requires 100% coverage
-- Use MockData and MockServices from Tests/MockData/
+### Security Patterns
+- Keychain for API keys: `SecurityService.keychain`
+- Biometric auth: `LocalAuthentication` framework
+- AES-GCM encryption for data at rest
+- Certificate pinning for network requests
+- Never commit secrets - use environment variables
 
-### Error Handling Pattern
-All services implement comprehensive error handling with recovery:
-- Network errors: Exponential backoff retry
-- Data errors: Graceful degradation
-- Security errors: User re-authentication
-- Business logic errors: User-friendly messages
+### Error Handling
+- Custom error enums per service (e.g., `AIAnalysisError`)
+- Exponential backoff for network retries
+- User-friendly localized error messages
+- Comprehensive logging via `os.log`
 
-### API Integration
-- Plaid: Bank account linking and transactions
-- Claude: Document analysis via AWS Lambda
-- All API calls through secure backend proxy
-- Never expose API keys in iOS app
-
-## Environment Configuration
-
-### Required Environment Variables (Backend)
-- `CLAUDE_API_KEY`: Claude API key for analysis
-- `PLAID_CLIENT_ID`: Plaid client ID
-- `PLAID_SECRET`: Plaid secret key
-
-### Xcode Configuration
-- Bundle ID: Must be unique (e.g., com.yourcompany.mortgageguardian)
-- Development Team: Set in project settings
-- Signing: Automatic signing recommended for development
-
-## Performance Benchmarks
-- Document processing: < 10 seconds
-- AI analysis: < 30 seconds
+## Performance Requirements
+- Document OCR: < 10 seconds
+- AI analysis: < 30 seconds per document
 - Plaid sync: < 5 seconds
-- Memory usage: < 100MB peak during processing
+- Memory: < 100MB peak usage
+- Test coverage: 90% minimum, 95% for critical paths

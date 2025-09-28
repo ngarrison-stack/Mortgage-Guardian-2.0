@@ -11,6 +11,12 @@ final class SavedMortgageScenario {
     var notes: String?
     var createdAt: Date
     
+    // AI-powered insights
+    var riskAssessment: MortgageRiskAssessment?
+    var propertyValuePrediction: PropertyValuePrediction?
+    var aiRecommendations: MortgageRecommendation?
+    var lastAIUpdateDate: Date?
+    
     init(
         name: String = "New Scenario",
         principalAmount: Double,

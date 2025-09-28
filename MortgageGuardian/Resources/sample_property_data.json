@@ -1,0 +1,64 @@
+{
+    "properties": [
+        {
+            "salePrice": 450000,
+            "propertyDetails": {
+                "squareFootage": 2000,
+                "bedrooms": 3,
+                "bathrooms": 2.5,
+                "lotSize": 5000,
+                "yearBuilt": 2010,
+                "propertyType": "single_family",
+                "condition": 4
+            },
+            "locationData": {
+                "latitude": 37.7749,
+                "longitude": -122.4194,
+                "zipCode": "94110",
+                "neighborhood": "Mission District",
+                "schoolRating": 8.5,
+                "crimeRate": 15.2,
+                "medianIncome": 120000
+            },
+            "marketConditions": {
+                "medianHomePrice": 1200000,
+                "daysOnMarket": 14,
+                "inventoryLevel": 0.8,
+                "mortgageRate": 6.5,
+                "unemploymentRate": 3.5,
+                "gdpGrowth": 2.1
+            },
+            "timestamp": "2025-09-28T00:00:00Z"
+        },
+        {
+            "salePrice": 750000,
+            "propertyDetails": {
+                "squareFootage": 2800,
+                "bedrooms": 4,
+                "bathrooms": 3.0,
+                "lotSize": 6500,
+                "yearBuilt": 2015,
+                "propertyType": "single_family",
+                "condition": 5
+            },
+            "locationData": {
+                "latitude": 37.7833,
+                "longitude": -122.4167,
+                "zipCode": "94123",
+                "neighborhood": "Marina District",
+                "schoolRating": 9.2,
+                "crimeRate": 10.5,
+                "medianIncome": 150000
+            },
+            "marketConditions": {
+                "medianHomePrice": 1500000,
+                "daysOnMarket": 10,
+                "inventoryLevel": 0.6,
+                "mortgageRate": 6.5,
+                "unemploymentRate": 3.5,
+                "gdpGrowth": 2.1
+            },
+            "timestamp": "2025-09-28T00:00:00Z"
+        }
+    ]
+}

@@ -250,6 +250,7 @@ public final class AIAnalysisService: ObservableObject {
     public static let shared = AIAnalysisService()
 
     private let securityService: SecurityService
+    private let secureKeyManager: SecureKeyManager
     private let logger = Logger(subsystem: "com.mortgageguardian", category: "AIAnalysisService")
     private let networkSession: URLSession
     private let analysisQueue = DispatchQueue(label: "ai.analysis", qos: .userInitiated)
@@ -265,15 +266,16 @@ public final class AIAnalysisService: ObservableObject {
     private var activeAnalysisTasks: Set<UUID> = []
     private var rateLimitTracker = RateLimitTracker()
 
-    // Backend API configuration
-    private let baseURL = "https://api.mortgageguardian.com/v1"
-    private let claudeProxyEndpoint = "/ai/claude/analyze"
-    private let letterGenerationEndpoint = "/ai/claude/generate-letter"
+    // Claude API configuration
+    private let claudeBaseURL = "https://api.anthropic.com/v1"
+    private let claudeMessagesEndpoint = "/messages"
+    private let anthropicVersion = "2023-06-01"
 
     // MARK: - Initialization
 
     private init() {
         self.securityService = SecurityService.shared
+        self.secureKeyManager = SecureKeyManager.shared
 
         // Configure secure network session
         let config = URLSessionConfiguration.default
@@ -341,11 +343,20 @@ public final class AIAnalysisService: ObservableObject {
 
             // Perform AI analysis
             updateProgress(.aiAnalysis, percentComplete: 40, message: "Analyzing document with Claude AI")
-            let rawResponse = try await performClaudeAnalysis(
-                prompt: prompt,
-                configuration: config,
-                taskId: taskId
-            )
+            let rawResponse: String
+
+            do {
+                rawResponse = try await performClaudeAnalysis(
+                    prompt: prompt,
+                    configuration: config,
+                    taskId: taskId
+                )
+            } catch AIAnalysisError.apiKeyNotConfigured {
+                // Fallback to mock analysis when API key is not configured
+                logger.warning("Claude API key not configured, falling back to mock analysis")
+                updateProgress(.aiAnalysis, percentComplete: 40, message: "Using mock analysis (Claude API key not configured)")
+                rawResponse = try await performMockAnalysis(document: document, context: context)
+            }
 
             // Process and validate response
             updateProgress(.responseProcessing, percentComplete: 70, message: "Processing AI response")
@@ -586,42 +597,91 @@ public final class AIAnalysisService: ObservableObject {
         taskId: UUID
     ) async throws -> String {
 
+        // Check if Claude API key is available
+        guard secureKeyManager.hasClaudeKey else {
+            throw AIAnalysisError.apiKeyNotConfigured
+        }
+
         let request = try await buildClaudeAPIRequest(
             prompt: prompt,
             configuration: configuration
         )
 
-        let (data, response) = try await networkSession.data(for: request)
+        var lastError: Error?
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AIAnalysisError.networkError(URLError(.badServerResponse))
+        // Retry logic with exponential backoff
+        for attempt in 1...configuration.retryAttempts {
+            do {
+                let (data, response) = try await networkSession.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw AIAnalysisError.networkError(URLError(.badServerResponse))
+                }
+
+                // Handle various HTTP status codes
+                switch httpResponse.statusCode {
+                case 200:
+                    // Parse response
+                    guard let responseString = String(data: data, encoding: .utf8) else {
+                        throw AIAnalysisError.invalidResponse("Unable to decode response")
+                    }
+
+                    // Extract Claude response
+                    let claudeResponse = try extractClaudeResponse(from: responseString)
+                    return claudeResponse
+
+                case 400:
+                    throw AIAnalysisError.invalidPrompt("Invalid request parameters")
+                case 401:
+                    throw AIAnalysisError.apiKeyNotConfigured
+                case 429:
+                    // Rate limited - wait and retry if attempts remaining
+                    if attempt < configuration.retryAttempts {
+                        let backoffTime = TimeInterval(attempt * attempt) // Exponential backoff
+                        logger.warning("Rate limited, retrying in \(backoffTime) seconds (attempt \(attempt)/\(configuration.retryAttempts))")
+                        try await Task.sleep(nanoseconds: UInt64(backoffTime * 1_000_000_000))
+                        continue
+                    } else {
+                        throw AIAnalysisError.rateLimitExceeded
+                    }
+                case 500...599:
+                    // Server error - retry if attempts remaining
+                    if attempt < configuration.retryAttempts {
+                        let backoffTime = TimeInterval(attempt * 2) // Linear backoff for server errors
+                        logger.warning("Server error \(httpResponse.statusCode), retrying in \(backoffTime) seconds (attempt \(attempt)/\(configuration.retryAttempts))")
+                        try await Task.sleep(nanoseconds: UInt64(backoffTime * 1_000_000_000))
+                        continue
+                    } else {
+                        throw AIAnalysisError.networkError(URLError(.badServerResponse))
+                    }
+                default:
+                    throw AIAnalysisError.invalidResponse("Unexpected status code: \(httpResponse.statusCode)")
+                }
+
+            } catch {
+                lastError = error
+
+                // Don't retry for certain errors
+                if case AIAnalysisError.apiKeyNotConfigured = error,
+                   case AIAnalysisError.invalidPrompt = error {
+                    throw error
+                }
+
+                // Retry for network errors if attempts remaining
+                if attempt < configuration.retryAttempts {
+                    let backoffTime = TimeInterval(attempt * 2)
+                    logger.warning("Request failed, retrying in \(backoffTime) seconds (attempt \(attempt)/\(configuration.retryAttempts)): \(error.localizedDescription)")
+                    try await Task.sleep(nanoseconds: UInt64(backoffTime * 1_000_000_000))
+                    continue
+                }
+            }
         }
 
-        // Handle various HTTP status codes
-        switch httpResponse.statusCode {
-        case 200:
-            break
-        case 400:
-            throw AIAnalysisError.invalidPrompt("Invalid request parameters")
-        case 401:
-            throw AIAnalysisError.apiKeyNotConfigured
-        case 429:
-            throw AIAnalysisError.rateLimitExceeded
-        case 500...599:
-            throw AIAnalysisError.networkError(URLError(.badServerResponse))
-        default:
-            throw AIAnalysisError.invalidResponse("Unexpected status code: \(httpResponse.statusCode)")
-        }
+        // If we get here, all retries failed
+        throw lastError ?? AIAnalysisError.networkError(URLError(.unknown))
 
-        // Parse response
-        guard let responseString = String(data: data, encoding: .utf8) else {
-            throw AIAnalysisError.invalidResponse("Unable to decode response")
-        }
-
-        // Extract Claude response from backend wrapper
-        let claudeResponse = try extractClaudeResponse(from: responseString)
-
-        return claudeResponse
+        // This code block is now handled in the retry loop above
+        // Keeping this comment for clarity
     }
 
     private func buildClaudeAPIRequest(
@@ -629,7 +689,7 @@ public final class AIAnalysisService: ObservableObject {
         configuration: AIConfiguration
     ) async throws -> URLRequest {
 
-        guard let url = URL(string: baseURL + claudeProxyEndpoint) else {
+        guard let url = URL(string: claudeBaseURL + claudeMessagesEndpoint) else {
             throw AIAnalysisError.invalidConfiguration
         }
 
@@ -647,14 +707,15 @@ public final class AIAnalysisService: ObservableObject {
                     "role": "user",
                     "content": prompt
                 ]
-            ],
-            "stream": configuration.enableStreamingResponse
+            ]
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        // Sign request with security service
-        request = try await securityService.signRequest(request, with: "claude_api_key")
+        // Add Claude API authentication
+        let apiKey = try secureKeyManager.getAPIKey(forService: .claude)
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue(anthropicVersion, forHTTPHeaderField: "anthropic-version")
 
         return request
     }
@@ -665,7 +726,7 @@ public final class AIAnalysisService: ObservableObject {
               let content = json["content"] as? [[String: Any]],
               let firstContent = content.first,
               let text = firstContent["text"] as? String else {
-            throw AIAnalysisError.responseParsingFailed("Invalid response format")
+            throw AIAnalysisError.responseParsingFailed("Invalid Claude API response format")
         }
 
         return text
@@ -880,6 +941,86 @@ public final class AIAnalysisService: ObservableObject {
             tokensPerMinute: 40000,
             requestsPerDay: 1000
         )
+    }
+
+    /// Provides mock analysis when Claude API is not available
+    private func performMockAnalysis(
+        document: MortgageDocument,
+        context: AnalysisContext
+    ) async throws -> String {
+        // Simulate processing time
+        try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+
+        // Generate mock analysis based on document type
+        let mockFindings = generateMockFindings(for: document.documentType)
+
+        let mockResponse = """
+        {
+            "findings": \(try encodeMockFindings(mockFindings)),
+            "overallConfidence": 0.6,
+            "summary": "Mock analysis performed due to API key not being configured. This is a simulated analysis for demonstration purposes. Please configure your Claude API key in Settings to enable full AI-powered analysis."
+        }
+        """
+
+        return mockResponse
+    }
+
+    private func generateMockFindings(for documentType: MortgageDocument.DocumentType) -> [[String: Any]] {
+        switch documentType {
+        case .mortgageStatement:
+            return [
+                [
+                    "issueType": "latePaymentError",
+                    "severity": "medium",
+                    "title": "Mock: Potential Late Fee Issue",
+                    "description": "This is a mock finding generated for demonstration purposes.",
+                    "detailedExplanation": "Mock analysis detected a potential late fee discrepancy. Please configure Claude API key for accurate analysis.",
+                    "suggestedAction": "Configure Claude API key in Settings for real analysis.",
+                    "affectedAmount": 25.0,
+                    "confidence": 0.6,
+                    "evidenceText": "Mock evidence - requires real API analysis",
+                    "reasoning": "This is a simulated finding for demo purposes."
+                ]
+            ]
+        case .escrowStatement:
+            return [
+                [
+                    "issueType": "escrowError",
+                    "severity": "low",
+                    "title": "Mock: Escrow Balance Check",
+                    "description": "Mock analysis suggests reviewing escrow calculations.",
+                    "detailedExplanation": "This is a simulated finding. Real AI analysis would provide detailed escrow analysis.",
+                    "suggestedAction": "Configure Claude API key for comprehensive escrow analysis.",
+                    "affectedAmount": null,
+                    "confidence": 0.5,
+                    "evidenceText": "Mock evidence for escrow analysis",
+                    "reasoning": "Simulated analysis for demonstration."
+                ]
+            ]
+        default:
+            return [
+                [
+                    "issueType": "other",
+                    "severity": "low",
+                    "title": "Mock: Document Review Needed",
+                    "description": "Mock analysis suggests manual review.",
+                    "detailedExplanation": "This is a mock finding. Configure Claude API key for detailed AI analysis.",
+                    "suggestedAction": "Set up Claude API key in Settings for full analysis capabilities.",
+                    "affectedAmount": null,
+                    "confidence": 0.5,
+                    "evidenceText": "Mock analysis placeholder",
+                    "reasoning": "Demo analysis - requires API configuration."
+                ]
+            ]
+        }
+    }
+
+    private func encodeMockFindings(_ findings: [[String: Any]]) throws -> String {
+        let data = try JSONSerialization.data(withJSONObject: findings, options: [])
+        guard let jsonString = String(data: data, encoding: .utf8) else {
+            throw AIAnalysisError.responseParsingFailed("Failed to encode mock findings")
+        }
+        return jsonString
     }
 
     private func updateProgress(
