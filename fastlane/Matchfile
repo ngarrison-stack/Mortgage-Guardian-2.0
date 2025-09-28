@@ -1,4 +1,4 @@
-git_url("")
+git_url(ENV["MATCH_GIT_URL"])
 
 # Optional: storage mode
 # storage_mode("git")

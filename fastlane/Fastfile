@@ -3,7 +3,7 @@ default_platform(:ios)
 
 platform :ios do
   desc "Get latest TestFlight build number"
-  lane :latest_testflight_build_number do
+  lane :get_latest_build do
     latest_testflight_build_number(
       api_key: {
         key_id: ENV["APPLE_KEY_ID"],
@@ -13,8 +13,8 @@ platform :ios do
     )
   end
 
-  desc "Increment build number"
-  lane :increment_build_number do |options|
+  desc "Set build number"
+  lane :set_build_number do |options|
     increment_build_number(
       build_number: options[:build_number]
     )
@@ -72,5 +72,51 @@ platform :ios do
     )
 
     UI.message("match finished. The certificates and provisioning profiles are stored in your match repo.")
+  end
+
+  desc "Run tests using the test-build.sh script"
+  lane :test do
+    Dir.chdir("..") do
+      sh("./test-build.sh")
+    end
+  end
+
+  desc "Build for development"
+  lane :build_dev do
+    Dir.chdir("..") do
+      sh("xcodebuild -project MortgageGuardian.xcodeproj -scheme MortgageGuardian -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -configuration Debug build")
+    end
+  end
+
+  desc "Run unit tests only"
+  lane :unit_tests do
+    run_tests(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      destination: "platform=iOS Simulator,name=iPhone 15 Pro",
+      only_testing: ["MortgageGuardianTests/UnitTests"]
+    )
+  end
+
+  desc "Run integration tests"
+  lane :integration_tests do
+    run_tests(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      destination: "platform=iOS Simulator,name=iPhone 15 Pro",
+      only_testing: ["MortgageGuardianTests/IntegrationTests"]
+    )
+  end
+
+  desc "Build and upload to TestFlight with automatic version management"
+  lane :release_beta do
+    # Get latest TestFlight build number and increment
+    build_number = latest_testflight_build_number + 1
+    increment_build_number(build_number: build_number)
+
+    # Run beta lane
+    beta
+
+    UI.success("✅ Build #{build_number} uploaded to TestFlight!")
   end
 end
