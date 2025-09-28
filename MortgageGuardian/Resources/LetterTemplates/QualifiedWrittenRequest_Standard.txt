@@ -1,0 +1,93 @@
+{{CURRENT_DATE}}
+
+{{SERVICER_NAME}}
+{{SERVICER_ADDRESS}}
+
+RE: Qualified Written Request Under 12 CFR § 1024.36
+Loan Number: {{LOAN_NUMBER}}
+Property Address: {{PROPERTY_ADDRESS}}
+
+Dear Sir or Madam:
+
+This letter serves as my Qualified Written Request (QWR) pursuant to 12 CFR § 1024.36 of the Real Estate Settlement Procedures Act (RESPA). I am requesting information regarding the servicing of my mortgage loan.
+
+BORROWER INFORMATION:
+Name: {{USER_FULL_NAME}}
+Property Address: {{PROPERTY_ADDRESS}}
+Loan Number: {{LOAN_NUMBER}}
+Contact Information: {{USER_EMAIL}}, {{USER_PHONE}}
+
+INFORMATION REQUESTED:
+I respectfully request the following information and documentation regarding my mortgage loan:
+
+1. PAYMENT HISTORY AND APPLICATION:
+   • Complete payment history from loan origination to present
+   • Detailed breakdown of how each payment was applied (principal, interest, escrow, fees)
+   • Any unapplied funds currently held on the account
+   • Documentation of any payment application changes or corrections
+
+2. ACCOUNT BALANCE AND CALCULATIONS:
+   • Current principal balance and how it was calculated
+   • Interest calculation methodology and any rate changes
+   • Detailed breakdown of all fees and charges assessed
+   • Escrow account analysis (if applicable)
+
+3. SERVICING TRANSFER INFORMATION:
+   • All documentation related to servicing transfers
+   • Verification that proper notices were provided per RESPA requirements
+   • Transfer of account balance and payment history accuracy
+
+4. ERROR CORRECTION RECORDS:
+   • Any previous error correction requests and their resolution
+   • Internal communications regarding account issues
+   • Quality control review reports (if any)
+
+SPECIFIC DETAILS REQUESTED:
+{{DETAILED_EXPLANATION}}
+
+REASON FOR REQUEST:
+I am requesting this information to:
+• Verify the accuracy of my mortgage account servicing
+• Understand how payments have been applied to my account
+• Ensure compliance with RESPA and other applicable regulations
+• {{EVIDENCE_TEXT}}
+
+LEGAL AUTHORITY:
+This request is made pursuant to my rights under:
+• 12 CFR § 1024.36 - Requests for information
+• 12 U.S.C. § 2605(e) - Servicer obligations
+• State consumer protection laws
+
+RESPONSE REQUIREMENTS:
+Under 12 CFR § 1024.36(d), you must:
+• Acknowledge receipt of this request within 5 business days (excluding weekends and holidays)
+• Provide the requested information within 30 business days (or 7 business days before the next payment due date, whichever is earlier)
+• Provide a written response even if you determine that some information is not available
+
+If you determine that any requested information is not available or cannot be provided, please:
+• Explain the specific reasons in writing
+• Identify what information, if any, is available
+• Provide any alternative information that may address my concerns
+
+CONSEQUENCES OF NON-COMPLIANCE:
+Failure to respond appropriately to this Qualified Written Request may result in:
+• Actual damages under 12 U.S.C. § 2605(f)(1)(A)
+• Statutory damages up to $2,000 under 12 U.S.C. § 2605(f)(1)(B)
+• Attorney's fees and costs under 12 U.S.C. § 2605(f)(3)
+• Additional remedies available under federal and state law
+• Regulatory enforcement action
+
+RESPONSE DEADLINE:
+Please provide your complete response in writing to the address below no later than {{RESPONSE_DEADLINE}}.
+
+I look forward to your prompt and complete response to this request. Thank you for your cooperation.
+
+Sincerely,
+
+
+{{USER_FULL_NAME}}
+{{USER_ADDRESS}}
+Email: {{USER_EMAIL}}
+Phone: {{USER_PHONE}}
+
+DELIVERY CONFIRMATION REQUESTED

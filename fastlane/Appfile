@@ -1,0 +1,4 @@
+# Appfile
+app_identifier("com.nickgarrison.mortgageguardian")
+apple_id(ENV["DEVELOPER_APP_ID"])
+team_id(ENV["DEVELOPER_TEAM_ID"])

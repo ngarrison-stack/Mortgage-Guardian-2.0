@@ -1,0 +1,15 @@
+{
+  "name": "claude-analysis-function",
+  "version": "1.0.0",
+  "description": "Claude AI analysis function for Mortgage Guardian",
+  "main": "index.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mortgage Guardian",
+  "license": "MIT"
+}

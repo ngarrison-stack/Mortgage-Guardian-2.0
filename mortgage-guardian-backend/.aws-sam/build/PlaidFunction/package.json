@@ -1,0 +1,15 @@
+{
+  "name": "plaid-function",
+  "version": "1.0.0",
+  "description": "Plaid integration function for Mortgage Guardian",
+  "main": "index.js",
+  "dependencies": {
+    "plaid": "^11.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mortgage Guardian",
+  "license": "MIT"
+}

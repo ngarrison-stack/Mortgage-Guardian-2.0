@@ -1,0 +1,76 @@
+# Fastfile
+default_platform(:ios)
+
+platform :ios do
+  desc "Get latest TestFlight build number"
+  lane :latest_testflight_build_number do
+    latest_testflight_build_number(
+      api_key: {
+        key_id: ENV["APPLE_KEY_ID"],
+        issuer_id: ENV["APPLE_ISSUER_ID"],
+        key_content: ENV["APPLE_KEY_CONTENT"]
+      }
+    )
+  end
+
+  desc "Increment build number"
+  lane :increment_build_number do |options|
+    increment_build_number(
+      build_number: options[:build_number]
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    build_app(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: { 
+          "com.nickgarrison.mortgageguardian" => ENV["PROVISIONING_PROFILE_SPECIFIER"]
+        }
+      }
+    )
+    
+    upload_to_testflight(
+      api_key: {
+        key_id: ENV["APPLE_KEY_ID"],
+        issuer_id: ENV["APPLE_ISSUER_ID"],
+        key_content: ENV["APPLE_KEY_CONTENT"]
+      },
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Create the App Store Connect app record and initial setup"
+  lane :setup_app do |options|
+    # Produce will create an app in App Store Connect if it doesn't exist
+    produce(
+      app_name: options[:app_name] || "Mortgage Guardian",
+      bundle_id: options[:bundle_id] || "com.nickgarrison.mortgageguardian",
+      sku: options[:sku] || "mortgage-guardian-1",
+      platform: "ios",
+      language: options[:language] || "English"
+    )
+
+    UI.message("App record created/verified in App Store Connect — you can now continue with signing setup (match) and uploading builds.")
+  end
+
+  desc "Setup code signing using match (stores certs in a private git repo)"
+  lane :setup_signing do |options|
+    unless ENV["MATCH_GIT_URL"]
+      UI.user_error!("Please set MATCH_GIT_URL environment variable to your private repo (e.g., git@github.com:you/certificates.git)")
+    end
+
+    match(
+      type: "appstore",
+      readonly: false,
+      git_url: ENV["MATCH_GIT_URL"],
+      app_identifier: [options[:bundle_id] || "com.nickgarrison.mortgageguardian"],
+      username: ENV["DEVELOPER_APP_ID"]
+    )
+
+    UI.message("match finished. The certificates and provisioning profiles are stored in your match repo.")
+  end
+end

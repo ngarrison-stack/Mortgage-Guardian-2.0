@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ClaudeAPIKey:
+    Type: String
+    NoEcho: true
+    Description: Claude API Key for AI analysis
+  PlaidClientID:
+    Type: String
+    Description: Plaid Client ID for bank integrations
+  PlaidSecret:
+    Type: String
+    NoEcho: true
+    Description: Plaid Secret for bank integrations
+Resources:
+  MortgageGuardianAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Auth:
+        ApiKeyRequired: true
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: Usage plan for Mortgage Guardian API
+          Quota:
+            Limit: 1000
+            Period: DAY
+          Throttle:
+            BurstLimit: 100
+            RateLimit: 50
+      Cors:
+        AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS'''
+        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+        AllowOrigin: '''*'''
+  ClaudeAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ClaudeAnalysisFunction
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          CLAUDE_API_KEY:
+            Ref: ClaudeAPIKey
+      Events:
+        AnalyzeDocument:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MortgageGuardianAPI
+            Path: /v1/ai/claude/analyze
+            Method: post
+    Metadata:
+      SamResourceId: ClaudeAnalysisFunction
+  PlaidFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: PlaidFunction
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          PLAID_CLIENT_ID:
+            Ref: PlaidClientID
+          PLAID_SECRET:
+            Ref: PlaidSecret
+      Events:
+        PlaidLink:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MortgageGuardianAPI
+            Path: /v1/plaid/{proxy+}
+            Method: ANY
+    Metadata:
+      SamResourceId: PlaidFunction
+  UserDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MortgageGuardianUsers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${MortgageGuardianAPI}.execute-api.${AWS::Region}.amazonaws.com/prod/

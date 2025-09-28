@@ -1,0 +1,14 @@
+git_url("")
+
+# Optional: storage mode
+# storage_mode("git")
+
+# The app identifier(s)
+app_identifier("com.nickgarrison.mortgageguardian")
+
+environment("production")
+
+# If you want to restrict match to a specific branch
+# git_branch("certs/main")
+
+# The readonly option is set in the lane when running
