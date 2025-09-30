@@ -15,28 +15,24 @@ Parameters:
     Description: Plaid Secret for bank integrations
 
 Resources:
-  # API Gateway
+  # API Gateway - Public access with rate limiting
   MortgageGuardianAPI:
     Type: AWS::Serverless::Api
     Properties:
       StageName: prod
       Auth:
-        ApiKeyRequired: true
-        UsagePlan:
-          CreateUsagePlan: PER_API
-          Description: Usage plan for Mortgage Guardian API
-          Quota:
-            Limit: 1000
-            Period: DAY
-          Throttle:
-            BurstLimit: 100
-            RateLimit: 50
+        ApiKeyRequired: false  # No API key required - public access
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingRateLimit: 10    # 10 requests per second per IP
+          ThrottlingBurstLimit: 20    # Burst of 20 requests
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization'"
         AllowOrigin: "'*'"
 
-  # Claude Analysis Function
+  # Claude Analysis Function with storage access
   ClaudeAnalysisFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -46,6 +42,15 @@ Resources:
       Environment:
         Variables:
           CLAUDE_API_KEY: !Ref ClaudeAPIKey
+          DOCUMENT_BUCKET: !Ref DocumentStorageBucket
+          DOCUMENT_TABLE: !Ref DocumentMetadataTable
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DocumentStorageBucket
+        - S3WritePolicy:
+            BucketName: !Ref DocumentStorageBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentMetadataTable
       Events:
         AnalyzeDocument:
           Type: Api
@@ -53,6 +58,52 @@ Resources:
             RestApiId: !Ref MortgageGuardianAPI
             Path: /v1/ai/claude/analyze
             Method: post
+
+  # Document Storage Function
+  DocumentStorageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/document-storage/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          DOCUMENT_BUCKET: !Ref DocumentStorageBucket
+          DOCUMENT_TABLE: !Ref DocumentMetadataTable
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DocumentStorageBucket
+        - S3WritePolicy:
+            BucketName: !Ref DocumentStorageBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentMetadataTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+      Events:
+        UploadDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MortgageGuardianAPI
+            Path: /v1/documents/upload
+            Method: post
+        GetDocuments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MortgageGuardianAPI
+            Path: /v1/documents
+            Method: get
+        GetDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MortgageGuardianAPI
+            Path: /v1/documents/{documentId}
+            Method: get
+        DeleteDocument:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MortgageGuardianAPI
+            Path: /v1/documents/{documentId}
+            Method: delete
 
   # Plaid Integration Function
   PlaidFunction:
@@ -73,7 +124,34 @@ Resources:
             Path: /v1/plaid/{proxy+}
             Method: ANY
 
-  # DynamoDB for user data
+  # S3 Bucket for secure document storage
+  DocumentStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "mortgage-guardian-documents-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: AutoDeleteAfter30Days
+            Status: Enabled
+            ExpirationInDays: 30
+          - Id: DeleteIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+      VersioningConfiguration:
+        Status: Enabled
+
+  # DynamoDB for document metadata and user data
   UserDataTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -85,6 +163,41 @@ Resources:
       KeySchema:
         - AttributeName: userId
           KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  # DynamoDB for document metadata and analysis results
+  DocumentMetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MortgageGuardianDocuments
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: documentId
+          AttributeType: S
+        - AttributeName: uploadDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: documentId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: UserUploadDateIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: uploadDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
   ApiUrl:

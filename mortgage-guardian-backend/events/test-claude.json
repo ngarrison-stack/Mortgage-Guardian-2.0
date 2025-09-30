@@ -1,0 +1,11 @@
+{
+  "httpMethod": "POST",
+  "path": "/v1/ai/claude/analyze",
+  "body": "{\"document\": \"Monthly Statement - September 2024\\nPrincipal Payment: $1,245.67\\nInterest Payment: $2,134.56\\nEscrow Payment: $567.89\\nTotal Payment: $3,948.12\\n\\nLoan Balance: $324,567.89\", \"analysisType\": \"mortgage_audit\"}",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "requestContext": {
+    "httpMethod": "POST"
+  }
+}

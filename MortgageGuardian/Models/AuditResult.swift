@@ -29,6 +29,24 @@ struct AuditResult: Identifiable, Codable {
         case forcePlacedInsurance = "force_placed_insurance"
         case duplicateCharge = "duplicate_charge"
 
+        // RESPA Compliance Violations
+        case respaNoticeOfErrorViolation = "respa_notice_of_error_violation"
+        case respaInformationRequestViolation = "respa_information_request_violation"
+        case respaEscrowDisclosureViolation = "respa_escrow_disclosure_violation"
+        case respaServicingTransferViolation = "respa_servicing_transfer_violation"
+        case respaSection8Violation = "respa_section_8_violation"
+        case respaForcePlacedInsuranceViolation = "respa_force_placed_insurance_violation"
+        case respaEscrowShortageViolation = "respa_escrow_shortage_violation"
+
+        // TILA Compliance Violations
+        case tilaRightOfRescissionViolation = "tila_right_of_rescission_violation"
+        case tilaAPRViolation = "tila_apr_violation"
+        case tilaARMDisclosureViolation = "tila_arm_disclosure_violation"
+        case tilaHOEPAViolation = "tila_hoepa_violation"
+        case tilaATRViolation = "tila_atr_violation"
+        case tilaPeriodicStatementViolation = "tila_periodic_statement_violation"
+        case tilaARMAdjustmentViolation = "tila_arm_adjustment_violation"
+
         var displayName: String {
             switch self {
             case .misappliedPayment:
@@ -53,6 +71,38 @@ struct AuditResult: Identifiable, Codable {
                 return "Force-Placed Insurance"
             case .duplicateCharge:
                 return "Duplicate Charge"
+
+            // RESPA Compliance Violations
+            case .respaNoticeOfErrorViolation:
+                return "RESPA Notice of Error Violation"
+            case .respaInformationRequestViolation:
+                return "RESPA Information Request Violation"
+            case .respaEscrowDisclosureViolation:
+                return "RESPA Escrow Disclosure Violation"
+            case .respaServicingTransferViolation:
+                return "RESPA Servicing Transfer Violation"
+            case .respaSection8Violation:
+                return "RESPA Section 8 Violation"
+            case .respaForcePlacedInsuranceViolation:
+                return "RESPA Force-Placed Insurance Violation"
+            case .respaEscrowShortageViolation:
+                return "RESPA Escrow Shortage Violation"
+
+            // TILA Compliance Violations
+            case .tilaRightOfRescissionViolation:
+                return "TILA Right of Rescission Violation"
+            case .tilaAPRViolation:
+                return "TILA APR Calculation Violation"
+            case .tilaARMDisclosureViolation:
+                return "TILA ARM Disclosure Violation"
+            case .tilaHOEPAViolation:
+                return "TILA HOEPA Violation"
+            case .tilaATRViolation:
+                return "TILA Ability-to-Repay Violation"
+            case .tilaPeriodicStatementViolation:
+                return "TILA Periodic Statement Violation"
+            case .tilaARMAdjustmentViolation:
+                return "TILA ARM Adjustment Violation"
             }
         }
 
@@ -80,6 +130,38 @@ struct AuditResult: Identifiable, Codable {
                 return "exclamationmark.shield.fill"
             case .duplicateCharge:
                 return "doc.on.doc.fill"
+
+            // RESPA Compliance Violations
+            case .respaNoticeOfErrorViolation:
+                return "envelope.badge.fill"
+            case .respaInformationRequestViolation:
+                return "info.circle.fill"
+            case .respaEscrowDisclosureViolation:
+                return "shield.slash.fill"
+            case .respaServicingTransferViolation:
+                return "arrow.left.arrow.right"
+            case .respaSection8Violation:
+                return "dollarsign.circle.fill"
+            case .respaForcePlacedInsuranceViolation:
+                return "exclamationmark.shield.fill"
+            case .respaEscrowShortageViolation:
+                return "calendar.badge.exclamationmark"
+
+            // TILA Compliance Violations
+            case .tilaRightOfRescissionViolation:
+                return "clock.arrow.circlepath"
+            case .tilaAPRViolation:
+                return "percent.circle.fill"
+            case .tilaARMDisclosureViolation:
+                return "chart.line.uptrend.xyaxis"
+            case .tilaHOEPAViolation:
+                return "exclamationmark.octagon.fill"
+            case .tilaATRViolation:
+                return "person.fill.questionmark"
+            case .tilaPeriodicStatementViolation:
+                return "doc.text.fill"
+            case .tilaARMAdjustmentViolation:
+                return "bell.badge.fill"
             }
         }
     }

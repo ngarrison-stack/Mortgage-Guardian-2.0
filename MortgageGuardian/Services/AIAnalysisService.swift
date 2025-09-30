@@ -597,75 +597,41 @@ public final class AIAnalysisService: ObservableObject {
         taskId: UUID
     ) async throws -> String {
 
-        // Check if Claude API key is available
-        guard secureKeyManager.hasClaudeKey else {
-            throw AIAnalysisError.apiKeyNotConfigured
-        }
-
-        let request = try await buildClaudeAPIRequest(
-            prompt: prompt,
-            configuration: configuration
-        )
+        // Use AWS backend for Claude analysis
+        let backendService = BackendAPIService.shared
 
         var lastError: Error?
 
         // Retry logic with exponential backoff
         for attempt in 1...configuration.retryAttempts {
             do {
-                let (data, response) = try await networkSession.data(for: request)
+                // Send prompt to backend for processing
+                let requestPayload = [
+                    "prompt": prompt,
+                    "model": configuration.model.rawValue,
+                    "maxTokens": configuration.maxTokens,
+                    "temperature": configuration.temperature
+                ] as [String : Any]
 
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    throw AIAnalysisError.networkError(URLError(.badServerResponse))
+                let jsonData = try JSONSerialization.data(withJSONObject: requestPayload)
+                let documentContent = String(data: jsonData, encoding: .utf8) ?? ""
+
+                let responseData = try await backendService.analyzeDocument(documentContent: documentContent)
+
+                guard let responseString = String(data: responseData, encoding: .utf8) else {
+                    throw AIAnalysisError.invalidResponse("Unable to decode response")
                 }
 
-                // Handle various HTTP status codes
-                switch httpResponse.statusCode {
-                case 200:
-                    // Parse response
-                    guard let responseString = String(data: data, encoding: .utf8) else {
-                        throw AIAnalysisError.invalidResponse("Unable to decode response")
-                    }
-
-                    // Extract Claude response
-                    let claudeResponse = try extractClaudeResponse(from: responseString)
-                    return claudeResponse
-
-                case 400:
-                    throw AIAnalysisError.invalidPrompt("Invalid request parameters")
-                case 401:
-                    throw AIAnalysisError.apiKeyNotConfigured
-                case 429:
-                    // Rate limited - wait and retry if attempts remaining
-                    if attempt < configuration.retryAttempts {
-                        let backoffTime = TimeInterval(attempt * attempt) // Exponential backoff
-                        logger.warning("Rate limited, retrying in \(backoffTime) seconds (attempt \(attempt)/\(configuration.retryAttempts))")
-                        try await Task.sleep(nanoseconds: UInt64(backoffTime * 1_000_000_000))
-                        continue
-                    } else {
-                        throw AIAnalysisError.rateLimitExceeded
-                    }
-                case 500...599:
-                    // Server error - retry if attempts remaining
-                    if attempt < configuration.retryAttempts {
-                        let backoffTime = TimeInterval(attempt * 2) // Linear backoff for server errors
-                        logger.warning("Server error \(httpResponse.statusCode), retrying in \(backoffTime) seconds (attempt \(attempt)/\(configuration.retryAttempts))")
-                        try await Task.sleep(nanoseconds: UInt64(backoffTime * 1_000_000_000))
-                        continue
-                    } else {
-                        throw AIAnalysisError.networkError(URLError(.badServerResponse))
-                    }
-                default:
-                    throw AIAnalysisError.invalidResponse("Unexpected status code: \(httpResponse.statusCode)")
+                // Extract analysis response
+                if let responseJson = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
+                   let analysisResult = responseJson["analysis"] as? String {
+                    return analysisResult
+                } else {
+                    return responseString
                 }
 
             } catch {
                 lastError = error
-
-                // Don't retry for certain errors
-                if case AIAnalysisError.apiKeyNotConfigured = error,
-                   case AIAnalysisError.invalidPrompt = error {
-                    throw error
-                }
 
                 // Retry for network errors if attempts remaining
                 if attempt < configuration.retryAttempts {
@@ -679,9 +645,6 @@ public final class AIAnalysisService: ObservableObject {
 
         // If we get here, all retries failed
         throw lastError ?? AIAnalysisError.networkError(URLError(.unknown))
-
-        // This code block is now handled in the retry loop above
-        // Keeping this comment for clarity
     }
 
     private func buildClaudeAPIRequest(

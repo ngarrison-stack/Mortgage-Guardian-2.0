@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Security enhancements for Mortgage Guardian API
+
+Resources:
+  # WAF for API protection
+  APIWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      Rules:
+        # Rate limiting rule
+        - Name: RateLimitRule
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: 100  # 100 requests per 5 minutes per IP
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+
+        # Block suspicious requests
+        - Name: BlockSQLInjection
+          Priority: 2
+          Statement:
+            SqliMatchStatement:
+              FieldToMatch:
+                Body: {}
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: BlockSQLInjection
+
+  # CloudWatch Alarms for monitoring
+  HighRequestRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alert when API receives high request rate
+      MetricName: Count
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  # Lambda function for additional request validation
+  RequestValidatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/request-validator/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          ALLOWED_ORIGINS: "com.mortgageguardian.app"
+          MAX_DOCUMENT_SIZE: "5242880"  # 5MB
+
+Outputs:
+  WebACLArn:
+    Description: "Web ACL ARN for API Gateway association"
+    Value: !GetAtt APIWebACL.Arn

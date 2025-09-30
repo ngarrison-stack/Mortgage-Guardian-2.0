@@ -4,9 +4,8 @@
   "description": "Plaid integration function for Mortgage Guardian",
   "main": "index.js",
   "dependencies": {
-    "plaid": "^11.0.0"
+    "plaid": "^38.1.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
