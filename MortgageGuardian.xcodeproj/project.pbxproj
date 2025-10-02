@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09DAEBCF30F627BE59733E9B /* SecureKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */; };
+		17194166DCB18B258065C268 /* PlaidAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0332F96FFE078D44705C0965 /* PlaidAccount.swift */; };
 		1D000001294B8F5A00C8A8A8 /* MortgageGuardianApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D000000294B8F5A00C8A8A8 /* MortgageGuardianApp.swift */; };
 		1D000003294B8F5A00C8A8A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D000002294B8F5A00C8A8A8 /* ContentView.swift */; };
 		1D000005294B8F5B00C8A8A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D000004294B8F5B00C8A8A8 /* Assets.xcassets */; };
 		1D000008294B8F5B00C8A8A8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D000007294B8F5B00C8A8A8 /* Preview Assets.xcassets */; };
-		09DAEBCF30F627BE59733E9B /* SecureKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */; };
-		17194166DCB18B258065C268 /* PlaidAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0332F96FFE078D44705C0965 /* PlaidAccount.swift */; };
 		362B240E8596615A7D85B65F /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */; };
 		4C4443BB4BE8184C58A49BFD /* RealPlaidConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */; };
 		59BD16E52E8EA2A000C89B32 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 59BD16E42E8EA2A000C89B32 /* LinkKit */; };
@@ -20,11 +20,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0332F96FFE078D44705C0965 /* PlaidAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidAccount.swift; sourceTree = "<group>"; };
 		1D000000294B8F5A00C8A8A8 /* MortgageGuardianApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MortgageGuardianApp.swift; sourceTree = "<group>"; };
 		1D000002294B8F5A00C8A8A8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1D000004294B8F5B00C8A8A8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1D000007294B8F5B00C8A8A8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		0332F96FFE078D44705C0965 /* PlaidAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidAccount.swift; sourceTree = "<group>"; };
 		1DFDFDFD294B8F5A00C8A8A8 /* MortgageGuardian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MortgageGuardian.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkService.swift; sourceTree = "<group>"; };
 		6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
