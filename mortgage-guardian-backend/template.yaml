@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  ClaudeAPIKey:
-    Type: String
-    NoEcho: true
-    Description: Claude API Key for AI analysis
   PlaidClientID:
     Type: String
     Description: Plaid Client ID for bank integrations
@@ -32,16 +28,17 @@ Resources:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization'"
         AllowOrigin: "'*'"
 
-  # Claude Analysis Function with storage access
+  # Claude Analysis Function with storage access and Bedrock permissions
   ClaudeAnalysisFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/claude-analysis/
       Handler: index.handler
       Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
       Environment:
         Variables:
-          CLAUDE_API_KEY: !Ref ClaudeAPIKey
           DOCUMENT_BUCKET: !Ref DocumentStorageBucket
           DOCUMENT_TABLE: !Ref DocumentMetadataTable
       Policies:
@@ -51,6 +48,14 @@ Resources:
             BucketName: !Ref DocumentStorageBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref DocumentMetadataTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "bedrock:InvokeModel"
+                - "bedrock:InvokeModelWithResponseStream"
+              Resource:
+                - "arn:aws:bedrock:*::foundation-model/anthropic.claude-*"
       Events:
         AnalyzeDocument:
           Type: Api

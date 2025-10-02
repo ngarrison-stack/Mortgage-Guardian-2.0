@@ -53,6 +53,10 @@
 	<true/>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>plaid</string>
+	</array>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>

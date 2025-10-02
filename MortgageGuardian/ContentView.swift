@@ -22,40 +22,6 @@ extension Color {
     })
 }
 
-// MARK: - PlaidAccount Model
-public struct PlaidAccount: Identifiable, Codable, Hashable {
-    public let id: String
-    public let name: String
-    public let type: String
-    public let subtype: String
-    public let mask: String
-    public let institutionName: String
-    public var balance: Double?
-    public var isActive: Bool
-    public let dateConnected: Date
-
-    public init(
-        id: String,
-        name: String,
-        type: String,
-        subtype: String,
-        mask: String,
-        institutionName: String,
-        balance: Double? = nil,
-        isActive: Bool = true,
-        dateConnected: Date = Date()
-    ) {
-        self.id = id
-        self.name = name
-        self.type = type
-        self.subtype = subtype
-        self.mask = mask
-        self.institutionName = institutionName
-        self.balance = balance
-        self.isActive = isActive
-        self.dateConnected = dateConnected
-    }
-}
 
 // MARK: - Logger Extension
 extension Logger {
@@ -182,7 +148,7 @@ struct ContentView: View {
 }
 
 struct DashboardView: View {
-    @StateObject private var plaidService = PlaidService.shared
+    @StateObject private var plaidService = PlaidLinkService.shared
     @State private var showingPlaidConnection = false
     @Environment(\.colorScheme) var colorScheme
 
@@ -316,7 +282,7 @@ struct DashboardView: View {
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingPlaidConnection) {
-                SimplePlaidConnectionView(plaidService: plaidService)
+                RealPlaidConnectionView()
             }
         }
     }
@@ -1327,7 +1293,7 @@ struct AnalysisResultRow: View {
 struct SettingsView: View {
     @State private var showingBankAccounts = false
     @State private var showingStorageSettings = false
-    @StateObject private var plaidService = PlaidService.shared
+    @StateObject private var plaidService = PlaidLinkService.shared
 
     var body: some View {
         NavigationView {

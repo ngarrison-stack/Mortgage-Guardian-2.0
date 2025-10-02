@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/nickgarrison/Documents/GitHub/Mortgage Guadian 2.0/**)",
+      "Bash(find:*)",
+      "Read(//Users/nickgarrison/Documents/GitHub/**)",
+      "Bash(cd:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(swift:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -42,11 +42,20 @@ exports.handler = async (event) => {
 
         // Route to appropriate handler
         switch (path) {
+            case 'link/token/create':
+                return await handleLinkToken(headers, body);
+
             case 'link_token':
                 return await handleLinkToken(headers, body);
 
+            case 'link/token/exchange':
+                return await handleExchangeToken(headers, body);
+
             case 'exchange_token':
                 return await handleExchangeToken(headers, body);
+
+            case 'accounts/get':
+                return await handleGetAccounts(headers, body);
 
             case 'accounts':
                 return await handleGetAccounts(headers, body);

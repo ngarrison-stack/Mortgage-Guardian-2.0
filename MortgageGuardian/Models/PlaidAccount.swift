@@ -1,17 +1,17 @@
 import Foundation
 
-struct PlaidAccount: Identifiable, Codable, Hashable {
-    let id: String
-    let name: String
-    let type: String
-    let subtype: String
-    let mask: String
-    let institutionName: String
-    var balance: Double?
-    var isActive: Bool
-    let dateConnected: Date
+public struct PlaidAccount: Identifiable, Codable, Hashable {
+    public let id: String
+    public let name: String
+    public let type: String
+    public let subtype: String
+    public let mask: String
+    public let institutionName: String
+    public var balance: Double?
+    public var isActive: Bool
+    public let dateConnected: Date
 
-    init(
+    public init(
         id: String,
         name: String,
         type: String,
@@ -33,11 +33,11 @@ struct PlaidAccount: Identifiable, Codable, Hashable {
         self.dateConnected = dateConnected
     }
 
-    var displayName: String {
+    public var displayName: String {
         return "\(name) •••• \(mask)"
     }
 
-    var accountTypeDescription: String {
+    public var accountTypeDescription: String {
         switch (type, subtype) {
         case ("depository", "checking"):
             return "Checking Account"
@@ -54,7 +54,7 @@ struct PlaidAccount: Identifiable, Codable, Hashable {
         }
     }
 
-    var icon: String {
+    public var icon: String {
         switch type {
         case "depository":
             return "building.columns.fill"
@@ -68,18 +68,18 @@ struct PlaidAccount: Identifiable, Codable, Hashable {
     }
 
     // MARK: - Hashable & Equatable
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 
-    static func == (lhs: PlaidAccount, rhs: PlaidAccount) -> Bool {
+    public static func == (lhs: PlaidAccount, rhs: PlaidAccount) -> Bool {
         return lhs.id == rhs.id
     }
 }
 
 // MARK: - Sample Data
 extension PlaidAccount {
-    static let sampleAccounts: [PlaidAccount] = [
+    public static let sampleAccounts: [PlaidAccount] = [
         PlaidAccount(
             id: "sample_checking_001",
             name: "Primary Checking",
@@ -109,15 +109,15 @@ extension PlaidAccount {
         )
     ]
 
-    static var sampleChecking: PlaidAccount {
+    public static var sampleChecking: PlaidAccount {
         return sampleAccounts[0]
     }
 
-    static var sampleSavings: PlaidAccount {
+    public static var sampleSavings: PlaidAccount {
         return sampleAccounts[1]
     }
 
-    static var sampleMortgage: PlaidAccount {
+    public static var sampleMortgage: PlaidAccount {
         return sampleAccounts[2]
     }
 }

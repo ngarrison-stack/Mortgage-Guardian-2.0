@@ -1,51 +1,6 @@
 import Foundation
 import Security
 
-/// Simple Keychain helper for storing API keys and service account JSON blobs.
-final class SecureKeyManager {
-    static let shared = SecureKeyManager()
-    private init() {}
-
-    enum KeychainError: Error {
-        case unexpectedStatus(OSStatus)
-        case itemNotFound
-        case dataConversionFailed
-    }
-
-    func saveAPIKey(_ key: String, forService service: String) throws {
-        guard let data = key.data(using: .utf8) else { throw KeychainError.dataConversionFailed }
-
-        // Delete existing item if present
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                    kSecAttrService as String: service]
-        SecItemDelete(query as CFDictionary)
-
-        let add: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                  kSecAttrService as String: service,
-                                  kSecValueData as String: data]
-        let status = SecItemAdd(add as CFDictionary, nil)
-        guard status == errSecSuccess else { throw KeychainError.unexpectedStatus(status) }
-    }
-
-    func getAPIKey(forService service: String) throws -> String {
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                    kSecAttrService as String: service,
-                                    kSecReturnData as String: true,
-                                    kSecMatchLimit as String: kSecMatchLimitOne]
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status != errSecItemNotFound else { throw KeychainError.itemNotFound }
-        guard status == errSecSuccess else { throw KeychainError.unexpectedStatus(status) }
-
-        guard let data = item as? Data, let key = String(data: data, encoding: .utf8) else {
-            throw KeychainError.dataConversionFailed
-        }
-        return key
-    }
-}
-import Foundation
-import Security
 import SwiftUI
 
 enum KeychainError: LocalizedError {
