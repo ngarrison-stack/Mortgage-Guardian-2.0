@@ -1,10 +1,10 @@
 import Foundation
 import Combine
-import LinkKit
+import Plaid
 import UIKit
+import os.log
 
-/// Real Plaid Link integration for bank account connections
-/// This replaces SimplePlaidService when LinkKit is properly installed
+/// Production Plaid Link integration for bank account connections
 @MainActor
 public final class PlaidLinkService: ObservableObject {
 
@@ -16,15 +16,21 @@ public final class PlaidLinkService: ObservableObject {
     @Published public var isLoading: Bool = false
     @Published public var errorMessage: String?
     @Published public var linkToken: String?
+    @Published public var isConnected: Bool = false
 
     // MARK: - Private Properties
     private let logger = Logger(subsystem: "com.mortgageguardian", category: "PlaidLinkService")
     private let secureKeyManager = SecureKeyManager.shared
     private let networkSession = URLSession.shared
 
+    // API Configuration
+    private let apiBaseURL = "https://h4rj2gpdza.execute-api.us-east-1.amazonaws.com/prod/v1/plaid"
+
+    // Plaid Link Handler
+    private var linkHandler: Handler?
+
     private init() {
-        // Initialize with empty state
-        logger.info("PlaidLinkService initialized")
+        logger.info("PlaidLinkService initialized with production Plaid SDK")
         loadStoredAccounts()
     }
 
@@ -126,7 +132,7 @@ public final class PlaidLinkService: ObservableObject {
     // MARK: - Private Implementation
 
     private func fetchLinkToken() async throws {
-        guard let url = URL(string: "\(APIConfiguration.baseURL)/v1/plaid/link/token/create") else {
+        guard let url = URL(string: "\(apiBaseURL)/link_token") else {
             throw PlaidError.invalidConfiguration
         }
 
@@ -166,25 +172,160 @@ public final class PlaidLinkService: ObservableObject {
     private func presentPlaidLink(linkToken: String) async {
         logger.info("Presenting Plaid Link with token: \(linkToken.prefix(10))...")
 
-        // For now, create a mock successful connection to test the functionality
-        // This simulates the successful Plaid Link flow without requiring the complex LinkKit setup
-        await MainActor.run {
-            // Create a mock account for testing
-            let mockAccount = PlaidAccount(
-                id: "mock_account_\(UUID().uuidString)",
-                name: "Test Checking",
-                type: "depository",
-                subtype: "checking",
-                mask: "0000",
-                institutionName: "Test Bank",
-                balance: 1234.56,
+        return await withCheckedContinuation { continuation in
+            // Create Plaid Link configuration
+            var configuration = LinkTokenConfiguration(token: linkToken) { success in
+                // Handle successful link
+                Task { @MainActor in
+                    do {
+                        try await self.handleLinkSuccess(publicToken: success.publicToken, metadata: success.metadata)
+                        self.isConnected = true
+                        self.logger.info("Plaid Link completed successfully")
+                    } catch {
+                        self.errorMessage = error.localizedDescription
+                        self.logger.error("Link success handling failed: \(error.localizedDescription)")
+                    }
+                    continuation.resume()
+                }
+            }
+
+            configuration.onExit = { exit in
+                // Handle link exit/cancellation
+                Task { @MainActor in
+                    if let error = exit.error {
+                        self.errorMessage = "Link failed: \(error.localizedDescription)"
+                        self.logger.error("Plaid Link exited with error: \(error.localizedDescription)")
+                    } else {
+                        self.logger.info("Plaid Link exited without error")
+                    }
+                    continuation.resume()
+                }
+            }
+
+            configuration.onEvent = { event in
+                // Log Plaid events for debugging
+                self.logger.info("Plaid Link event: \(event.eventName)")
+            }
+
+            // Create and present link handler
+            let result = Plaid.create(configuration)
+            switch result {
+            case .failure(let error):
+                Task { @MainActor in
+                    self.errorMessage = "Failed to create Plaid Link: \(error.localizedDescription)"
+                    self.logger.error("Failed to create Plaid Link: \(error.localizedDescription)")
+                    continuation.resume()
+                }
+            case .success(let handler):
+                self.linkHandler = handler
+                if let topViewController = UIApplication.shared.windows.first?.rootViewController {
+                    handler.open(presentUsing: .viewController(topViewController))
+                } else {
+                    Task { @MainActor in
+                        self.errorMessage = "Could not find view controller to present Plaid Link"
+                        self.logger.error("Could not find view controller to present Plaid Link")
+                        continuation.resume()
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleLinkSuccess(publicToken: String, metadata: LinkSuccess.Metadata) async throws {
+        // Exchange public token for access token via backend
+        guard let url = URL(string: "\(apiBaseURL)/exchange_token") else {
+            throw PlaidError.invalidConfiguration
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let requestBody: [String: Any] = [
+            "public_token": publicToken
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let (data, response) = try await networkSession.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw PlaidError.tokenExchangeFailed
+        }
+
+        let responseJson = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let accessToken = responseJson?["access_token"] as? String else {
+            throw PlaidError.tokenExchangeFailed
+        }
+
+        // Fetch accounts with the access token
+        try await fetchAccountsWithAccessToken(accessToken: accessToken)
+    }
+
+    private func fetchAccountsWithAccessToken(accessToken: String) async throws {
+        guard let url = URL(string: "\(apiBaseURL)/accounts") else {
+            throw PlaidError.invalidConfiguration
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let requestBody: [String: Any] = [
+            "access_token": accessToken
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let (data, response) = try await networkSession.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw PlaidError.accountsFetchFailed
+        }
+
+        let responseJson = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let accountsArray = responseJson?["accounts"] as? [[String: Any]] else {
+            throw PlaidError.accountsFetchFailed
+        }
+
+        // Convert Plaid accounts to our model
+        let plaidAccounts = accountsArray.compactMap { accountData -> PlaidAccount? in
+            guard let accountId = accountData["account_id"] as? String,
+                  let name = accountData["name"] as? String,
+                  let type = accountData["type"] as? String else {
+                return nil
+            }
+
+            let subtype = accountData["subtype"] as? String ?? ""
+            let mask = accountData["mask"] as? String ?? ""
+
+            // Extract balance
+            var balance: Double = 0.0
+            if let balances = accountData["balances"] as? [String: Any],
+               let available = balances["available"] as? Double {
+                balance = available
+            }
+
+            return PlaidAccount(
+                id: accountId,
+                name: name,
+                type: type,
+                subtype: subtype,
+                mask: mask,
+                institutionName: "Connected Bank", // Will be populated from metadata
+                balance: balance,
                 isActive: true
             )
+        }
 
-            self.addAccount(mockAccount)
-            self.isLoading = false
-
-            logger.info("Mock Plaid Link flow completed successfully - account added")
+        await MainActor.run {
+            for account in plaidAccounts {
+                self.addAccount(account)
+            }
+            self.isConnected = true
+            self.logger.info("Successfully fetched \(plaidAccounts.count) accounts from Plaid")
         }
 
         // Real LinkKit implementation would go here:
