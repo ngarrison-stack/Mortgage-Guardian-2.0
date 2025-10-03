@@ -15,6 +15,7 @@
 		1D000008294B8F5B00C8A8A8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D000007294B8F5B00C8A8A8 /* Preview Assets.xcassets */; };
 		362B240E8596615A7D85B65F /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */; };
 		4C4443BB4BE8184C58A49BFD /* RealPlaidConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */; };
+		4DB0E34D0F35AC75FE9613E7 /* Pods_MortgageGuardian.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */; };
 		59BD16E52E8EA2A000C89B32 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 59BD16E42E8EA2A000C89B32 /* LinkKit */; };
 		F4FD0A761798883E8200D80F /* PlaidLinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */; };
 /* End PBXBuildFile section */
@@ -28,6 +29,9 @@
 		1DFDFDFD294B8F5A00C8A8A8 /* MortgageGuardian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MortgageGuardian.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkService.swift; sourceTree = "<group>"; };
 		6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
+		72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MortgageGuardian.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.release.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.release.xcconfig"; sourceTree = "<group>"; };
+		AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.debug.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.debug.xcconfig"; sourceTree = "<group>"; };
 		C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealPlaidConnectionView.swift; sourceTree = "<group>"; };
 		DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -38,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				59BD16E52E8EA2A000C89B32 /* LinkKit in Frameworks */,
+				4DB0E34D0F35AC75FE9613E7 /* Pods_MortgageGuardian.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,6 +62,8 @@
 			children = (
 				1DFDFDFF294B8F5A00C8A8A8 /* MortgageGuardian */,
 				1DFDFDFB294B8F5A00C8A8A8 /* Products */,
+				48AD825598338692D79A4E6D /* Pods */,
+				6BC6ADCAC5840418A02BF990 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -100,12 +107,30 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		48AD825598338692D79A4E6D /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */,
+				9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		6934E1BECC35344B1654E9C4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		6BC6ADCAC5840418A02BF990 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		B24B66EE093BE06D6040258B /* Configuration */ = {
@@ -123,9 +148,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1D00000B294B8F5B00C8A8A8 /* Build configuration list for PBXNativeTarget "MortgageGuardian" */;
 			buildPhases = (
+				93E80E9AE1F552D1913C1160 /* [CP] Check Pods Manifest.lock */,
 				1DFDFDFA294B8F5A00C8A8A8 /* Frameworks */,
 				1DFDFDF9294B8F5A00C8A8A8 /* Sources */,
 				1DFDFDF8294B8F5A00C8A8A8 /* Resources */,
+				08BDBEC2B9C512057677A1DC /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -183,6 +210,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		08BDBEC2B9C512057677A1DC /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		93E80E9AE1F552D1913C1160 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MortgageGuardian-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1DFDFDF9294B8F5A00C8A8A8 /* Sources */ = {
@@ -327,6 +396,7 @@
 		};
 		1D00000C294B8F5B00C8A8A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -360,6 +430,7 @@
 		};
 		1D00000D294B8F5B00C8A8A8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

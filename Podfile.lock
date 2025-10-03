@@ -1,0 +1,24 @@
+PODS:
+  - Alamofire (5.9.1)
+  - KeychainAccess (4.2.2)
+  - Plaid (5.6.1)
+
+DEPENDENCIES:
+  - Alamofire (~> 5.9.0)
+  - KeychainAccess (~> 4.2.0)
+  - Plaid (~> 5.6.0)
+
+SPEC REPOS:
+  trunk:
+    - Alamofire
+    - KeychainAccess
+    - Plaid
+
+SPEC CHECKSUMS:
+  Alamofire: f36a35757af4587d8e4f4bfa223ad10be2422b8c
+  KeychainAccess: c0c4f7f38f6fc7bbe58f5702e25f7bd2f65abf51
+  Plaid: 93c9e80b93f5cea960a1120047ef2b689394ff91
+
+PODFILE CHECKSUM: f2cc3691e3ad7baa813de811bfe0f0a2d70e3289
+
+COCOAPODS: 1.16.2
