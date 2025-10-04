@@ -1,0 +1,4 @@
+${PODS_ROOT}/Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian-frameworks.sh
+${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework
+${BUILT_PRODUCTS_DIR}/KeychainAccess/KeychainAccess.framework
+${PODS_XCFRAMEWORKS_BUILD_DIR}/Plaid/LinkKit.framework/LinkKit

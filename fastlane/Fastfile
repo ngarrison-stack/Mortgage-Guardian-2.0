@@ -30,7 +30,8 @@ platform :ios do
         provisioningProfiles: {
           "com.nickgarrison.mortgageguardian" => ENV["PROVISIONING_PROFILE_SPECIFIER"]
         }
-      }
+      },
+      skip_package_dependencies_resolution: true
     )
     
     upload_to_testflight(

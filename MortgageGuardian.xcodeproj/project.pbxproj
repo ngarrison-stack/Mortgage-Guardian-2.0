@@ -15,23 +15,22 @@
 		1D000008294B8F5B00C8A8A8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D000007294B8F5B00C8A8A8 /* Preview Assets.xcassets */; };
 		362B240E8596615A7D85B65F /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */; };
 		4C4443BB4BE8184C58A49BFD /* RealPlaidConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */; };
-		4DB0E34D0F35AC75FE9613E7 /* Pods_MortgageGuardian.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */; };
-		59BD16E52E8EA2A000C89B32 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 59BD16E42E8EA2A000C89B32 /* LinkKit */; };
+		A2501D369327888024602AAD /* Pods_MortgageGuardian.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 101E2AB650FBE1EFD3C66536 /* Pods_MortgageGuardian.framework */; };
 		F4FD0A761798883E8200D80F /* PlaidLinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0332F96FFE078D44705C0965 /* PlaidAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidAccount.swift; sourceTree = "<group>"; };
+		101E2AB650FBE1EFD3C66536 /* Pods_MortgageGuardian.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MortgageGuardian.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D000000294B8F5A00C8A8A8 /* MortgageGuardianApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MortgageGuardianApp.swift; sourceTree = "<group>"; };
 		1D000002294B8F5A00C8A8A8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1D000004294B8F5B00C8A8A8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1D000007294B8F5B00C8A8A8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		1DFDFDFD294B8F5A00C8A8A8 /* MortgageGuardian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MortgageGuardian.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		557D367C5DDDAFE60DCAF5CF /* Pods-MortgageGuardian.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.release.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.release.xcconfig"; sourceTree = "<group>"; };
 		6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkService.swift; sourceTree = "<group>"; };
 		6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
-		72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MortgageGuardian.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.release.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.release.xcconfig"; sourceTree = "<group>"; };
-		AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.debug.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.debug.xcconfig"; sourceTree = "<group>"; };
+		BB1C01AA876D5C55E2B8D9AE /* Pods-MortgageGuardian.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MortgageGuardian.debug.xcconfig"; path = "Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian.debug.xcconfig"; sourceTree = "<group>"; };
 		C43EABF7802DC41281DE5BBA /* RealPlaidConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealPlaidConnectionView.swift; sourceTree = "<group>"; };
 		DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -41,8 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				59BD16E52E8EA2A000C89B32 /* LinkKit in Frameworks */,
-				4DB0E34D0F35AC75FE9613E7 /* Pods_MortgageGuardian.framework in Frameworks */,
+				A2501D369327888024602AAD /* Pods_MortgageGuardian.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,8 +60,8 @@
 			children = (
 				1DFDFDFF294B8F5A00C8A8A8 /* MortgageGuardian */,
 				1DFDFDFB294B8F5A00C8A8A8 /* Products */,
-				48AD825598338692D79A4E6D /* Pods */,
-				6BC6ADCAC5840418A02BF990 /* Frameworks */,
+				E378B555392BE7CDC9B39F4D /* Pods */,
+				660BDAECEDE912C0F3F38304 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -107,14 +105,12 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		48AD825598338692D79A4E6D /* Pods */ = {
+		660BDAECEDE912C0F3F38304 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */,
-				9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */,
+				101E2AB650FBE1EFD3C66536 /* Pods_MortgageGuardian.framework */,
 			);
-			name = Pods;
-			path = Pods;
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		6934E1BECC35344B1654E9C4 /* Views */ = {
@@ -125,20 +121,22 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		6BC6ADCAC5840418A02BF990 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				72936F72BA5D9A1ACE850EBC /* Pods_MortgageGuardian.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		B24B66EE093BE06D6040258B /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
 				6E1E98D4FD4A054DE50CB541 /* APIConfiguration.swift */,
 			);
 			path = Configuration;
+			sourceTree = "<group>";
+		};
+		E378B555392BE7CDC9B39F4D /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				BB1C01AA876D5C55E2B8D9AE /* Pods-MortgageGuardian.debug.xcconfig */,
+				557D367C5DDDAFE60DCAF5CF /* Pods-MortgageGuardian.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,11 +146,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1D00000B294B8F5B00C8A8A8 /* Build configuration list for PBXNativeTarget "MortgageGuardian" */;
 			buildPhases = (
-				93E80E9AE1F552D1913C1160 /* [CP] Check Pods Manifest.lock */,
+				FFD031E55EC37968D0AC4F60 /* [CP] Check Pods Manifest.lock */,
 				1DFDFDFA294B8F5A00C8A8A8 /* Frameworks */,
 				1DFDFDF9294B8F5A00C8A8A8 /* Sources */,
 				1DFDFDF8294B8F5A00C8A8A8 /* Resources */,
-				08BDBEC2B9C512057677A1DC /* [CP] Embed Pods Frameworks */,
+				D7698655A182F6013EEF5C98 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -187,9 +185,6 @@
 				Base,
 			);
 			mainGroup = 1DFDFDEC294B8F5A00C8A8A8;
-			packageReferences = (
-				59BD16E32E8EA2A000C89B32 /* XCRemoteSwiftPackageReference "plaid-link-ios" */,
-			);
 			productRefGroup = 1DFDFDFB294B8F5A00C8A8A8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -212,7 +207,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		08BDBEC2B9C512057677A1DC /* [CP] Embed Pods Frameworks */ = {
+		D7698655A182F6013EEF5C98 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -229,7 +224,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MortgageGuardian/Pods-MortgageGuardian-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		93E80E9AE1F552D1913C1160 /* [CP] Check Pods Manifest.lock */ = {
+		FFD031E55EC37968D0AC4F60 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -396,7 +391,7 @@
 		};
 		1D00000C294B8F5B00C8A8A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AB4238AA97E15C51D77874CA /* Pods-MortgageGuardian.debug.xcconfig */;
+			baseConfigurationReference = BB1C01AA876D5C55E2B8D9AE /* Pods-MortgageGuardian.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -430,7 +425,7 @@
 		};
 		1D00000D294B8F5B00C8A8A8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9938704574163C8E0A01A5F8 /* Pods-MortgageGuardian.release.xcconfig */;
+			baseConfigurationReference = 557D367C5DDDAFE60DCAF5CF /* Pods-MortgageGuardian.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -484,25 +479,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		59BD16E32E8EA2A000C89B32 /* XCRemoteSwiftPackageReference "plaid-link-ios" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/plaid/plaid-link-ios";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.4.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		59BD16E42E8EA2A000C89B32 /* LinkKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 59BD16E32E8EA2A000C89B32 /* XCRemoteSwiftPackageReference "plaid-link-ios" */;
-			productName = LinkKit;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1DFDFDEE294B8F5A00C8A8A8 /* Project object */;
 }

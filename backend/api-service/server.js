@@ -17,218 +17,28 @@ const plaidEnvironment = process.env.PLAID_ENV === 'production'
     ? PlaidEnvironments.production
     : PlaidEnvironments.sandbox;
 
-// Mock Service for fallback
-class MockPlaidService {
-    constructor() {
-        this.mockAccounts = [
-            {
-                account_id: 'mock_account_1',
-                name: 'Chase Checking',
-                type: 'depository',
-                subtype: 'checking',
-                mask: '1234',
-                balances: {
-                    available: 12543.67,
-                    current: 12543.67,
-                    limit: null,
-                    iso_currency_code: 'USD'
-                }
-            },
-            {
-                account_id: 'mock_account_2',
-                name: 'Wells Fargo Savings',
-                type: 'depository',
-                subtype: 'savings',
-                mask: '5678',
-                balances: {
-                    available: 25000.00,
-                    current: 25000.00,
-                    limit: null,
-                    iso_currency_code: 'USD'
-                }
-            },
-            {
-                account_id: 'mock_account_3',
-                name: 'Citi Credit Card',
-                type: 'credit',
-                subtype: 'credit card',
-                mask: '9012',
-                balances: {
-                    available: 7500.00,
-                    current: -2456.33,
-                    limit: 10000.00,
-                    iso_currency_code: 'USD'
-                }
-            },
-            {
-                account_id: 'mock_account_4',
-                name: 'Plaid Student Loan',
-                type: 'loan',
-                subtype: 'student',
-                mask: '5678',
-                balances: {
-                    available: null,
-                    current: 45123.00,
-                    limit: null,
-                    iso_currency_code: 'USD'
-                },
-                liability: {
-                    type: 'student',
-                    origination_date: '2022-01-01',
-                    principal: 45123,
-                    nominal_apr: 4.23,
-                    guarantor: 'DEPT OF ED',
-                    loan_name: 'Plaid Student Loan',
-                    repayment_model: {
-                        type: 'standard',
-                        non_repayment_months: 12,
-                        repayment_months: 120
-                    }
-                }
-            }
-        ];
+// COMPLIANCE NOTICE: No mock data allowed in this application
+// All data must come from real Plaid API for regulatory compliance
 
-        this.mockTransactions = [
-            {
-                transaction_id: 'mock_txn_1',
-                account_id: 'mock_account_1',
-                amount: -1200.00,
-                date: '2025-10-01',
-                name: 'MORTGAGE PAYMENT',
-                merchant_name: 'QUICKEN LOANS',
-                category: ['Payment', 'Mortgage'],
-                account_owner: null
-            },
-            {
-                transaction_id: 'mock_txn_2',
-                account_id: 'mock_account_1',
-                amount: -85.43,
-                date: '2025-09-30',
-                name: 'ESCROW SHORTAGE',
-                merchant_name: 'QUICKEN LOANS',
-                category: ['Payment', 'Mortgage'],
-                account_owner: null
-            },
-            {
-                transaction_id: 'mock_txn_3',
-                account_id: 'mock_account_1',
-                amount: 3500.00,
-                date: '2025-09-29',
-                name: 'PAYROLL DEPOSIT',
-                merchant_name: 'ACME CORP',
-                category: ['Deposit', 'Payroll'],
-                account_owner: null
-            },
-            {
-                transaction_id: 'mock_txn_4',
-                account_id: 'mock_account_1',
-                amount: 292.29,
-                date: '2025-10-02',
-                name: 'DEBIT CRD AUTOPAY 98712 000000000098712 KIUYPKFWRSGT YOTLKJHAUXL C',
-                merchant_name: 'AUTO PAYMENT',
-                category: ['Payment', 'Credit Card'],
-                account_owner: null
-            },
-            {
-                transaction_id: 'mock_txn_5',
-                account_id: 'mock_account_1',
-                amount: 1523.52,
-                date: '2025-08-05',
-                name: 'CREDIT CRD AUTOPAY 29812 000000000098123 SPKFGKABCRGK DUXZYAYOTAL X',
-                merchant_name: 'AUTO PAYMENT',
-                category: ['Payment', 'Credit Card'],
-                account_owner: null
-            }
-        ];
-    }
-
-    generateLinkToken(userId) {
-        const crypto = require('crypto');
-        const linkToken = `link-sandbox-${crypto.randomUUID()}`;
-        const expiration = new Date();
-        expiration.setHours(expiration.getHours() + 4);
-
-        return {
-            link_token: linkToken,
-            expiration: expiration.toISOString()
-        };
-    }
-
-    exchangePublicToken(publicToken) {
-        const crypto = require('crypto');
-        const accessToken = `access-sandbox-${crypto.randomUUID()}`;
-        const itemId = `item-sandbox-${crypto.randomUUID()}`;
-
-        return {
-            access_token: accessToken,
-            item_id: itemId
-        };
-    }
-
-    getAccounts(accessToken) {
-        return {
-            accounts: this.mockAccounts,
-            item: {
-                item_id: `item-sandbox-${require('crypto').randomUUID()}`,
-                institution_id: 'ins_3',
-                webhook: null,
-                error: null,
-                available_products: ['transactions', 'auth'],
-                billed_products: ['transactions']
-            }
-        };
-    }
-
-    getTransactions(accessToken, startDate, endDate, count = 100) {
-        let filteredTransactions = this.mockTransactions;
-
-        if (startDate) {
-            filteredTransactions = filteredTransactions.filter(txn =>
-                new Date(txn.date) >= new Date(startDate)
-            );
-        }
-
-        if (endDate) {
-            filteredTransactions = filteredTransactions.filter(txn =>
-                new Date(txn.date) <= new Date(endDate)
-            );
-        }
-
-        filteredTransactions = filteredTransactions.slice(0, Math.min(count, 500));
-
-        return {
-            transactions: filteredTransactions,
-            accounts: this.mockAccounts,
-            total_transactions: filteredTransactions.length
-        };
-    }
-
-    createSandboxPublicToken(institutionId, initialProducts, overrideAccounts) {
-        const crypto = require('crypto');
-        return {
-            public_token: `public-sandbox-${crypto.randomUUID()}`,
-            institution_id: institutionId
-        };
-    }
+// Initialize Plaid client - PRODUCTION ONLY (No Mock Data)
+if (!plaidClientId || !plaidSecret) {
+    console.error('❌ CRITICAL: Missing Plaid credentials');
+    console.error('❌ This is a compliance application - no mock data allowed');
+    console.error('❌ Please provide valid PLAID_CLIENT_ID and PLAID_SECRET');
+    process.exit(1);
 }
 
-// Initialize Plaid client and mock service
-const shouldUseMock = !plaidClientId || !plaidSecret || plaidSecret.length < 30;
-let client = null;
-const mockService = new MockPlaidService();
-
-if (!shouldUseMock) {
-    const configuration = new Configuration({
-        basePath: plaidEnvironment,
-        baseOptions: {
-            headers: {
-                'PLAID-CLIENT-ID': plaidClientId,
-                'PLAID-SECRET': plaidSecret,
-            },
+const configuration = new Configuration({
+    basePath: plaidEnvironment,
+    baseOptions: {
+        headers: {
+            'PLAID-CLIENT-ID': plaidClientId,
+            'PLAID-SECRET': plaidSecret,
         },
-    });
-    client = new PlaidApi(configuration);
-}
+    },
+});
+
+const client = new PlaidApi(configuration);
 
 console.log('🔗 Plaid Configuration:', {
     clientId: plaidClientId ? plaidClientId.substring(0, 8) + '...' : 'missing',
@@ -237,28 +47,27 @@ console.log('🔗 Plaid Configuration:', {
     usingMock: shouldUseMock
 });
 
-// Helper function to handle Plaid API calls with fallback
-async function handlePlaidCall(realApiCall, mockFallback, errorMessage) {
-    if (shouldUseMock) {
-        console.log('🧪 Using mock service');
-        return { success: true, data: mockFallback(), source: 'mock' };
-    }
-
+// Helper function to handle Plaid API calls - PRODUCTION ONLY
+async function handlePlaidCall(realApiCall, errorMessage) {
     try {
-        console.log('🔗 Attempting real Plaid API...');
+        console.log('🔗 Calling Plaid API...');
         const response = await realApiCall();
-        console.log('✅ Real Plaid API success');
-        return { success: true, data: response.data, source: 'real' };
+        console.log('✅ Plaid API success');
+        return { success: true, data: response.data };
     } catch (error) {
-        console.log('⚠️ Real Plaid failed, falling back to mock:', error.message);
+        console.error('❌ Plaid API error:', error.message);
+
+        // Return detailed error for compliance applications
+        const plaidError = error.response?.data || {};
         return {
-            success: true,
-            data: {
-                ...mockFallback(),
-                _source: 'mock_fallback',
-                _note: 'Using mock data - add valid Plaid credentials for production'
-            },
-            source: 'mock_fallback'
+            success: false,
+            error: {
+                message: errorMessage,
+                plaid_error: plaidError.error_message || error.message,
+                error_code: plaidError.error_code,
+                documentation_url: plaidError.documentation_url,
+                request_id: plaidError.request_id
+            }
         };
     }
 }
@@ -288,11 +97,14 @@ app.post('/api/v1/plaid/link_token', async (req, res) => {
                 country_codes: ['US'],
                 language: 'en'
             }),
-            () => mockService.generateLinkToken(userId || 'default_user'),
             'Failed to create link token'
         );
 
-        res.json(result.data);
+        if (result.success) {
+            res.json(result.data);
+        } else {
+            res.status(400).json(result.error);
+        }
     } catch (error) {
         console.error('Link token error:', error);
         res.status(500).json({ error: 'Failed to create link token' });
@@ -310,11 +122,14 @@ app.post('/api/v1/plaid/sandbox_public_token', async (req, res) => {
                 initial_products,
                 override_accounts
             }),
-            () => mockService.createSandboxPublicToken(institution_id, initial_products, override_accounts),
             'Failed to create sandbox public token'
         );
 
-        res.json(result.data);
+        if (result.success) {
+            res.json(result.data);
+        } else {
+            res.status(400).json(result.error);
+        }
     } catch (error) {
         console.error('Sandbox public token error:', error);
         res.status(500).json({ error: 'Failed to create sandbox public token' });

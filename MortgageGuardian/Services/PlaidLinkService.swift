@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import Plaid
+import LinkKit
 import UIKit
 import os.log
 
@@ -178,7 +178,7 @@ public final class PlaidLinkService: ObservableObject {
                 // Handle successful link
                 Task { @MainActor in
                     do {
-                        try await self.handleLinkSuccess(publicToken: success.publicToken, metadata: success.metadata)
+                        try await self.handleLinkSuccess(publicToken: success.publicToken, metadata: success)
                         self.isConnected = true
                         self.logger.info("Plaid Link completed successfully")
                     } catch {
@@ -231,7 +231,7 @@ public final class PlaidLinkService: ObservableObject {
         }
     }
 
-    private func handleLinkSuccess(publicToken: String, metadata: LinkSuccess.Metadata) async throws {
+    private func handleLinkSuccess(publicToken: String, metadata: LinkSuccess) async throws {
         // Exchange public token for access token via backend
         guard let url = URL(string: "\(apiBaseURL)/exchange_token") else {
             throw PlaidError.invalidConfiguration

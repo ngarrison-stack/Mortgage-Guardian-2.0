@@ -15,10 +15,10 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios get_latest_build
+### ios get_latest_build_number
 
 ```sh
-[bundle exec] fastlane ios get_latest_build
+[bundle exec] fastlane ios get_latest_build_number
 ```
 
 Get latest TestFlight build number
@@ -29,7 +29,7 @@ Get latest TestFlight build number
 [bundle exec] fastlane ios set_build_number
 ```
 
-Set build number
+Increment build number
 
 ### ios beta
 

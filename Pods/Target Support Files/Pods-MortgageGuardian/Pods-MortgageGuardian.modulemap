@@ -1,0 +1,6 @@
+framework module Pods_MortgageGuardian {
+  umbrella header "Pods-MortgageGuardian-umbrella.h"
+
+  export *
+  module * { export * }
+}
