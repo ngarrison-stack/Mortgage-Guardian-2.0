@@ -104,25 +104,29 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================
-// START SERVER
+// START SERVER (only in non-serverless environments)
 // ============================================
 
-app.listen(PORT, () => {
-  console.log('🚀 Mortgage Guardian Backend (AWS-Free)');
-  console.log('========================================');
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Claude API: ${process.env.ANTHROPIC_API_KEY ? 'Configured' : '❌ Missing'}`);
-  console.log(`✅ Plaid: ${process.env.PLAID_CLIENT_ID ? 'Configured' : '❌ Missing'}`);
-  console.log(`✅ Supabase: ${process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
-  console.log('========================================');
-  console.log(`📡 Ready to accept requests at http://localhost:${PORT}`);
-});
+// For local development and non-serverless deployments
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('🚀 Mortgage Guardian Backend (AWS-Free)');
+    console.log('========================================');
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ Claude API: ${process.env.ANTHROPIC_API_KEY ? 'Configured' : '❌ Missing'}`);
+    console.log(`✅ Plaid: ${process.env.PLAID_CLIENT_ID ? 'Configured' : '❌ Missing'}`);
+    console.log(`✅ Supabase: ${process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
+    console.log('========================================');
+    console.log(`📡 Ready to accept requests at http://localhost:${PORT}`);
+  });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    process.exit(0);
+  });
+}
 
+// Export for Vercel serverless
 module.exports = app;
