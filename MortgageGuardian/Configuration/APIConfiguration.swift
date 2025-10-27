@@ -2,17 +2,23 @@ import Foundation
 
 /// API Configuration for Mortgage Guardian Backend
 struct APIConfiguration {
-    // AWS API Gateway Configuration - Public endpoint, no API key needed!
-    static let baseURL = "https://h4rj2gpdza.execute-api.us-east-1.amazonaws.com/prod"
+    // Backend URL - Configure via Info.plist or use default
+    static let baseURL: String = {
+        if let url = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String, !url.isEmpty {
+            return url
+        }
+        // Default to local development server
+        return "http://localhost:3000"
+    }()
 
     // API Endpoints
     enum Endpoints {
-        static let claudeAnalyze = "/v1/ai/claude/analyze"
-        static let plaidBase = "/v1/plaid"
-        static let health = "/health"
+        static let claudeAnalyze = "/api/claude/analyze"
+        static let plaidBase = "/api/plaid"
+        static let health = "/api/health"
     }
 
-    // Request Headers - No API key needed, just standard headers
+    // Request Headers
     static func defaultHeaders() -> [String: String] {
         return [
             "Content-Type": "application/json",
@@ -27,7 +33,7 @@ struct APIConfiguration {
     }
 }
 
-/// Network service for AWS backend communication
+/// Network service for backend communication
 class BackendAPIService {
     static let shared = BackendAPIService()
 

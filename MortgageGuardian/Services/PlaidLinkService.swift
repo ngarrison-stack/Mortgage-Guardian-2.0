@@ -23,8 +23,10 @@ public final class PlaidLinkService: ObservableObject {
     private let secureKeyManager = SecureKeyManager.shared
     private let networkSession = URLSession.shared
 
-    // API Configuration
-    private let apiBaseURL = "https://h4rj2gpdza.execute-api.us-east-1.amazonaws.com/prod/v1/plaid"
+    // API Configuration - Uses centralized API configuration
+    private var apiBaseURL: String {
+        return APIConfiguration.baseURL + APIConfiguration.Endpoints.plaidBase
+    }
 
     // Plaid Link Handler
     private var linkHandler: Handler?
