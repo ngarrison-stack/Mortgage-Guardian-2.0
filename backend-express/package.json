@@ -23,7 +23,16 @@
     "plaid": "^18.0.0",
     "express-rate-limit": "^7.1.5",
     "compression": "^1.7.4",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "jsonwebtoken": "^9.0.2",
+    "argon2": "^0.31.1",
+    "speakeasy": "^2.0.0",
+    "rate-limiter-flexible": "^3.0.0",
+    "ioredis": "^5.3.2",
+    "winston": "^3.11.0",
+    "winston-syslog": "^2.7.0",
+    "joi": "^17.11.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
