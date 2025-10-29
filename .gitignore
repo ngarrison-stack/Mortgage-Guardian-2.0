@@ -1,0 +1,335 @@
+# ============================================================================
+# SECURITY: Secrets and Credentials - NEVER COMMIT THESE
+# ============================================================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Apple Developer Credentials
+fastlane/.env
+fastlane/.env.local
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+*.p12
+*.mobileprovision
+*.cer
+
+# API Keys and Secrets
+**/secrets.json
+**/credentials.json
+**/*secret*
+**/*credential*
+**/config.local.*
+
+# AWS Credentials
+.aws/
+**/.aws/
+*.pem
+
+# ============================================================================
+# BUILD ARTIFACTS AND DEPENDENCIES
+# ============================================================================
+
+# Node.js
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Package manager lock files (keep package-lock.json but ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+.next/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+
+# ============================================================================
+# AWS SAM AND SERVERLESS
+# ============================================================================
+.aws-sam/
+**/.aws-sam/
+samconfig.toml
+.serverless/
+**/.serverless/
+
+# CloudFormation
+.cfn/
+
+# ============================================================================
+# IOS / XCODE
+# ============================================================================
+
+# Xcode
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# CocoaPods
+Pods/
+**/Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# fastlane
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# ============================================================================
+# MACOS
+# ============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ============================================================================
+# EDITORS AND IDES
+# ============================================================================
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Zed
+.zed/
+
+# ============================================================================
+# TESTING AND COVERAGE
+# ============================================================================
+coverage/
+*.lcov
+.nyc_output/
+lib-cov/
+.grunt/
+.lock-wscript
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+.pytest_cache/
+.rspec
+.rspec_status
+
+# ============================================================================
+# LOGS AND TEMPORARY FILES
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ============================================================================
+# OPERATING SYSTEM FILES
+# ============================================================================
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# ============================================================================
+# PROJECT-SPECIFIC
+# ============================================================================
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Backups
+*.bak
+*.backup
+
+# Local development tools
+.tool-versions
+.envrc
+
+# ============================================================================
+# FRONTEND SPECIFIC
+# ============================================================================
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+dist/
+
+# Gatsby
+.cache/
+public/
+
+# Vuepress
+.vuepress/dist
+
+# Storybook
+storybook-static/
+
+# ============================================================================
+# PYTHON (for ETL/scripts)
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg
+*.egg-info/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+
+# ============================================================================
+# TERRAFORM (for infrastructure)
+# ============================================================================
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+*.dockerignore
+
+# ============================================================================
+# MISC
+# ============================================================================
+
+# API documentation
+api-docs/
+
+# Local notes
+TODO.local
+NOTES.local
+scratch/
