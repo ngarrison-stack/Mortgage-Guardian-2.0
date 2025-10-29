@@ -1,0 +1,437 @@
+name: Complete CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'release/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily security scan at 2 AM
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ==================== Security Scanning ====================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium
+
+      - name: Run Gitleaks (Secret Detection)
+        uses: zricethezav/gitleaks-action@v1.6.0
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Mortgage Guardian'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+  # ==================== Code Quality ====================
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          cd backend-express
+          npm ci
+          cd ../frontend
+          npm ci
+
+      - name: ESLint Analysis
+        run: |
+          cd backend-express
+          npx eslint . --ext .js,.jsx,.ts,.tsx --format json --output-file eslint-report.json
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: javascript, typescript
+
+  # ==================== iOS Build & Test ====================
+  ios-build-test:
+    name: iOS Build and Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v3
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod install --repo-update
+
+      - name: Build iOS App
+        run: |
+          xcodebuild clean build \
+            -workspace MortgageGuardian.xcworkspace \
+            -scheme MortgageGuardian \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run iOS Tests
+        run: |
+          xcodebuild test \
+            -workspace MortgageGuardian.xcworkspace \
+            -scheme MortgageGuardian \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+            -resultBundlePath TestResults \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ios-test-results
+          path: TestResults
+
+  # ==================== Backend Testing ====================
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mortgage_guardian_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        working-directory: ./backend-express
+        run: npm ci
+
+      - name: Run Unit Tests
+        working-directory: ./backend-express
+        run: npm test -- --coverage
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mortgage_guardian_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Run Integration Tests
+        working-directory: ./backend-express
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mortgage_guardian_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./backend-express/coverage/lcov.info
+
+  # ==================== Frontend Testing ====================
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run Unit Tests
+        working-directory: ./frontend
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Run E2E Tests
+        working-directory: ./frontend
+        run: |
+          npx playwright install
+          npm run test:e2e
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: frontend/build
+
+  # ==================== Performance Testing ====================
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:3000
+            http://localhost:3000/dashboard
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Run k6 Load Tests
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: tests/performance/load-test.js
+          flags: --out json=results.json
+
+      - name: Upload Performance Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: results.json
+
+  # ==================== Compliance Checks ====================
+  compliance-check:
+    name: Compliance and Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: License Compliance Check
+        uses: fossa-contrib/fossa-action@v2
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+
+      - name: GDPR Compliance Check
+        run: |
+          npm install -g gdpr-check
+          gdpr-check --config .gdpr.yml
+
+      - name: PCI DSS Compliance Scan
+        run: |
+          docker run --rm -v $(pwd):/src \
+            securecodewarrior/pci-dss-scanner:latest \
+            scan /src
+
+      - name: HIPAA Compliance Check
+        run: |
+          npm install -g hipaa-compliance-checker
+          hipaa-compliance-checker --path .
+
+  # ==================== Docker Build ====================
+  docker-build:
+    name: Docker Build and Push
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, backend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend-express
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:buildcache,mode=max
+
+  # ==================== Deploy to Staging ====================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, ios-build-test, frontend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.mortgageguardian.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$(pwd)/kubeconfig
+          kubectl apply -f k8s/staging/
+          kubectl set image deployment/backend backend=${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:${{ github.sha }} -n staging
+          kubectl rollout status deployment/backend -n staging
+
+      - name: Run Smoke Tests
+        run: |
+          npm install -g newman
+          newman run tests/api/smoke-tests.json \
+            --environment tests/api/staging-env.json
+
+  # ==================== Deploy to Production ====================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    environment:
+      name: production
+      url: https://mortgageguardian.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Blue-Green Deployment
+        run: |
+          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$(pwd)/kubeconfig
+
+          # Deploy to green environment
+          kubectl apply -f k8s/production/green/
+          kubectl set image deployment/backend-green backend=${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:${{ github.sha }} -n production
+          kubectl rollout status deployment/backend-green -n production
+
+          # Run health checks
+          ./scripts/health-check.sh green
+
+          # Switch traffic to green
+          kubectl patch service backend -n production -p '{"spec":{"selector":{"version":"green"}}}'
+
+          # Wait and monitor
+          sleep 60
+          ./scripts/monitor-deployment.sh
+
+          # Update blue environment for next deployment
+          kubectl set image deployment/backend-blue backend=${{ secrets.DOCKER_USERNAME }}/mortgage-guardian-backend:${{ github.sha }} -n production
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            ## Changes in this Release
+            - Automated deployment from ${{ github.sha }}
+            - See commit history for details
+          draft: false
+          prerelease: false
+
+      - name: Notify Teams
+        uses: thechetantalwar/teams-notify@v2
+        with:
+          teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK }}
+          message: "✅ Production deployment successful! Version: v${{ github.run_number }}"
+
+  # ==================== Security Audit (Weekly) ====================
+  security-audit:
+    name: Weekly Security Audit
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Full Security Audit
+        run: |
+          # Run comprehensive security audit
+          npm audit --audit-level=low
+
+          # Check for outdated packages
+          npm outdated
+
+          # Run OWASP ZAP scan
+          docker run -v $(pwd):/zap/wrk/:rw \
+            -t owasp/zap2docker-stable zap-baseline.py \
+            -t https://mortgageguardian.com \
+            -g gen.conf -r scan-report.html
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-audit-report
+          path: scan-report.html
