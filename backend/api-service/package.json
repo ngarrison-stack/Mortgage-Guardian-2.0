@@ -1,0 +1,22 @@
+{
+  "name": "api-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test-plaid.js",
+  "scripts": {
+    "start": "node server-compliance.js",
+    "dev": "node server-compliance.js",
+    "compliance": "node server-compliance.js",
+    "test": "node test-plaid.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "plaid": "^38.1.0"
+  }
+}
