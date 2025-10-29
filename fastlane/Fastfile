@@ -1,0 +1,130 @@
+# Fastfile
+default_platform(:ios)
+
+platform :ios do
+  desc "Get latest TestFlight build number"
+  lane :get_latest_build_number do
+    latest_testflight_build_number(
+      api_key: {
+        key_id: ENV["APPLE_KEY_ID"],
+        issuer_id: ENV["APPLE_ISSUER_ID"],
+        key_content: ENV["APPLE_KEY_CONTENT"]
+      }
+    )
+  end
+
+  desc "Increment build number"
+  lane :set_build_number do |options|
+    increment_build_number(
+      build_number: options[:build_number]
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    build_app(
+      workspace: "MortgageGuardian.xcworkspace",
+      scheme: "MortgageGuardian",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.nickgarrison.mortgageguardian" => ENV["PROVISIONING_PROFILE_SPECIFIER"]
+        }
+      },
+      skip_package_dependencies_resolution: true
+    )
+    
+    upload_to_testflight(
+      api_key: {
+        key_id: ENV["APPLE_KEY_ID"],
+        issuer_id: ENV["APPLE_ISSUER_ID"],
+        key_content: ENV["APPLE_KEY_CONTENT"]
+      },
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Create the App Store Connect app record and initial setup"
+  lane :setup_app do |options|
+    # Produce will create an app in App Store Connect if it doesn't exist
+    produce(
+      app_name: options[:app_name] || "Mortgage Guardian",
+      app_identifier: options[:app_identifier] || "com.nickgarrison.mortgageguardian",
+      sku: options[:sku] || "mortgage-guardian-1",
+      platform: "ios",
+      language: options[:language] || "English",
+      api_key: {
+        key_id: ENV["APPLE_KEY_ID"],
+        issuer_id: ENV["APPLE_ISSUER_ID"],
+        key_content: ENV["APPLE_KEY_CONTENT"]
+      }
+    )
+
+    UI.message("App record created/verified in App Store Connect — you can now continue with signing setup (match) and uploading builds.")
+  end
+
+  desc "Setup code signing using match (stores certs in a private git repo)"
+  lane :setup_signing do |options|
+    unless ENV["MATCH_GIT_URL"]
+      UI.user_error!("Please set MATCH_GIT_URL environment variable to your private repo (e.g., git@github.com:you/certificates.git)")
+    end
+
+    match(
+      type: "appstore",
+      readonly: false,
+      git_url: ENV["MATCH_GIT_URL"],
+      app_identifier: [options[:app_identifier] || "com.nickgarrison.mortgageguardian"],
+      username: ENV["n.garrison@me.com"]
+    )
+
+    UI.message("match finished. The certificates and provisioning profiles are stored in your match repo.")
+  end
+
+  desc "Run tests using the test-build.sh script"
+  lane :test do
+    sh("../test-build.sh")
+  end
+
+  desc "Build for development"
+  lane :build_dev do
+    build_app(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      configuration: "Debug",
+      destination: "platform=iOS Simulator,name=iPhone 15 Pro",
+      skip_package_ipa: true
+    )
+  end
+
+  desc "Run unit tests only"
+  lane :unit_tests do
+    run_tests(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      destination: "platform=iOS Simulator,name=iPhone 15 Pro",
+      only_testing: ["MortgageGuardianTests/UnitTests"]
+    )
+  end
+
+  desc "Run integration tests"
+  lane :integration_tests do
+    run_tests(
+      project: "MortgageGuardian.xcodeproj",
+      scheme: "MortgageGuardian",
+      destination: "platform=iOS Simulator,name=iPhone 15 Pro",
+      only_testing: ["MortgageGuardianTests/IntegrationTests"]
+    )
+  end
+
+  desc "Build and upload to TestFlight with automatic version management"
+  lane :release_beta do
+    # Get latest TestFlight build number and increment
+    build_number = get_latest_build_number + 1
+    set_build_number(build_number: build_number)
+
+    # Run beta lane
+    beta
+
+    UI.success("✅ Build #{build_number} uploaded to TestFlight!")
+  end
+end
