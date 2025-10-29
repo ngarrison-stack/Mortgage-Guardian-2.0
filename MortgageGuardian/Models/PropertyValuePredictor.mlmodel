@@ -1,0 +1,32 @@
+version: "1.0"
+type: pipeline
+parameters:
+  input_features:
+    - name: currentValue
+      type: double
+    - name: propertyAge
+      type: double
+    - name: squareFootage
+      type: double
+    - name: bedrooms
+      type: double
+    - name: bathrooms
+      type: double
+    - name: lotSize
+      type: double
+    - name: latitude
+      type: double
+    - name: longitude
+      type: double
+    - name: marketTrend
+      type: double
+    - name: interestRate
+      type: double
+  output_features:
+    - name: predictedValue
+      type: double
+    - name: confidence
+      type: double
+    
+training_input: "property_data.csv"
+description: "Predicts future property values based on current market conditions and property attributes"

@@ -1,0 +1,75 @@
+{{CURRENT_DATE}}
+
+{{SERVICER_NAME}}
+{{SERVICER_ADDRESS}}
+
+RE: Notice of Error Under 12 CFR § 1024.35
+Loan Number: {{LOAN_NUMBER}}
+Property Address: {{PROPERTY_ADDRESS}}
+
+Dear Sir or Madam:
+
+I am writing to notify you of an error in the servicing of my mortgage loan pursuant to 12 CFR § 1024.35 of the Real Estate Settlement Procedures Act (RESPA). This letter serves as my formal Notice of Error.
+
+BORROWER INFORMATION:
+Name: {{USER_FULL_NAME}}
+Property Address: {{PROPERTY_ADDRESS}}
+Loan Number: {{LOAN_NUMBER}}
+Contact Information: {{USER_EMAIL}}, {{USER_PHONE}}
+
+ERROR DESCRIPTION:
+{{ISSUE_DESCRIPTION}}
+
+DETAILED EXPLANATION:
+{{DETAILED_EXPLANATION}}
+
+FINANCIAL IMPACT:
+The error has resulted in financial damages of ${{AFFECTED_AMOUNT}}. {{EVIDENCE_TEXT}}
+
+SUPPORTING EVIDENCE:
+Based on my records and analysis, the following evidence supports my claim:
+• {{EVIDENCE_TEXT}}
+• Account statements showing discrepancies
+• Payment records demonstrating timely payments
+• Documentation of previous correspondence
+
+REQUESTED CORRECTION:
+I request that you immediately:
+1. Correct the error identified above within the timeframe required by RESPA
+2. Provide written confirmation of the correction to my account
+3. Adjust my account to reflect the correct information
+4. Refund any overpayments or incorrectly charged fees totaling ${{AFFECTED_AMOUNT}}
+5. Ensure that any negative credit reporting resulting from this error is corrected with all credit bureaus
+
+LEGAL NOTICE:
+Under 12 CFR § 1024.35(e), you are required to:
+• Acknowledge receipt of this notice within 5 business days (excluding weekends and holidays)
+• Either correct the error or conduct an investigation within 30 business days (or 7 business days before the next payment due date, whichever is earlier)
+• Provide written notification of the correction or results of investigation
+
+Failure to comply with RESPA requirements may subject your company to:
+• Actual damages under 12 U.S.C. § 2605(f)(1)(A)
+• Statutory damages up to $2,000 under 12 U.S.C. § 2605(f)(1)(B)
+• Attorney's fees and costs under 12 U.S.C. § 2605(f)(3)
+• Additional remedies available under federal and state law
+
+RESPONSE REQUIRED:
+Please provide your response in writing to the address below no later than {{RESPONSE_DEADLINE}}. I request confirmation of receipt of this notice and a detailed timeline for resolution.
+
+I expect this matter to be resolved promptly and in accordance with federal law. Thank you for your immediate attention to this matter.
+
+Sincerely,
+
+
+{{USER_FULL_NAME}}
+{{USER_ADDRESS}}
+Email: {{USER_EMAIL}}
+Phone: {{USER_PHONE}}
+
+Enclosures:
+• Supporting Documentation
+• Account Statement Copies
+• Payment Records
+• Previous Correspondence (if applicable)
+
+DELIVERY CONFIRMATION REQUESTED

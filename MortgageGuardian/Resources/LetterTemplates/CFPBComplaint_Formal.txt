@@ -1,0 +1,168 @@
+{{CURRENT_DATE}}
+
+Consumer Financial Protection Bureau
+P.O. Box 4503
+Iowa City, IA 52244
+
+RE: Formal Consumer Complaint - RESPA Violations
+Company: {{SERVICER_NAME}}
+Product: Mortgage
+Issue Type: Servicing Errors and RESPA Violations
+Loan Number: {{LOAN_NUMBER}}
+
+To Whom It May Concern:
+
+I am filing this formal complaint against {{SERVICER_NAME}} for violations of the Real Estate Settlement Procedures Act (RESPA) and other federal consumer protection laws.
+
+COMPLAINANT INFORMATION:
+Name: {{USER_FULL_NAME}}
+Address: {{USER_ADDRESS}}
+Email: {{USER_EMAIL}}
+Phone: {{USER_PHONE}}
+
+COMPANY INFORMATION:
+Company Name: {{SERVICER_NAME}}
+Company Address: {{SERVICER_ADDRESS}}
+Loan Number: {{LOAN_NUMBER}}
+Property Address: {{PROPERTY_ADDRESS}}
+
+PRODUCT/SERVICE DETAILS:
+• Product Type: Mortgage Loan Servicing
+• Account Number: {{LOAN_NUMBER}}
+• Original Loan Amount: [Original Amount]
+• Current Balance: [Current Balance]
+• Monthly Payment: [Payment Amount]
+
+COMPLAINT DETAILS:
+
+NATURE OF VIOLATIONS:
+{{ISSUE_DESCRIPTION}}
+
+DETAILED COMPLAINT:
+{{DETAILED_EXPLANATION}}
+
+The servicer has violated federal law by failing to properly service my mortgage loan in accordance with RESPA requirements. These violations have caused significant financial harm and distress to my household.
+
+SPECIFIC FEDERAL LAW VIOLATIONS:
+1. 12 CFR § 1024.35 - Error Resolution Procedures
+   • Failure to acknowledge error notice within required timeframe
+   • Failure to correct identified errors within 30 business days
+   • Improper rejection of valid error claims
+
+2. 12 CFR § 1024.36 - Information Request Procedures (if applicable)
+   • Failure to respond to qualified written requests
+   • Inadequate or incomplete responses to information requests
+
+3. 12 U.S.C. § 2605 - Mortgage Servicing Requirements
+   • Failure to maintain accurate account records
+   • Improper assessment of fees and charges
+   • Failure to properly apply payments
+
+ATTEMPTS TO RESOLVE WITH COMPANY:
+I have made multiple good-faith attempts to resolve this matter directly with {{SERVICER_NAME}}:
+
+• {{ISSUE_DATE}}: Initial Notice of Error submitted under RESPA
+• [Follow-up dates]: Additional correspondence and documentation provided
+• [Escalation date]: Executive escalation letter sent
+• Total time attempting resolution: [Number] months
+
+Despite these efforts, {{SERVICER_NAME}} has failed to comply with federal law and continues to violate consumer protection regulations.
+
+FINANCIAL HARM:
+The violations have caused the following financial damages:
+• Direct monetary losses: ${{AFFECTED_AMOUNT}}
+• Total damages including consequential losses: ${{TOTAL_DAMAGES}}
+• Ongoing harm that continues to accrue
+• Credit damage and associated costs
+• Time and expense to attempt resolution
+
+NON-FINANCIAL HARM:
+• Stress and anxiety from dealing with ongoing violations
+• Damage to credit rating and financial reputation
+• Loss of confidence in mortgage servicing system
+• Disruption to household financial planning
+
+RESOLUTION REQUESTED:
+I request that the CFPB:
+
+1. INVESTIGATE {{SERVICER_NAME}}'S PRACTICES:
+   • Conduct a thorough investigation of the company's RESPA compliance
+   • Review internal policies and procedures for error resolution
+   • Examine whether this represents a pattern of violations affecting other consumers
+
+2. ENFORCE FEDERAL LAW:
+   • Take appropriate enforcement action against {{SERVICER_NAME}}
+   • Impose penalties and sanctions for RESPA violations
+   • Require implementation of effective compliance procedures
+
+3. CONSUMER RELIEF:
+   • Direct {{SERVICER_NAME}} to correct my account immediately
+   • Require full restitution for all damages (${{TOTAL_DAMAGES}})
+   • Mandate correction of credit reports and negative reporting
+
+4. SYSTEMIC REMEDIES:
+   • Require {{SERVICER_NAME}} to review and correct similar violations for other consumers
+   • Implement oversight to ensure ongoing RESPA compliance
+   • Establish consumer remediation program if appropriate
+
+SUPPORTING DOCUMENTATION:
+I have attached the following supporting documentation:
+• Original Notice of Error and all correspondence with {{SERVICER_NAME}}
+• Account statements showing errors and discrepancies
+• Payment records and bank statements
+• Credit reports showing negative impact
+• Documentation of financial damages
+
+COMPANY RESPONSE ISSUES:
+{{SERVICER_NAME}}'s responses (if any) have been:
+• Inadequate and incomplete
+• Legally non-compliant with RESPA requirements
+• Dismissive of valid consumer concerns
+• Failing to address the underlying violations
+
+CONSUMER IMPACT:
+This case highlights broader issues with mortgage servicing that may affect many consumers:
+• Systematic RESPA non-compliance
+• Inadequate error resolution procedures
+• Lack of proper oversight and quality control
+• Disregard for federal consumer protection laws
+
+REQUEST FOR CFPB ACTION:
+I respectfully request that the CFPB:
+• Accept this complaint for investigation
+• Contact {{SERVICER_NAME}} for a response
+• Ensure that {{SERVICER_NAME}} complies with federal law
+• Provide me with updates on the complaint status
+• Take enforcement action as appropriate
+
+ADDITIONAL INFORMATION:
+I am available to provide any additional information or documentation that may assist in this investigation. I can be reached at {{USER_EMAIL}} or {{USER_PHONE}}.
+
+I have also filed complaints with:
+• [State] Mortgage Regulatory Authority
+• [State] Attorney General's Office
+• Better Business Bureau (if applicable)
+
+AUTHORIZATION:
+I authorize the CFPB to share my complaint information with {{SERVICER_NAME}} and to contact me regarding this matter. I understand that {{SERVICER_NAME}} will have an opportunity to respond to this complaint.
+
+Thank you for your attention to this serious matter. I look forward to the CFPB's assistance in ensuring that {{SERVICER_NAME}} complies with federal consumer protection laws.
+
+Sincerely,
+
+
+{{USER_FULL_NAME}}
+{{USER_ADDRESS}}
+Email: {{USER_EMAIL}}
+Phone: {{USER_PHONE}}
+
+Attachments:
+• Supporting Documentation Package
+• Correspondence with {{SERVICER_NAME}}
+• Account Records and Evidence
+• Financial Impact Documentation
+
+COMPLAINT TRACKING:
+Date Filed: {{CURRENT_DATE}}
+Method: [Online/Mail/Phone]
+Confirmation Number: [To be assigned by CFPB]
