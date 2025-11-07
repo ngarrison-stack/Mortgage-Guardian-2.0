@@ -4,13 +4,16 @@
   "description": "Vercel-optimized backend for Mortgage Guardian - No AWS required",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node dist/server.js",
     "dev": "nodemon server.js",
     "vercel-build": "echo 'No build step needed'",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet\" && exit 0",
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",

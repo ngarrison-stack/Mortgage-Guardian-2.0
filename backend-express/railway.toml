@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+numReplicas = 1
+startCommand = "npm start"
+healthcheckPath = "/health"
+restartPolicyType = "always"
+
+[[services]]
+name = "web"
+port = 3000
+
+[services.web]
+healthcheckPath = "/health"

@@ -1,0 +1,10 @@
+{
+  "site_id": "9b1b9bf4-774f-4545-b901-b2289c4a6300",
+  "site_name": "mortgage-guardian-app",
+  "deploy_id": "690dc8e6dcfd48cd225af341",
+  "deploy_url": "https://690dc8e6dcfd48cd225af341--mortgage-guardian-app.netlify.app",
+  "logs": "https://app.netlify.com/projects/mortgage-guardian-app/deploys/690dc8e6dcfd48cd225af341",
+  "function_logs": "https://app.netlify.com/projects/mortgage-guardian-app/logs/functions",
+  "edge_function_logs": "https://app.netlify.com/projects/mortgage-guardian-app/logs/edge-functions",
+  "url": "https://mortgage-guardian-app.netlify.app"
+}
