@@ -6,6 +6,10 @@ package-lock.json
 .env
 .env.local
 .env.production
+.env.railway
+.env.railway.local
+export-env.sh
+set-railway-vars.sh
 
 # Logs
 logs/
