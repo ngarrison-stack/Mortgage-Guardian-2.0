@@ -25,6 +25,7 @@ pids/
 # Testing
 coverage/
 .nyc_output/
+test-claude.js
 
 # Editor directories
 .vscode/

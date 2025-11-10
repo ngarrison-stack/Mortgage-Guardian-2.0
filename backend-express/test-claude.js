@@ -1,10 +1,16 @@
+require('dotenv').config();
 const Anthropic = require('@anthropic-ai/sdk');
 
 const client = new Anthropic({
-  apiKey: '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'
+  apiKey: process.env.ANTHROPIC_API_KEY || ''
 });
 
 async function test() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('Error: ANTHROPIC_API_KEY not found in environment variables');
+    process.exit(1);
+  }
+
   try {
     const response = await client.messages.create({
       model: 'claude-3-5-sonnet-20241022',

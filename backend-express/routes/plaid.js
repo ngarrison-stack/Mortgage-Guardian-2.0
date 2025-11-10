@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const plaidService = require('../services/plaidService');
+const plaidDataService = require('../services/plaidDataService');
 
 // ============================================
 // REQUEST VALIDATION MIDDLEWARE
@@ -143,7 +144,7 @@ router.post('/link_token', validateFields(['user_id']), async (req, res, next) =
  */
 router.post('/exchange_token', validateFields(['public_token']), async (req, res, next) => {
   try {
-    const { public_token } = req.body;
+    const { public_token, user_id, institution_id } = req.body;
 
     // Validate token format
     if (!public_token.startsWith('public-')) {
@@ -154,6 +155,21 @@ router.post('/exchange_token', validateFields(['public_token']), async (req, res
     }
 
     const result = await plaidService.exchangePublicToken(public_token);
+
+    // Store the item in database with access token
+    if (user_id) {
+      await plaidDataService.upsertPlaidItem({
+        itemId: result.itemId,
+        userId: user_id,
+        accessToken: result.accessToken,
+        status: 'active',
+        institutionId: institution_id || null
+      });
+
+      console.log(`✅ Stored Plaid item ${result.itemId} for user ${user_id}`);
+    } else {
+      console.warn('⚠️ No user_id provided - item not stored in database');
+    }
 
     // WARNING: In production, store access_token in database, don't return to client
     // For this mortgage auditing use case, we're returning it so iOS can store locally
@@ -529,24 +545,93 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 // ============================================
 
 async function handleTransactionWebhook(data) {
-  const { webhook_code, item_id, new_transactions, removed_transactions } = data;
+  const { webhook_code, item_id, new_transactions, removed_transactions, error } = data;
 
   switch (webhook_code) {
     case 'INITIAL_UPDATE':
     case 'HISTORICAL_UPDATE':
     case 'DEFAULT_UPDATE':
       console.log(`Transaction update for item ${item_id}: ${new_transactions} new transactions`);
-      // TODO: Implement logic to fetch and store new transactions
-      // You might want to:
-      // 1. Look up user by item_id
-      // 2. Fetch new transactions using getTransactions()
-      // 3. Store in database
-      // 4. Notify user of new data
+
+      try {
+        // 1. Look up item to get access token and user ID
+        const itemResult = await plaidDataService.getItem(item_id);
+        if (!itemResult.success) {
+          console.error(`Failed to find item ${item_id}:`, itemResult.error);
+          return;
+        }
+
+        const { access_token, user_id } = itemResult.data;
+
+        // 2. Fetch new transactions from Plaid
+        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const transactionsResponse = await plaidService.getTransactions({
+          accessToken: access_token,
+          startDate: thirtyDaysAgo.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0]
+        });
+
+        if (!transactionsResponse.success) {
+          console.error(`Failed to fetch transactions for item ${item_id}:`, transactionsResponse.error);
+          return;
+        }
+
+        // 3. Store transactions in database
+        const storeResult = await plaidDataService.storeTransactions({
+          itemId: item_id,
+          transactions: transactionsResponse.transactions,
+          userId: user_id
+        });
+
+        if (!storeResult.success) {
+          console.error(`Failed to store transactions:`, storeResult.error);
+          return;
+        }
+
+        // 4. Store/update accounts information
+        if (transactionsResponse.accounts && transactionsResponse.accounts.length > 0) {
+          await plaidDataService.upsertAccounts({
+            itemId: item_id,
+            accounts: transactionsResponse.accounts,
+            userId: user_id
+          });
+        }
+
+        // 5. Notify user of new data
+        await plaidDataService.createNotification({
+          userId: user_id,
+          itemId: item_id,
+          type: 'transactions_updated',
+          message: `${new_transactions} new transactions have been synced to your account`,
+          priority: 'low'
+        });
+
+        console.log(`✅ Successfully processed ${new_transactions} new transactions for item ${item_id}`);
+      } catch (error) {
+        console.error(`Error processing transaction webhook for item ${item_id}:`, error);
+      }
       break;
 
     case 'TRANSACTIONS_REMOVED':
       console.log(`Transactions removed for item ${item_id}: ${removed_transactions.length} transactions`);
-      // TODO: Remove transactions from database
+
+      try {
+        // Remove transactions from database
+        const removeResult = await plaidDataService.removeTransactions({
+          transactionIds: removed_transactions
+        });
+
+        if (!removeResult.success) {
+          console.error(`Failed to remove transactions:`, removeResult.error);
+        } else {
+          console.log(`✅ Successfully removed ${removed_transactions.length} transactions`);
+        }
+      } catch (error) {
+        console.error(`Error removing transactions:`, error);
+      }
       break;
 
     default:
@@ -560,24 +645,144 @@ async function handleItemWebhook(data) {
   switch (webhook_code) {
     case 'ERROR':
       console.error(`Item error for ${item_id}:`, error);
-      // TODO: Handle item errors
-      // - ITEM_LOGIN_REQUIRED: User needs to re-authenticate
-      // - Update item status in database
-      // - Notify user to reconnect
+
+      try {
+        // Get item details for user notification
+        const itemResult = await plaidDataService.getItem(item_id);
+        if (!itemResult.success) {
+          console.error(`Failed to find item ${item_id} for error handling`);
+          return;
+        }
+
+        const { user_id } = itemResult.data;
+
+        // Handle specific error types
+        if (error && error.error_code === 'ITEM_LOGIN_REQUIRED') {
+          // User needs to re-authenticate
+          await plaidDataService.updateItemStatus({
+            itemId: item_id,
+            status: 'login_required',
+            error: error,
+            requiresAction: true
+          });
+
+          // Send high priority notification
+          await plaidDataService.createNotification({
+            userId: user_id,
+            itemId: item_id,
+            type: 'authentication_required',
+            message: 'Your bank connection requires re-authentication. Please log in again to continue receiving updates.',
+            priority: 'high'
+          });
+
+          console.log(`⚠️ Item ${item_id} requires re-authentication`);
+        } else {
+          // Generic error handling
+          await plaidDataService.updateItemStatus({
+            itemId: item_id,
+            status: 'error',
+            error: error,
+            requiresAction: true
+          });
+
+          await plaidDataService.createNotification({
+            userId: user_id,
+            itemId: item_id,
+            type: 'item_error',
+            message: `An error occurred with your bank connection: ${error.error_message || 'Unknown error'}`,
+            priority: 'medium'
+          });
+
+          console.log(`❌ Item ${item_id} encountered error: ${error.error_code}`);
+        }
+      } catch (err) {
+        console.error(`Error handling item error webhook:`, err);
+      }
       break;
 
     case 'PENDING_EXPIRATION':
       console.log(`Item consent expiring soon for ${item_id}`);
-      // TODO: Notify user to re-authenticate before expiration
+
+      try {
+        // Get item details for user notification
+        const itemResult = await plaidDataService.getItem(item_id);
+        if (!itemResult.success) {
+          console.error(`Failed to find item ${item_id} for expiration warning`);
+          return;
+        }
+
+        const { user_id } = itemResult.data;
+
+        // Update item status to warn about expiration
+        await plaidDataService.updateItemStatus({
+          itemId: item_id,
+          status: 'expiring_soon',
+          requiresAction: true
+        });
+
+        // Send warning notification
+        await plaidDataService.createNotification({
+          userId: user_id,
+          itemId: item_id,
+          type: 'consent_expiring',
+          message: 'Your bank connection will expire soon. Please re-authenticate to maintain access to your financial data.',
+          priority: 'high'
+        });
+
+        console.log(`⏰ Notified user about pending expiration for item ${item_id}`);
+      } catch (err) {
+        console.error(`Error handling pending expiration webhook:`, err);
+      }
       break;
 
     case 'USER_PERMISSION_REVOKED':
       console.log(`User revoked permission for item ${item_id}`);
-      // TODO: Mark item as inactive in database
+
+      try {
+        // Get item details for logging
+        const itemResult = await plaidDataService.getItem(item_id);
+        if (!itemResult.success) {
+          console.error(`Failed to find item ${item_id} for permission revocation`);
+          return;
+        }
+
+        const { user_id } = itemResult.data;
+
+        // Mark item as inactive in database
+        await plaidDataService.updateItemStatus({
+          itemId: item_id,
+          status: 'permission_revoked',
+          requiresAction: false
+        });
+
+        // Notify user that connection has been revoked
+        await plaidDataService.createNotification({
+          userId: user_id,
+          itemId: item_id,
+          type: 'permission_revoked',
+          message: 'Your bank connection has been disconnected. You can reconnect at any time from your settings.',
+          priority: 'medium'
+        });
+
+        console.log(`🔒 Item ${item_id} marked as inactive due to permission revocation`);
+      } catch (err) {
+        console.error(`Error handling permission revocation webhook:`, err);
+      }
       break;
 
     case 'WEBHOOK_UPDATE_ACKNOWLEDGED':
       console.log(`Webhook update acknowledged for item ${item_id}`);
+
+      // Update last webhook timestamp
+      try {
+        await plaidDataService.updateItemStatus({
+          itemId: item_id,
+          status: 'active',
+          requiresAction: false
+        });
+      } catch (err) {
+        console.error(`Error acknowledging webhook update:`, err);
+      }
       break;
 
     default:
