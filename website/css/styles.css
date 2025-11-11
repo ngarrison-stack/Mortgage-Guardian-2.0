@@ -1710,22 +1710,209 @@ p {
 .hidden { display: none; }
 .visible { display: block; }
 
-/* Smooth Scrolling */
+/* Apple Smooth Scrolling */
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 80px;
 }
 
-/* Focus Styles for Accessibility */
+/* Premium Focus Styles */
 *:focus {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
+    outline: 3px solid rgba(0, 102, 204, 0.4);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+}
+
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Scroll-triggered animations */
+@media (prefers-reduced-motion: no-preference) {
+    .feature-card,
+    .pricing-card,
+    .testimonial-card {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: scrollFadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .feature-card:nth-child(1) { animation-delay: 0.1s; }
+    .feature-card:nth-child(2) { animation-delay: 0.2s; }
+    .feature-card:nth-child(3) { animation-delay: 0.3s; }
+    .feature-card:nth-child(4) { animation-delay: 0.4s; }
+    .feature-card:nth-child(5) { animation-delay: 0.5s; }
+    .feature-card:nth-child(6) { animation-delay: 0.6s; }
+}
+
+@keyframes scrollFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Selection styling */
+::selection {
+    background: rgba(0, 102, 204, 0.2);
+    color: var(--black);
+}
+
+/* Apple-Style Loading States */
+@keyframes shimmerLoading {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    animation: shimmerLoading 2s infinite linear;
+    background: linear-gradient(
+        to right,
+        var(--gray-200) 0%,
+        var(--gray-300) 20%,
+        var(--gray-200) 40%,
+        var(--gray-200) 100%
+    );
+    background-size: 1000px 100%;
+}
+
+/* Premium Hover Effects for Links */
+a {
+    transition: var(--transition);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .announcement-banner {
+        border: 2px solid var(--white);
+    }
+
+    .feature-card,
+    .pricing-card {
+        border: 2px solid var(--black);
+    }
+}
+
+/* Dark mode preparation (future enhancement) */
+@media (prefers-color-scheme: dark) {
+    /* Future dark mode styles */
 }
 
 /* Print Styles */
 @media print {
     .navbar,
+    .announcement-banner,
     .download,
-    .contact {
+    .contact,
+    .floating-card {
         display: none;
     }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .feature-card,
+    .pricing-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }
+
+/* =============================================
+   EXTRA APPLE POLISH
+   ============================================= */
+
+/* Premium text rendering */
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improved image rendering */
+img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* Smooth scrollbar (Webkit only) */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 6px;
+    border: 3px solid var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+/* Cursor improvements */
+button,
+.btn,
+a,
+[role="button"] {
+    cursor: pointer;
+}
+
+/* Enhanced button active states */
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* Improved form inputs */
+input,
+textarea,
+select {
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle pulse animation for important elements */
+@keyframes subtlePulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.92;
+    }
+}
+
+/* Performance optimization */
+.feature-card,
+.pricing-card,
+.testimonial-card,
+.btn {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* End of Apple-inspired styling */
