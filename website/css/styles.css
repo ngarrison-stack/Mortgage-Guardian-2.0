@@ -884,57 +884,100 @@ p {
     50% { transform: translateY(-10px); }
 }
 
-/* Section Headers */
+/* Apple-Style Section Headers */
 .section-header {
     text-align: center;
-    max-width: 600px;
-    margin: 0 auto var(--spacing-16) auto;
+    max-width: 720px;
+    margin: 0 auto var(--spacing-20) auto;
 }
 
 .section-header h2 {
-    margin-bottom: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg,
+        var(--black) 0%,
+        var(--gray-700) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .section-header p {
-    font-size: var(--font-size-lg);
+    font-size: clamp(1.0625rem, 2vw, 1.3125rem);
     color: var(--gray-600);
+    line-height: 1.5;
+    font-weight: 400;
+    letter-spacing: -0.015em;
 }
 
-/* Features Section */
+/* Apple-Style Features Section */
 .features {
-    padding: var(--spacing-20) 0;
-    background-color: var(--white);
+    padding: var(--spacing-32) 0;
+    background: var(--gray-100);
+    position: relative;
 }
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: var(--spacing-8);
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-6);
 }
 
 .feature-card {
     background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-8);
+    border: 0.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-3xl);
+    padding: var(--spacing-10);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg,
+        rgba(0, 102, 204, 0.02) 0%,
+        transparent 50%);
+    opacity: 0;
     transition: var(--transition);
 }
 
 .feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--primary-color);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-2xl);
+    border-color: rgba(0, 102, 204, 0.15);
+}
+
+.feature-card:hover::before {
+    opacity: 1;
 }
 
 .feature-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    border-radius: var(--radius-xl);
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg,
+        var(--primary-color) 0%,
+        var(--primary-light) 100%);
+    border-radius: var(--radius-2xl);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: var(--spacing-6);
+    margin-bottom: var(--spacing-8);
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.2);
+    transition: var(--transition);
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.08) rotate(-2deg);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.3);
 }
 
 .feature-icon img {
@@ -944,13 +987,18 @@ p {
 }
 
 .feature-card h3 {
-    margin-bottom: var(--spacing-4);
-    color: var(--gray-900);
+    margin-bottom: var(--spacing-5);
+    color: var(--black);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    letter-spacing: -0.025em;
 }
 
 .feature-card p {
     margin-bottom: var(--spacing-6);
     color: var(--gray-600);
+    line-height: 1.6;
+    font-size: var(--font-size-base);
 }
 
 .feature-list {
@@ -958,10 +1006,12 @@ p {
 }
 
 .feature-list li {
-    padding: var(--spacing-2) 0;
+    padding: var(--spacing-3) 0;
     color: var(--gray-600);
     position: relative;
-    padding-left: var(--spacing-6);
+    padding-left: var(--spacing-8);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
 }
 
 .feature-list li::before {
@@ -969,7 +1019,8 @@ p {
     position: absolute;
     left: 0;
     color: var(--secondary-color);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.125rem;
 }
 
 /* How It Works Section */
