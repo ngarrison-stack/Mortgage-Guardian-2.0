@@ -29,6 +29,7 @@ Mortgage Guardian 2.0 is a multi-platform mortgage servicing audit platform comb
 ## Development Commands
 
 ### Backend Development (`backend-express/`)
+
 ```bash
 cd backend-express
 npm install              # Install dependencies
@@ -38,6 +39,7 @@ npm test                 # Run tests (placeholder)
 ```
 
 ### Frontend Development (`frontend/`)
+
 ```bash
 cd frontend
 npm install              # Install dependencies
@@ -48,6 +50,7 @@ npm run lint             # Run ESLint
 ```
 
 ### Docker Development (Root Level)
+
 ```bash
 # Start all services (PostgreSQL, Redis, Mailhog, MinIO)
 docker-compose up -d
@@ -60,6 +63,7 @@ docker-compose -f docker-compose.production.yml up -d
 ```
 
 ### Environment Setup
+
 ```bash
 # Backend configuration
 cp backend-express/.env.example backend-express/.env
@@ -73,6 +77,7 @@ cp frontend/.env.example frontend/.env
 ## Key API Endpoints
 
 ### Backend Express API (`backend-express/`)
+
 - **Health Check**: `GET /health`
 - **Claude Analysis**: `POST /v1/ai/claude/analyze`
 - **Plaid Operations**:
@@ -85,12 +90,14 @@ cp frontend/.env.example frontend/.env
 ## Service Configuration
 
 ### Required API Keys
+
 1. **Anthropic Claude**: `ANTHROPIC_API_KEY` - Document analysis
 2. **Plaid**: `PLAID_CLIENT_ID`, `PLAID_SECRET` - Bank integration
 3. **Supabase**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` - Database/Auth
 4. **Clerk** (Frontend): Authentication service
 
 ### Database Services
+
 - **PostgreSQL**: Primary database (port 5432)
 - **Redis**: Caching and rate limiting (port 6379)
 - **MinIO**: S3-compatible document storage (ports 9000/9001)
@@ -99,6 +106,7 @@ cp frontend/.env.example frontend/.env
 ## Deployment
 
 ### Railway Deployment
+
 ```bash
 cd backend-express
 railway login
@@ -108,6 +116,7 @@ railway up
 ```
 
 ### Vercel Deployment
+
 ```bash
 # Backend deployment handled via vercel.json configuration
 vercel --prod
@@ -118,6 +127,7 @@ vercel --prod
 ```
 
 ### Docker Production
+
 ```bash
 docker-compose -f docker-compose.production.yml up -d
 ```
@@ -125,6 +135,7 @@ docker-compose -f docker-compose.production.yml up -d
 ## Core Services Implementation
 
 ### Document Processing Flow
+
 1. **Upload**: Document received via `/v1/documents/process`
 2. **OCR**: Text extraction using Vision Framework (iOS) or server-side OCR
 3. **Analysis**: Claude AI analyzes extracted text for servicing errors
@@ -132,6 +143,7 @@ docker-compose -f docker-compose.production.yml up -d
 5. **Report**: Generate findings with confidence scores
 
 ### Security Features
+
 - **Rate Limiting**: Configured via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX_REQUESTS`
 - **CORS**: Configurable origins via `ALLOWED_ORIGINS`
 - **Authentication**: JWT tokens with Supabase/Clerk
@@ -139,6 +151,7 @@ docker-compose -f docker-compose.production.yml up -d
 - **API Security**: Helmet.js for security headers
 
 ### Service Architecture Patterns
+
 - **Modular Services**: Separate service files for Claude, Plaid, documents
 - **Error Handling**: Centralized error handling with proper HTTP status codes
 - **Async Operations**: All I/O operations use async/await
@@ -148,37 +161,44 @@ docker-compose -f docker-compose.production.yml up -d
 ## Testing Strategy
 
 ### Backend Testing
+
 ```bash
 cd backend-express
 npm test                 # Run test suite
 ```
 
 ### Frontend Testing
+
 ```bash
 cd frontend
-npm test                 # Run React component tests
+npm test                 # React component tests
 ```
 
 ## Important Implementation Notes
 
 ### Plaid Integration
+
 - Supports sandbox, development, and production environments
 - Webhook support for real-time transaction updates
 - Access token management for persistent bank connections
 
 ### Claude AI Analysis
+
 - Specialized prompts for mortgage document analysis
 - Confidence scoring for detected issues
 - Context-aware processing based on document type
 
 ### Document Storage
+
 - MinIO for local S3-compatible storage
 - Supabase storage for cloud deployment
 - Secure document lifecycle management
 
 ### Performance Targets
+
 - Document processing: < 10 seconds
 - AI analysis: < 30 seconds per document
 - Plaid sync: < 5 seconds
 - Memory: < 100MB peak usage
 - Test coverage: 90% minimum, 95% for critical paths
+- API response time: < 1 second for standard operations
