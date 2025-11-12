@@ -4,196 +4,180 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mortgage Guardian 2.0 is an iOS application for detecting errors in mortgage loan servicing through AI-powered document analysis and automated audit algorithms. It combines Claude AI analysis with manual verification to identify discrepancies and generate RESPA-compliant dispute letters.
+Mortgage Guardian 2.0 is a multi-platform mortgage servicing audit platform combining an iOS mobile app with a Node.js/Express backend. The system uses AI-powered document analysis (Claude AI) to detect errors in mortgage loan servicing, cross-references with bank data via Plaid, and generates RESPA-compliant dispute letters.
 
 ## Architecture
 
-### iOS App
-- **Language**: Swift 5.9+
-- **UI Framework**: SwiftUI with SwiftData for persistence
-- **Minimum iOS**: 17.0
-- **Project**: `MortgageGuardian.xcodeproj`
-- **Entry Point**: `MortgageGuardian/MortgageGuardianApp.swift` (injects DataManager)
-- **Data Flow**: SwiftUI views ↔ DataManager (SwiftData ModelContainer & ModelContext) ↔ @Model types in `Models/`
+### System Components
 
-### Core Services (Services/ directory)
-- **AI System**: AIManager, MortgageAICoordinator, MLPredictor, AISetupManager
-- **Document Processing**: DocumentAnalysisService, DocumentProcessor, AWSTextractService, GoogleCloudOCRService
-- **Financial Integration**: PlaidService, SimplePlaidService, PlaidLinkService, AuditEngine
-- **Security**: SecurityService, SecureKeyManager, PermissionsManager
-- **Document Generation**: LetterGenerationService, PDFGenerator
-- **Market Data**: MarketDataService
+1. **Backend API** (`backend-express/`): Node.js/Express server deployable to Vercel, Railway, or other platforms
+   - Claude AI integration for document analysis
+   - Plaid integration for bank account verification
+   - Supabase for database and authentication
+   - Redis for caching and rate limiting
 
-### Backend (AWS SAM)
-- **Template**: `mortgage-guardian-backend/template.yaml`
-- **Runtime**: Node.js 20.x (upgraded from 18.x)
-- **Functions**: `src/claude-analysis/`, `src/plaid/`
-- **API Gateway**: `/v1/ai/claude/analyze`, `/v1/plaid/{proxy+}`
-- **Authentication**: Cognito User Pool with MFA support
+2. **Frontend** (`frontend/`): Next.js 15 with Turbopack
+   - Clerk authentication
+   - React 19 with TypeScript
+   - Tailwind CSS v4
 
-## Build Commands
+3. **iOS App** (referenced in README): Swift/SwiftUI application
+   - Document OCR using Vision Framework
+   - Bank integration via Plaid SDK
+   - RESPA-compliant letter generation
 
-### iOS Build & Test
+## Development Commands
+
+### Backend Development (`backend-express/`)
 ```bash
-# Quick build test (uses iPhone 17 Pro simulator)
-./test-build.sh
-
-# CI-compatible build (mirrors GitHub Actions)
-xcodebuild clean build -project MortgageGuardian.xcodeproj \
-  -scheme MortgageGuardian -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,name=iPhone 15,OS=17.0" \
-  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-# Run all tests (CI-compatible)
-xcodebuild test -project MortgageGuardian.xcodeproj \
-  -scheme MortgageGuardian -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,name=iPhone 15,OS=17.0" \
-  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-# Unit tests only
-xcodebuild test -scheme MortgageGuardian \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -only-testing:MortgageGuardianTests/UnitTests
-
-# Integration tests
-xcodebuild test -scheme MortgageGuardian \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -only-testing:MortgageGuardianTests/IntegrationTests
+cd backend-express
+npm install              # Install dependencies
+npm run dev              # Start development server with nodemon (port 3000)
+npm start                # Start production server
+npm test                 # Run tests (placeholder)
 ```
 
-### Fastlane Release Automation
+### Frontend Development (`frontend/`)
 ```bash
-# TestFlight beta deployment (requires APPLE_KEY_* env vars)
-bundle exec fastlane ios beta
-
-# Setup code signing (requires MATCH_GIT_URL env var)
-bundle exec fastlane ios setup_signing
+cd frontend
+npm install              # Install dependencies
+npm run dev              # Start Next.js dev server with Turbopack
+npm run build            # Build production bundle with Turbopack
+npm run start            # Start production server
+npm run lint             # Run ESLint
 ```
 
-### Backend Deployment
+### Docker Development (Root Level)
 ```bash
-cd mortgage-guardian-backend
-sam build
-sam deploy --guided
+# Start all services (PostgreSQL, Redis, Mailhog, MinIO)
+docker-compose up -d
 
-# Install dependencies
-cd src/plaid && npm install
-cd ../claude-analysis && npm install
+# Stop all services
+docker-compose down
+
+# Production deployment
+docker-compose -f docker-compose.production.yml up -d
 ```
 
-### Developer Setup
+### Environment Setup
 ```bash
-# Interactive setup with bundle ID configuration
-./scripts/setup-developer.sh
+# Backend configuration
+cp backend-express/.env.example backend-express/.env
+# Configure: ANTHROPIC_API_KEY, PLAID_CLIENT_ID, PLAID_SECRET, SUPABASE_URL, etc.
 
-# Quick setup with defaults
-./scripts/quick-setup.sh
+# Frontend configuration
+cp frontend/.env.example frontend/.env
+# Configure Clerk authentication keys
 ```
 
-### Machine Learning Training
+## Key API Endpoints
+
+### Backend Express API (`backend-express/`)
+- **Health Check**: `GET /health`
+- **Claude Analysis**: `POST /v1/ai/claude/analyze`
+- **Plaid Operations**:
+  - `POST /v1/plaid/create_link_token`
+  - `POST /v1/plaid/exchange_public_token`
+  - `GET /v1/plaid/accounts/:accessToken`
+  - `GET /v1/plaid/transactions/:accessToken`
+- **Document Processing**: `POST /v1/documents/process`
+
+## Service Configuration
+
+### Required API Keys
+1. **Anthropic Claude**: `ANTHROPIC_API_KEY` - Document analysis
+2. **Plaid**: `PLAID_CLIENT_ID`, `PLAID_SECRET` - Bank integration
+3. **Supabase**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` - Database/Auth
+4. **Clerk** (Frontend): Authentication service
+
+### Database Services
+- **PostgreSQL**: Primary database (port 5432)
+- **Redis**: Caching and rate limiting (port 6379)
+- **MinIO**: S3-compatible document storage (ports 9000/9001)
+- **Supabase**: Cloud database alternative
+
+## Deployment
+
+### Railway Deployment
 ```bash
-# Training pipeline requires macOS CreateML environment
-# Compile and run script that instantiates MLModelTrainer
-# and calls trainPropertyValueModel() on macOS
-# Training outputs go to configured modelOutputPath
-```
-
-## Code Architecture
-
-### Data Persistence & State Management
-- **SwiftData**: Primary persistence layer using `@Model` types in `Models/`
-- **DataManager**: Central ModelContainer creation in `Core/DataManager.swift`
-- **Observable Pattern**: `@Observable` classes for services (DataManager, MLPredictor, MarketDataService, MortgageAICoordinator)
-- **Async Operations**: Extensive use of `async/await` and `Task {}` for AI services; prefer `async let` for parallel model calls
-
-### Document Processing Pipeline
-1. **Capture**: Camera/file import → DocumentProcessor
-2. **OCR**: Vision Framework, AWS Textract, or Google Cloud OCR
-3. **Audit**: AuditEngine manual calculations
-4. **AI**: AIAnalysisService Claude integration via AWS Lambda
-5. **Verify**: Cross-reference bank data via PlaidService
-6. **Output**: LetterGenerationService for RESPA letters
-
-### Machine Learning Integration
-- **Training Pipeline**: `ML/MLModelTrainer.swift` and `ML/TrainingDataManager.swift`
-- **Runtime Models**: Compiled `.mlmodelc` files in app bundle
-- **Model Loading**: `MortgageAICoordinator.loadModels()` handles model initialization
-- **Training Data**: `Resources/sample_property_data.json` provides example training data
-- **AI Initialization**: `AISetupManager.setupAI()` runs during app startup
-
-### Test Structure
-- `Tests/UnitTests/`: Service-level tests (90% coverage required)
-- `Tests/IntegrationTests/`: End-to-end workflows
-- `Tests/UITests/`: UI automation tests
-- `Tests/MockData/`: Mock services and test data
-- `Tests/TestHelpers/`: Test utilities and base classes
-
-### Security Patterns
-- **Keychain Storage**: `SecurityService.keychain` and `SecureKeyManager` for API keys
-- **Biometric Auth**: `LocalAuthentication` framework
-- **Data Encryption**: AES-GCM encryption for data at rest
-- **Network Security**: Certificate pinning for network requests
-- **Secret Management**: Market data API keys stored via `SecureKeyManager` (Keychain)
-
-### Error Handling
-- Custom error enums per service (e.g., `AIAnalysisError`)
-- Exponential backoff for network retries
-- User-friendly localized error messages
-- Comprehensive logging via `os.log`
-
-## Development Patterns & Conventions
-
-### SwiftData Model Management
-- Use `@Model` types and `ModelContainer(mainContext)` via `DataManager`
-- Fetch with `FetchDescriptor<T>` and `SortDescriptor`
-- Keep model changes additive to avoid migration issues
-- Key models: `SavedMortgageScenario`, `UserSettings`, `UserProfile` in `Models/PersistentModels.swift`
-
-### UI & Theming
-- Use `AppTheme.*` helpers for consistent styling
-- Reuse existing design tokens (corner radius, colors)
-- UI components for AI features: `AIInsightsView.swift`, `AIAffordabilityAnalyzer.swift`, `AIMonitoringDashboard.swift`
-
-### Adding New Features
-- **New AI Endpoint**: Create method on `MLPredictor`, call from `AIManager.analyzeScenario()`, persist to `SavedMortgageScenario`
-- **New SwiftData Field**: Edit `Models/PersistentModels.swift`, add stored var and update initializer
-- **New CoreML Model**: Place `.mlmodelc` in app bundle, update `MortgageAICoordinator.loadModels()`
-
-## CI/CD & Release
-- **GitHub Actions**: `.github/workflows/ci.yml` uses macOS runners and iPhone 15 iOS 17.0 simulator
-- **Fastlane**: `fastlane/Fastfile` provides `beta`, `setup_app`, `setup_signing`, `increment_build_number` lanes
-- **Required Environment Variables**: `APPLE_KEY_ID`, `APPLE_ISSUER_ID`, `APPLE_KEY_CONTENT`, `PROVISIONING_PROFILE_SPECIFIER`, `MATCH_GIT_URL`
-
-## Performance Requirements
-- Document OCR: < 10 seconds
-- AI analysis: < 30 seconds per document
-- Plaid sync: < 5 seconds
-- Memory: < 100MB peak usage
-- Test coverage: 90% minimum, 95% for critical paths
-- Initialize git
-git init
-git add .
-git commit -m "Initial backend setup"
-
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login and deploy
+cd backend-express
 railway login
 railway init
 railway up
+# Configure environment variables in Railway dashboard
+```
 
-# Add environment variables in Railway dashboard
-# Visit: railway.app/dashboard
-# Click your project → Variables → Add all .env variables
+### Vercel Deployment
+```bash
+# Backend deployment handled via vercel.json configuration
+vercel --prod
 
-# Add Redis addon
-railway add redis
+# Frontend deployment
+cd frontend
+vercel --prod
+```
 
-# Deploy worker as separate service
-railway service create worker
-# Edit Procfile or railway.json to run worker
+### Docker Production
+```bash
+docker-compose -f docker-compose.production.yml up -d
+```
 
-# Get your Railway URL
-railway domain
-# Example: https://mortgage-analyzer-production.up.railway.app
+## Core Services Implementation
+
+### Document Processing Flow
+1. **Upload**: Document received via `/v1/documents/process`
+2. **OCR**: Text extraction using Vision Framework (iOS) or server-side OCR
+3. **Analysis**: Claude AI analyzes extracted text for servicing errors
+4. **Verification**: Cross-reference with Plaid bank transaction data
+5. **Report**: Generate findings with confidence scores
+
+### Security Features
+- **Rate Limiting**: Configured via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX_REQUESTS`
+- **CORS**: Configurable origins via `ALLOWED_ORIGINS`
+- **Authentication**: JWT tokens with Supabase/Clerk
+- **Data Encryption**: AES-GCM for sensitive data
+- **API Security**: Helmet.js for security headers
+
+### Service Architecture Patterns
+- **Modular Services**: Separate service files for Claude, Plaid, documents
+- **Error Handling**: Centralized error handling with proper HTTP status codes
+- **Async Operations**: All I/O operations use async/await
+- **Caching Strategy**: Redis for API response caching
+- **Rate Limiting**: Per-IP rate limiting with Redis backend
+
+## Testing Strategy
+
+### Backend Testing
+```bash
+cd backend-express
+npm test                 # Run test suite
+```
+
+### Frontend Testing
+```bash
+cd frontend
+npm test                 # Run React component tests
+```
+
+## Important Implementation Notes
+
+### Plaid Integration
+- Supports sandbox, development, and production environments
+- Webhook support for real-time transaction updates
+- Access token management for persistent bank connections
+
+### Claude AI Analysis
+- Specialized prompts for mortgage document analysis
+- Confidence scoring for detected issues
+- Context-aware processing based on document type
+
+### Document Storage
+- MinIO for local S3-compatible storage
+- Supabase storage for cloud deployment
+- Secure document lifecycle management
+
+### Performance Targets
+- Document processing: < 10 seconds
+- AI analysis: < 30 seconds per document
+- Plaid sync: < 5 seconds
+- API response time: < 1 second for standard operations
