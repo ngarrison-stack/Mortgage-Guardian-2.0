@@ -180,4 +180,5 @@ npm test                 # Run React component tests
 - Document processing: < 10 seconds
 - AI analysis: < 30 seconds per document
 - Plaid sync: < 5 seconds
-- API response time: < 1 second for standard operations
+- Memory: < 100MB peak usage
+- Test coverage: 90% minimum, 95% for critical paths
