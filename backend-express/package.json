@@ -36,7 +36,11 @@
     "winston-syslog": "^2.7.0"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   },
   "keywords": [
