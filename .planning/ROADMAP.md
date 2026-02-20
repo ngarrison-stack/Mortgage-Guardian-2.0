@@ -17,7 +17,7 @@ None (general Node.js/Express backend hardening)
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Testing Infrastructure** - Establish Jest testing framework and utilities
-- [ ] **Phase 2: Authentication Layer** - Enforce JWT authentication across all API routes
+- [x] **Phase 2: Authentication Layer** - Enforce JWT authentication across all API routes
 - [ ] **Phase 3: Input Validation Framework** - Implement Joi validation at all API boundaries
 - [ ] **Phase 4: Document Upload Security** - Secure file uploads with validation and scanning
 - [ ] **Phase 5: Core Service Tests** - Test coverage for Claude AI and Plaid integrations
@@ -47,7 +47,7 @@ Plans:
 Plans:
 - [x] 02-01: JWT middleware with token validation and error handling
 - [x] 02-02: Protected route enforcement across all `/v1/` endpoints
-- [ ] 02-03: Authentication tests (valid tokens, expired tokens, missing tokens)
+- [x] 02-03: Authentication tests (valid tokens, expired tokens, missing tokens)
 
 ### Phase 3: Input Validation Framework
 **Goal**: Implement Joi schema validation at all API boundaries with consistent error responses
@@ -132,7 +132,7 @@ All phases are integers (1-8) for initial milestone.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
-| 2. Authentication Layer | 2/3 | In progress | - |
+| 2. Authentication Layer | 3/3 | Complete | 2026-02-20 |
 | 3. Input Validation Framework | 0/7 | Not started | - |
 | 4. Document Upload Security | 0/5 | Not started | - |
 | 5. Core Service Tests | 0/6 | Not started | - |
