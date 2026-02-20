@@ -32,6 +32,7 @@
 
 **Testing:**
 - Jest 29.7.0 with ts-jest preset for TypeScript support
+- supertest 7.2.2 for Express HTTP assertion testing
 - jest.config.js: node environment, 90% coverage thresholds, __tests__/ convention
 - Scripts: test, test:watch, test:coverage, test:verbose
 
