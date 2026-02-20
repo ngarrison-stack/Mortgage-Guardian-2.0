@@ -43,5 +43,8 @@ module.exports = {
   moduleFileExtensions: ['js', 'ts'],
 
   // Auto-reset mocks between tests
-  clearMocks: true
+  clearMocks: true,
+
+  // Allow Jest to pass when no test files are found (bootstrapping phase)
+  passWithNoTests: true
 };
