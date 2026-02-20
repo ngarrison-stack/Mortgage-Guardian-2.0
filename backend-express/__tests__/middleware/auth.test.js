@@ -232,6 +232,28 @@ describe('requireAuth middleware', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
+    test('returns 401 when Supabase auth.getUser() throws an exception', async () => {
+      const { req, res, next } = createMockReqResNext({
+        headers: { authorization: 'Bearer crash-token' }
+      });
+
+      // Override auth.getUser to throw (simulating a network/unexpected error)
+      const originalGetUser = mockClient.auth.getUser;
+      mockClient.auth.getUser = jest.fn().mockRejectedValue(new Error('Network failure'));
+
+      await requireAuth(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Unauthorized',
+        message: 'Token validation failed'
+      });
+      expect(next).not.toHaveBeenCalled();
+
+      // Restore original method
+      mockClient.auth.getUser = originalGetUser;
+    });
+
     test('returns 401 for malformed token (Bearer with empty string)', async () => {
       const { req, res, next } = createMockReqResNext({
         headers: { authorization: 'Bearer ' }
