@@ -46,7 +46,7 @@ Plans:
 
 Plans:
 - [x] 02-01: JWT middleware with token validation and error handling
-- [ ] 02-02: Protected route enforcement across all `/v1/` endpoints
+- [x] 02-02: Protected route enforcement across all `/v1/` endpoints
 - [ ] 02-03: Authentication tests (valid tokens, expired tokens, missing tokens)
 
 ### Phase 3: Input Validation Framework
@@ -132,7 +132,7 @@ All phases are integers (1-8) for initial milestone.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
-| 2. Authentication Layer | 1/3 | In progress | - |
+| 2. Authentication Layer | 2/3 | In progress | - |
 | 3. Input Validation Framework | 0/7 | Not started | - |
 | 4. Document Upload Security | 0/5 | Not started | - |
 | 5. Core Service Tests | 0/6 | Not started | - |
