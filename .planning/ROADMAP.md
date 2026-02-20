@@ -42,7 +42,7 @@ Plans:
 **Goal**: Enforce JWT authentication on all `/v1/` API routes using Supabase Auth, protecting sensitive financial endpoints
 **Depends on**: Phase 1 (testing infrastructure for auth tests)
 **Research**: Unlikely (Supabase Auth already integrated, JWT patterns established)
-**Plans**: 3-5 plans
+**Plans**: 3 plans
 
 Plans:
 - [ ] 02-01: JWT middleware with token validation and error handling
@@ -132,7 +132,7 @@ All phases are integers (1-8) for initial milestone.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
-| 2. Authentication Layer | 0/5 | Not started | - |
+| 2. Authentication Layer | 0/3 | Not started | - |
 | 3. Input Validation Framework | 0/7 | Not started | - |
 | 4. Document Upload Security | 0/5 | Not started | - |
 | 5. Core Service Tests | 0/6 | Not started | - |
