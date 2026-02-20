@@ -6,6 +6,9 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import middleware
+const { requireAuth } = require('./middleware/auth');
+
 // Import routes
 const claudeRoutes = require('./routes/claude');
 const plaidRoutes = require('./routes/plaid');
@@ -54,6 +57,9 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/v1/', limiter);
+
+// Authentication — require JWT for all /v1/ routes (public paths excluded in middleware)
+app.use('/v1/', requireAuth);
 
 // ============================================
 // ROUTES
