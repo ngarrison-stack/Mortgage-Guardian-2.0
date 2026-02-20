@@ -46,6 +46,7 @@ Mortgage-Guardian-2.0-Clean/
   - `migrations/` - Database schema migrations
   - `docs/` - API documentation
   - `api/` - Vercel serverless function wrappers
+  - `__tests__/mocks/` - Service mock modules (mockClaudeService, mockSupabaseClient, mockRedisClient)
 - Deployment: Vercel (`vercel.json`), Railway (`railway.json`, `railway.toml`)
 
 **frontend/**

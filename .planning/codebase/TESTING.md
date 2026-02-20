@@ -60,28 +60,35 @@ test-plaid-corrected.js       # Plaid test (root level)
 ## Mocking
 
 **Framework:**
-- Mock service available: `backend-express/services/mockPlaidService.js`
-- Manual mocking for Plaid integration testing
-- No mocking framework configured
+- Jest built-in mocking (jest.fn(), jest.mock())
+- Dedicated mock modules in `backend-express/__tests__/mocks/`
+- Configurable service doubles with setResponse/setError/reset pattern
+
+**Mock Modules:**
+- `__tests__/mocks/mockClaudeService.js` - Claude AI (analyzeDocument, buildMortgageAnalysisPrompt, testConnection)
+- `__tests__/mocks/mockSupabaseClient.js` - Supabase factory (auth, query builder, storage)
+- `__tests__/mocks/mockRedisClient.js` - Redis in-memory store (string/set/key ops, expiry tracking)
+- `services/mockPlaidService.js` - Plaid (legacy mock, pre-existing)
 
 **Patterns:**
 ```javascript
-// Mock Plaid service pattern (example from mockPlaidService.js)
-const mockPlaidService = {
-  createLinkToken: async () => ({ link_token: 'mock_token' }),
-  exchangePublicToken: async () => ({ access_token: 'mock_access' }),
-  // ... additional mock methods
-};
+// Configurable mock pattern (all new mocks)
+const mock = require('./__tests__/mocks/mockClaudeService');
+mock.setResponse({ analysis: 'custom' }); // Override default response
+mock.setError(new Error('API down'));      // Simulate failure
+mock.reset();                              // Restore defaults
+mock.getCallHistory();                     // Inspect calls
 ```
 
 **What to Mock:**
-- External APIs: Plaid (mockPlaidService.js available)
-- Anthropic Claude API (not mocked currently)
-- Supabase database (not mocked currently)
+- Anthropic Claude API: mockClaudeService.js
+- Supabase (database/auth/storage): mockSupabaseClient.js
+- Redis/ioredis: mockRedisClient.js
+- Plaid: services/mockPlaidService.js
 
 **What NOT to Mock:**
-- Currently all integration tests use real APIs
-- No unit tests with isolated mocking
+- Express request/response (use supertest for integration tests)
+- Internal business logic functions
 
 ## Fixtures and Factories
 
