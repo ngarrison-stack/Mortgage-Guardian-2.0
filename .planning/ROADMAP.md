@@ -53,7 +53,7 @@ Plans:
 **Goal**: Implement Joi schema validation at all API boundaries with consistent error responses
 **Depends on**: Phase 2 (auth must be in place before validating authenticated requests)
 **Research**: Unlikely (Joi already in dependencies, validation patterns standard)
-**Plans**: 5-7 plans
+**Plans**: 5 plans
 
 Plans:
 - [ ] 03-01: Joi validation middleware with error response formatting
@@ -133,11 +133,11 @@ All phases are integers (1-8) for initial milestone.
 |-------|----------------|--------|-----------|
 | 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
 | 2. Authentication Layer | 3/3 | Complete | 2026-02-20 |
-| 3. Input Validation Framework | 0/7 | Not started | - |
+| 3. Input Validation Framework | 0/5 | Planned | - |
 | 4. Document Upload Security | 0/5 | Not started | - |
 | 5. Core Service Tests | 0/6 | Not started | - |
 | 6. Document Processing Tests | 0/5 | Not started | - |
 | 7. Service Refactoring | 0/8 | Not started | - |
 | 8. Structured Logging | 0/5 | Not started | - |
 
-**Total Plans:** 46 plans across 8 phases
+**Total Plans:** 44 plans across 8 phases
