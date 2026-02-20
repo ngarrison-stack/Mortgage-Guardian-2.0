@@ -31,8 +31,9 @@
 - React 19.1.0 - UI library (`frontend/`)
 
 **Testing:**
-- No test framework detected currently
-- Test scripts exist but show "No tests yet" placeholder
+- Jest 29.7.0 with ts-jest preset for TypeScript support
+- jest.config.js: node environment, 90% coverage thresholds, __tests__/ convention
+- Scripts: test, test:watch, test:coverage, test:verbose
 
 **Build/Dev:**
 - Turbopack - Next.js bundler (via `--turbopack` flag in `frontend/package.json`)

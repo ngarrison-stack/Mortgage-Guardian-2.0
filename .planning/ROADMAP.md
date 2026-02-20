@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3-5 plans
 
 Plans:
-- [ ] 01-01: Jest configuration with TypeScript support and coverage reporting
+- [x] 01-01: Jest configuration with TypeScript support and coverage reporting
 - [ ] 01-02: Testing utilities (mocks for Supabase, Plaid, Claude AI, Redis)
 - [ ] 01-03: Integration test patterns and database test fixtures
 
@@ -131,7 +131,7 @@ All phases are integers (1-8) for initial milestone.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Testing Infrastructure | 0/5 | Not started | - |
+| 1. Foundation & Testing Infrastructure | 1/3 | In progress | - |
 | 2. Authentication Layer | 0/5 | Not started | - |
 | 3. Input Validation Framework | 0/7 | Not started | - |
 | 4. Document Upload Security | 0/5 | Not started | - |

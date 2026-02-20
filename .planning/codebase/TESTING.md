@@ -5,15 +5,22 @@
 ## Test Framework
 
 **Runner:**
-- None configured currently
-- `package.json` test script: `"test": "echo \"No tests yet\" && exit 0"`
+- Jest 29.7.0 with ts-jest preset
+- Configuration: `backend-express/jest.config.js`
+- passWithNoTests enabled for bootstrapping phase
 
 **Assertion Library:**
-- Not configured
+- Jest built-in expect() assertions
+- @types/jest for TypeScript type support
+- @jest/globals for ESM-style imports
 
 **Run Commands:**
 ```bash
-npm test                              # Placeholder (no tests)
+cd backend-express
+npm test                              # Run all tests
+npm run test:watch                    # TDD watch mode
+npm run test:coverage                 # Generate coverage report
+npm run test:verbose                  # Detailed test output
 ```
 
 ## Test File Organization
@@ -90,16 +97,18 @@ const mockPlaidService = {
 ## Coverage
 
 **Requirements:**
-- No coverage targets set
-- No coverage tooling configured
-- Coverage not tracked
+- 90% minimum across statements, branches, functions, and lines
+- Enforced via jest.config.js coverageThreshold
 
 **Configuration:**
-- None
+- collectCoverageFrom: services/**/*.js, routes/**/*.js (excludes node_modules, __tests__)
+- coverageReporters: text (console), lcov (CI), html (browsable)
 
 **View Coverage:**
 ```bash
-# Not available - no coverage collection
+cd backend-express
+npm run test:coverage                 # Generate and display coverage report
+# HTML report: coverage/index.html
 ```
 
 ## Test Types
