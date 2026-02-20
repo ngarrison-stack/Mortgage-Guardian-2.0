@@ -1,0 +1,103 @@
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client for JWT validation
+// Uses anon key (not service key) — correct for auth.getUser() token validation
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn('Warning: Supabase not configured - auth middleware will reject all requests unless mocked');
+}
+
+/**
+ * Paths that bypass JWT authentication.
+ * Each entry specifies a method and path that should skip auth validation.
+ * These endpoints use their own verification mechanisms.
+ */
+const PUBLIC_PATHS = [
+  { method: 'POST', path: '/v1/plaid/webhook' }
+];
+
+/**
+ * Check if a request matches a public path that bypasses auth.
+ *
+ * @param {string} method - HTTP method (e.g. 'GET', 'POST')
+ * @param {string} url - Request originalUrl
+ * @returns {boolean} True if the request should bypass auth
+ */
+function isPublicPath(method, url) {
+  return PUBLIC_PATHS.some(
+    (route) => route.method === method && url.startsWith(route.path)
+  );
+}
+
+/**
+ * Express middleware that enforces JWT authentication via Supabase Auth.
+ *
+ * Extracts the Bearer token from the Authorization header, validates it
+ * using supabase.auth.getUser(), and attaches the authenticated user to req.user.
+ *
+ * Returns 401 for:
+ * - Missing Authorization header
+ * - Malformed Authorization header (not 'Bearer <token>')
+ * - Invalid or expired token
+ * - Unexpected validation errors
+ *
+ * Public paths (defined in PUBLIC_PATHS) bypass authentication entirely.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+async function requireAuth(req, res, next) {
+  // Skip auth for public paths
+  if (isPublicPath(req.method, req.originalUrl)) {
+    return next();
+  }
+
+  try {
+    // Extract Authorization header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Missing or invalid Authorization header'
+      });
+    }
+
+    // Extract token after 'Bearer '
+    const token = authHeader.slice(7);
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Missing or invalid Authorization header'
+      });
+    }
+
+    // Validate token via Supabase auth
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data || !data.user) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired token'
+      });
+    }
+
+    // Attach user to request for downstream handlers
+    req.user = data.user;
+    next();
+  } catch (err) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Token validation failed'
+    });
+  }
+}
+
+module.exports = { requireAuth };
