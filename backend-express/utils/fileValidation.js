@@ -21,13 +21,13 @@ const path = require('path');
  * Whitelist of allowed file extensions for upload.
  * Only these types are accepted by the document processing pipeline.
  */
-const ALLOWED_FILE_TYPES = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'tiff', 'txt'];
+const ALLOWED_FILE_TYPES = Object.freeze(['pdf', 'jpg', 'jpeg', 'png', 'heic', 'tiff', 'txt']);
 
 /**
  * Maximum file size limits in bytes, keyed by extension.
  * The 'default' key is used for types not explicitly listed.
  */
-const FILE_SIZE_LIMITS = {
+const FILE_SIZE_LIMITS = Object.freeze({
   pdf: 20 * 1024 * 1024,     // 20 MB
   jpg: 10 * 1024 * 1024,     // 10 MB
   jpeg: 10 * 1024 * 1024,    // 10 MB
@@ -36,7 +36,7 @@ const FILE_SIZE_LIMITS = {
   tiff: 10 * 1024 * 1024,    // 10 MB
   txt: 5 * 1024 * 1024,      // 5 MB
   default: 10 * 1024 * 1024  // 10 MB
-};
+});
 
 // ---------------------------------------------------------------------------
 // Extension-to-detected-type mapping
@@ -80,7 +80,7 @@ async function validateFileContent(buffer, claimedFileName) {
   }
 
   // Extract claimed extension (lowercase, no dot)
-  const claimedExt = path.extname(claimedFileName || '').toLowerCase().replace('.', '');
+  const claimedExt = path.extname(claimedFileName || '').toLowerCase().replace(/^\./, '');
 
   // 2. Check file size against per-type limit
   const sizeLimit = FILE_SIZE_LIMITS[claimedExt] || FILE_SIZE_LIMITS.default;
