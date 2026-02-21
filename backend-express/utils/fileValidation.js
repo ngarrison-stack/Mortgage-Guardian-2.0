@@ -217,12 +217,56 @@ function sanitizeFileName(fileName) {
 }
 
 // ---------------------------------------------------------------------------
+// scanFileContent (stub)
+// ---------------------------------------------------------------------------
+
+/**
+ * Scan file content for malware.
+ *
+ * DECISION (Phase 04-03, 2026-02-21): Malware scanning deferred.
+ *
+ * Rationale:
+ *   - Deployment target is serverless (Vercel/Railway) — ClamAV requires a
+ *     running daemon and is incompatible.
+ *   - VirusTotal API scanning is async, meaning files are stored before scan
+ *     results return, creating a window where unscanned files exist.
+ *   - Free tier rate limits (4 req/min, 500/day) could block legitimate uploads.
+ *   - The added complexity (submission, polling, quarantine logic) is not
+ *     justified at current scale.
+ *
+ * Compensating controls already in place:
+ *   1. JWT authentication — only authenticated users can upload (Phase 2)
+ *   2. Joi schema validation — type, size, format validated at boundary (Phase 3)
+ *   3. Magic number verification — prevents disguised executables (Phase 04-01)
+ *   4. Filename sanitization — blocks path traversal and injection (Phase 04-01)
+ *   5. Body size limits — 25MB cap prevents abuse (Phase 04-02)
+ *
+ * Revisit when:
+ *   - Moving to containerized deployment (enables ClamAV sidecar)
+ *   - Handling high-risk document types beyond mortgage PDFs/images
+ *   - Document upload volume justifies VirusTotal paid tier
+ *
+ * This stub maintains the function signature so future integration is a
+ * drop-in replacement with zero changes to calling code.
+ *
+ * @param {Buffer} buffer - The file content buffer to scan
+ * @returns {Promise<Object>} Scan result: { scanned: false, reason: string }
+ */
+async function scanFileContent(buffer) {
+  return {
+    scanned: false,
+    reason: 'Malware scanning deferred — compensating controls active (see fileValidation.js)'
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
 module.exports = {
   validateFileContent,
   sanitizeFileName,
+  scanFileContent,
   ALLOWED_FILE_TYPES,
   FILE_SIZE_LIMITS
 };
