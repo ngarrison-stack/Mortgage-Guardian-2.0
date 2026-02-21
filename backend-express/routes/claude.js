@@ -1,20 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const claudeService = require('../services/claudeService');
+const { validate } = require('../middleware/validate');
+const { analyzeSchema } = require('../schemas/claude');
 
 // POST /v1/ai/claude/analyze
 // Analyze mortgage documents using Claude AI
-router.post('/analyze', async (req, res, next) => {
+router.post('/analyze', validate(analyzeSchema), async (req, res, next) => {
   try {
     const { prompt, model, maxTokens, temperature, documentText, documentType } = req.body;
-
-    // Validate request
-    if (!prompt && !documentText) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Either prompt or documentText is required'
-      });
-    }
 
     // Build analysis prompt
     let analysisPrompt = prompt;
@@ -27,9 +21,9 @@ router.post('/analyze', async (req, res, next) => {
     // Call Claude API
     const result = await claudeService.analyzeDocument({
       prompt: analysisPrompt,
-      model: model || 'claude-3-5-sonnet-20241022',
-      maxTokens: maxTokens || 4096,
-      temperature: temperature || 0.1
+      model,
+      maxTokens,
+      temperature
     });
 
     res.json({
