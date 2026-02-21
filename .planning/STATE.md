@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-12)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** Phase 4 in progress — Document Upload Security (1/4 plans complete)
+**Current focus:** Phase 4 in progress — Document Upload Security (2/4 plans complete)
 
 ## Current Position
 
 Phase: 4 of 8 (Document Upload Security)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 04-01-PLAN.md
+Last activity: 2026-02-21 — Completed 04-02-PLAN.md
 
-Progress: ██▓░░░░░░░ 27%
+Progress: ███░░░░░░░ 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 3.3 min
-- Total execution time: 0.65 hours
+- Total plans completed: 13
+- Average duration: 3.2 min
+- Total execution time: 0.70 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: ██▓░░░░░░░ 27%
 | 1 | 3/3 | 11 min | 3.7 min |
 | 2 | 3/3 | 13 min | 4.3 min |
 | 3 | 5/5 | 13 min | 2.6 min |
-| 4 | 1/4 | 6 min | 6.0 min |
+| 4 | 2/4 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (1 min), 03-03 (3 min), 03-04 (2 min), 03-05 (5 min), 04-01 (6 min)
-- Trend: TDD plan took longer (38 tests + RED/GREEN/REFACTOR cycle + dependency install)
+- Last 5 plans: 03-03 (3 min), 03-04 (2 min), 03-05 (5 min), 04-01 (6 min), 04-02 (3 min)
+- Trend: Standard 2-task plan executed quickly after heavier TDD plan
 
 ## Accumulated Context
 
@@ -56,6 +56,9 @@ Recent decisions affecting current work:
 - file-type v16.x for magic number detection (last CJS-compatible version)
 - Object.freeze() on exported security constants
 - Undetectable file types allowed with warning (not rejected)
+- 25MB body parser limit accommodates base64 overhead for 20MB PDF binary limit
+- Defense-in-depth: Joi pattern + sanitizeFileName both reject path separators
+- File validation in route handler (not middleware) — needs decoded buffer
 
 ### Deferred Issues
 
@@ -72,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 04-01-PLAN.md — file validation utility with TDD (38 tests)
+Stopped at: Completed 04-02-PLAN.md — upload route security hardening (validation + sanitization + body limits)
 Resume file: None
