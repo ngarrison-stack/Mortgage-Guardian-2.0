@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const documentService = require('../services/documentService');
 const { validate } = require('../middleware/validate');
+const { validateFileContent, sanitizeFileName } = require('../utils/fileValidation');
 const {
   uploadDocumentSchema,
   getDocumentsSchema,
@@ -23,12 +24,25 @@ router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) =>
       metadata
     } = req.body;
 
-    console.log(`Uploading document: ${fileName} for user ${userId}`);
+    // Decode base64 content and validate file
+    const fileBuffer = Buffer.from(content, 'base64');
+    const validationResult = await validateFileContent(fileBuffer, fileName);
+    if (!validationResult.valid) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: validationResult.error
+      });
+    }
+
+    // Sanitize the file name before any further use
+    const safeFileName = sanitizeFileName(fileName);
+
+    console.log(`Uploading document: ${safeFileName} for user ${userId}`);
 
     const result = await documentService.uploadDocument({
       documentId,
       userId,
-      fileName,
+      fileName: safeFileName,
       documentType,
       content,
       analysisResults,
