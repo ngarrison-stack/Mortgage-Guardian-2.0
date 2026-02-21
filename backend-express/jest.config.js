@@ -19,6 +19,7 @@ module.exports = {
     'services/**/*.js',
     'routes/**/*.js',
     'middleware/**/*.js',
+    'schemas/**/*.js',
     '!**/node_modules/**',
     '!**/__tests__/**'
   ],
