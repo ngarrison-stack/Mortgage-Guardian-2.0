@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const documentService = require('../services/documentService');
+const { validate } = require('../middleware/validate');
+const {
+  uploadDocumentSchema,
+  getDocumentsSchema,
+  getDocumentSchema,
+  deleteDocumentSchema
+} = require('../schemas/documents');
 
 // POST /v1/documents/upload
 // Upload and store a mortgage document
-router.post('/upload', async (req, res, next) => {
+router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) => {
   try {
     const {
       documentId,
@@ -16,21 +23,13 @@ router.post('/upload', async (req, res, next) => {
       metadata
     } = req.body;
 
-    // Validate required fields
-    if (!documentId || !userId || !fileName || !content) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Missing required fields: documentId, userId, fileName, content'
-      });
-    }
-
     console.log(`Uploading document: ${fileName} for user ${userId}`);
 
     const result = await documentService.uploadDocument({
       documentId,
       userId,
       fileName,
-      documentType: documentType || 'unknown',
+      documentType,
       content,
       analysisResults,
       metadata
@@ -51,21 +50,14 @@ router.post('/upload', async (req, res, next) => {
 
 // GET /v1/documents
 // Get all documents for a user
-router.get('/', async (req, res, next) => {
+router.get('/', validate(getDocumentsSchema, 'query'), async (req, res, next) => {
   try {
     const { userId, limit, offset } = req.query;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'userId query parameter is required'
-      });
-    }
-
     const documents = await documentService.getDocumentsByUser({
       userId,
-      limit: parseInt(limit) || 50,
-      offset: parseInt(offset) || 0
+      limit,
+      offset
     });
 
     res.json({
@@ -82,17 +74,10 @@ router.get('/', async (req, res, next) => {
 
 // GET /v1/documents/:documentId
 // Get a specific document
-router.get('/:documentId', async (req, res, next) => {
+router.get('/:documentId', validate(getDocumentSchema, 'query'), async (req, res, next) => {
   try {
     const { documentId } = req.params;
     const { userId } = req.query;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'userId query parameter is required'
-      });
-    }
 
     const document = await documentService.getDocument({
       documentId,
@@ -116,17 +101,10 @@ router.get('/:documentId', async (req, res, next) => {
 
 // DELETE /v1/documents/:documentId
 // Delete a document
-router.delete('/:documentId', async (req, res, next) => {
+router.delete('/:documentId', validate(deleteDocumentSchema, 'query'), async (req, res, next) => {
   try {
     const { documentId } = req.params;
     const { userId } = req.query;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'userId query parameter is required'
-      });
-    }
 
     await documentService.deleteDocument({
       documentId,
