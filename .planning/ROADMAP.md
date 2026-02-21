@@ -59,7 +59,7 @@ Plans:
 - [x] 03-01: Joi validation middleware with error response formatting
 - [x] 03-02: Document upload endpoint schemas (file metadata, user context)
 - [x] 03-03: Plaid endpoint schemas (tokens, account IDs, date ranges)
-- [ ] 03-04: Claude AI endpoint schemas (document content, analysis parameters)
+- [x] 03-04: Claude AI endpoint schemas (document content, analysis parameters)
 - [ ] 03-05: Validation tests (valid inputs, invalid inputs, edge cases)
 
 ### Phase 4: Document Upload Security
@@ -133,7 +133,7 @@ All phases are integers (1-8) for initial milestone.
 |-------|----------------|--------|-----------|
 | 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
 | 2. Authentication Layer | 3/3 | Complete | 2026-02-20 |
-| 3. Input Validation Framework | 3/5 | In progress | - |
+| 3. Input Validation Framework | 4/5 | In progress | - |
 | 4. Document Upload Security | 0/5 | Not started | - |
 | 5. Core Service Tests | 0/6 | Not started | - |
 | 6. Document Processing Tests | 0/5 | Not started | - |
