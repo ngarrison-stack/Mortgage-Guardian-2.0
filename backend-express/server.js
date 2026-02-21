@@ -37,9 +37,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Body parsing
-app.use(express.json({ limit: '50mb' })); // Large limit for document uploads
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body parsing — 25MB accommodates base64 overhead (~33% larger than binary) for a 20MB PDF limit
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Logging
 if (process.env.NODE_ENV === 'development') {

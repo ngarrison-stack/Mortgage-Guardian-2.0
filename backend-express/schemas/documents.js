@@ -7,9 +7,9 @@ const Joi = require('joi');
 const uploadDocumentSchema = Joi.object({
   documentId: Joi.string().trim().required(),
   userId: Joi.string().trim().required(),
-  fileName: Joi.string().trim().required(),
-  content: Joi.string().required(),
-  documentType: Joi.string().trim().default('unknown'),
+  fileName: Joi.string().trim().max(255).pattern(/^[a-zA-Z0-9._\s()-]+$/, 'safe characters').required(),
+  content: Joi.string().max(28000000).required(),
+  documentType: Joi.string().trim().valid('mortgage_statement', 'bank_statement', 'tax_document', 'correspondence', 'legal_document', 'unknown').default('unknown'),
   analysisResults: Joi.object(),
   metadata: Joi.object()
 });
