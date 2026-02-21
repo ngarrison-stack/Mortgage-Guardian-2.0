@@ -336,3 +336,6 @@ NOTES.local
 scratch/
 private_keys/
 frontend/.netlify/
+
+# Auto Claude data directory
+.auto-claude/
