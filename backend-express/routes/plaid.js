@@ -2,32 +2,17 @@ const express = require('express');
 const router = express.Router();
 const plaidService = require('../services/plaidService');
 const plaidDataService = require('../services/plaidDataService');
-
-// ============================================
-// REQUEST VALIDATION MIDDLEWARE
-// ============================================
-
-/**
- * Validate required fields in request body
- */
-const validateFields = (requiredFields) => {
-  return (req, res, next) => {
-    const missingFields = requiredFields.filter(field => {
-      const value = req.body[field];
-      return value === undefined || value === null || value === '';
-    });
-
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: `Missing required fields: ${missingFields.join(', ')}`,
-        requiredFields
-      });
-    }
-
-    next();
-  };
-};
+const { validate } = require('../middleware/validate');
+const {
+  linkTokenSchema,
+  exchangeTokenSchema,
+  accountsSchema,
+  transactionsSchema,
+  itemSchema,
+  updateWebhookSchema,
+  deleteItemSchema,
+  sandboxTokenSchema
+} = require('../schemas/plaid');
 
 /**
  * Sanitize user input to prevent injection attacks
@@ -73,7 +58,7 @@ router.use(sanitizeInput);
  * - expiration: ISO timestamp when token expires
  * - request_id: Plaid request ID for debugging
  */
-router.post('/link_token', validateFields(['user_id']), async (req, res, next) => {
+router.post('/link_token', validate(linkTokenSchema), async (req, res, next) => {
   try {
     const {
       user_id,
@@ -82,21 +67,6 @@ router.post('/link_token', validateFields(['user_id']), async (req, res, next) =
       access_token,
       products
     } = req.body;
-
-    // Additional validation
-    if (user_id && user_id.length > 255) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'user_id must be 255 characters or less'
-      });
-    }
-
-    if (products && !Array.isArray(products)) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'products must be an array'
-      });
-    }
 
     const result = await plaidService.createLinkToken({
       userId: user_id,
@@ -142,17 +112,9 @@ router.post('/link_token', validateFields(['user_id']), async (req, res, next) =
  * - Store access tokens encrypted in your database
  * - Associate access tokens with user IDs securely
  */
-router.post('/exchange_token', validateFields(['public_token']), async (req, res, next) => {
+router.post('/exchange_token', validate(exchangeTokenSchema), async (req, res, next) => {
   try {
     const { public_token, user_id, institution_id } = req.body;
-
-    // Validate token format
-    if (!public_token.startsWith('public-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid public token format'
-      });
-    }
 
     const result = await plaidService.exchangePublicToken(public_token);
 
@@ -207,25 +169,9 @@ router.post('/exchange_token', validateFields(['public_token']), async (req, res
  * - item: Bank connection metadata
  * - request_id: Plaid request ID for debugging
  */
-router.post('/accounts', validateFields(['access_token']), async (req, res, next) => {
+router.post('/accounts', validate(accountsSchema), async (req, res, next) => {
   try {
     const { access_token, account_ids } = req.body;
-
-    // Validate token format
-    if (!access_token.startsWith('access-') && !access_token.startsWith('access_sandbox-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid access token format'
-      });
-    }
-
-    // Validate account_ids if provided
-    if (account_ids && !Array.isArray(account_ids)) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'account_ids must be an array'
-      });
-    }
 
     const result = await plaidService.getAccounts(access_token, account_ids);
 
@@ -259,65 +205,24 @@ router.post('/accounts', validateFields(['access_token']), async (req, res, next
  * - accounts: Array of accounts with transactions
  * - request_id: Plaid request ID for debugging
  */
-router.post('/transactions', validateFields(['access_token', 'start_date', 'end_date']), async (req, res, next) => {
+router.post('/transactions', validate(transactionsSchema), async (req, res, next) => {
   try {
     const {
       access_token,
       start_date,
       end_date,
       account_ids,
-      count = 100,
-      offset = 0
+      count,
+      offset
     } = req.body;
-
-    // Validate token format
-    if (!access_token.startsWith('access-') && !access_token.startsWith('access_sandbox-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid access token format'
-      });
-    }
-
-    // Validate date format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(start_date) || !dateRegex.test(end_date)) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Dates must be in YYYY-MM-DD format'
-      });
-    }
-
-    // Validate count
-    if (count < 1 || count > 500) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'count must be between 1 and 500'
-      });
-    }
-
-    // Validate offset
-    if (offset < 0) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'offset must be non-negative'
-      });
-    }
-
-    // Validate account_ids if provided
-    if (account_ids && !Array.isArray(account_ids)) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'account_ids must be an array'
-      });
-    }
 
     const result = await plaidService.getTransactions({
       accessToken: access_token,
       startDate: start_date,
       endDate: end_date,
       accountIds: account_ids,
-      count: parseInt(count),
-      offset: parseInt(offset)
+      count: count,
+      offset: offset
     });
 
     res.json(result);
@@ -351,17 +256,9 @@ router.post('/transactions', validateFields(['access_token', 'start_date', 'end_
  * - billedProducts: Products currently being billed
  * - error: Any item-level errors
  */
-router.post('/item', validateFields(['access_token']), async (req, res, next) => {
+router.post('/item', validate(itemSchema), async (req, res, next) => {
   try {
     const { access_token } = req.body;
-
-    // Validate token format
-    if (!access_token.startsWith('access-') && !access_token.startsWith('access_sandbox-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid access token format'
-      });
-    }
 
     const result = await plaidService.getItem(access_token);
 
@@ -389,33 +286,9 @@ router.post('/item', validateFields(['access_token']), async (req, res, next) =>
  * - itemId: Unique item identifier
  * - webhook: Updated webhook URL
  */
-router.post('/item/webhook', validateFields(['access_token', 'webhook']), async (req, res, next) => {
+router.post('/item/webhook', validate(updateWebhookSchema), async (req, res, next) => {
   try {
     const { access_token, webhook } = req.body;
-
-    // Validate token format
-    if (!access_token.startsWith('access-') && !access_token.startsWith('access_sandbox-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid access token format'
-      });
-    }
-
-    // Validate webhook URL
-    try {
-      const url = new URL(webhook);
-      if (url.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
-        return res.status(400).json({
-          error: 'Bad Request',
-          message: 'Webhook URL must use HTTPS in production'
-        });
-      }
-    } catch {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid webhook URL format'
-      });
-    }
 
     const result = await plaidService.updateWebhook(access_token, webhook);
 
@@ -442,17 +315,9 @@ router.post('/item/webhook', validateFields(['access_token', 'webhook']), async 
  * - removed: Boolean indicating success
  * - request_id: Plaid request ID for debugging
  */
-router.delete('/item', validateFields(['access_token']), async (req, res, next) => {
+router.delete('/item', validate(deleteItemSchema), async (req, res, next) => {
   try {
     const { access_token } = req.body;
-
-    // Validate token format
-    if (!access_token.startsWith('access-') && !access_token.startsWith('access_sandbox-')) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid access token format'
-      });
-    }
 
     const result = await plaidService.removeItem(access_token);
 
@@ -824,7 +689,7 @@ async function handleAuthWebhook(data) {
  * Response:
  * - public_token: Public token for sandbox testing
  */
-router.post('/sandbox_public_token', async (req, res, next) => {
+router.post('/sandbox_public_token', validate(sandboxTokenSchema), async (req, res, next) => {
   try {
     // Block in production
     if (process.env.PLAID_ENV === 'production') {
