@@ -76,16 +76,17 @@ Plans:
 - [x] 04-04: File upload security tests
 
 ### Phase 5: Core Service Tests
-**Goal**: Achieve 90%+ test coverage for Claude AI analysis and Plaid integration services
+**Goal**: Achieve 90%+ test coverage for Claude AI analysis, Plaid integration, financial security, and data persistence services
 **Depends on**: Phase 1 (testing utilities for service mocks)
 **Research**: Unlikely (testing established services with known patterns)
-**Plans**: 4-6 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 05-01: Claude AI service tests (document analysis, confidence scoring, error handling)
-- [ ] 05-02: Plaid service tests (token exchange, account retrieval, transaction sync)
-- [ ] 05-03: Financial security service tests (encryption, PII handling)
-- [ ] 05-04: Integration tests (service interactions, error propagation)
+- [ ] 05-01: Claude AI service tests (analyzeDocument, prompt building, error handling)
+- [ ] 05-02: Plaid service tests (API methods, webhook verification, helpers, mock fallback)
+- [ ] 05-03: Financial security service tests (encryption, credentials, compliance, audit)
+- [ ] 05-04: Vendor-neutral security tests (native crypto, sessions, audit log, middleware)
+- [ ] 05-05: Data service & integration tests (plaidDataService, cross-service flows)
 
 ### Phase 6: Document Processing Tests
 **Goal**: Achieve 90%+ test coverage for document upload, storage, and processing workflows
@@ -135,9 +136,9 @@ All phases are integers (1-8) for initial milestone.
 | 2. Authentication Layer | 3/3 | Complete | 2026-02-20 |
 | 3. Input Validation Framework | 5/5 | Complete | 2026-02-21 |
 | 4. Document Upload Security | 4/4 | Complete | 2026-02-22 |
-| 5. Core Service Tests | 0/6 | Not started | - |
+| 5. Core Service Tests | 0/5 | Not started | - |
 | 6. Document Processing Tests | 0/5 | Not started | - |
 | 7. Service Refactoring | 0/8 | Not started | - |
 | 8. Structured Logging | 0/5 | Not started | - |
 
-**Total Plans:** 44 plans across 8 phases
+**Total Plans:** 45 plans across 8 phases
