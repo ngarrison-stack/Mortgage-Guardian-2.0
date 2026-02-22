@@ -471,4 +471,133 @@ describe('Document upload security integration', () => {
 
   });
 
+  // =========================================================================
+  // 6. Edge cases
+  // =========================================================================
+  describe('edge cases', () => {
+
+    test('empty content string (decodes to empty buffer) is rejected', async () => {
+      // Empty base64 string decodes to empty Buffer
+      const body = buildUploadBody({
+        fileName: 'empty.pdf',
+        content: ''
+      });
+
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      // Joi requires content (non-empty string), so this is caught at schema level
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    test('missing content field is rejected by Joi', async () => {
+      const body = {
+        documentId: 'doc-test-002',
+        userId: 'test-user-id',
+        fileName: 'test.pdf',
+        documentType: 'mortgage_statement'
+        // no content field
+      };
+
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toMatch(/content/i);
+    });
+
+    test('very long filename (255+ chars) is rejected by Joi max', async () => {
+      const longName = 'a'.repeat(300) + '.pdf';
+      const body = buildUploadBody({
+        fileName: longName,
+        content: VALID_PDF_BASE64
+      });
+
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      // Joi .max(255) on fileName rejects this
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    test('double extension file (file.pdf.exe) is rejected by Joi pattern', async () => {
+      // The Joi pattern /^[a-zA-Z0-9._\s()-]+$/ allows dots, but .exe extension
+      // means file-type detection will fail if content doesn't match claimed type
+      const body = buildUploadBody({
+        fileName: 'document.pdf.exe',
+        content: VALID_PDF_BASE64
+      });
+
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      // File content validation: PDF magic bytes with .exe extension → mismatch
+      // The file has PDF content but claims to be .exe — file validation rejects it
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    test('unicode characters in filename are rejected by Joi pattern', async () => {
+      const body = buildUploadBody({
+        fileName: 'dokument-ubersicht.pdf',
+        content: VALID_PDF_BASE64
+      });
+
+      // ASCII-only filename passes Joi pattern
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      // ASCII-safe name passes; test with actual unicode
+      expect(response.status).toBe(201);
+
+      // Now test actual unicode
+      const unicodeBody = buildUploadBody({
+        fileName: '\u00FCbersicht-dokument.pdf',
+        content: VALID_PDF_BASE64
+      });
+
+      const unicodeResponse = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(unicodeBody);
+
+      // Joi pattern /^[a-zA-Z0-9._\s()-]+$/ rejects unicode characters
+      expect(unicodeResponse.status).toBe(400);
+      expect(unicodeResponse.body).toHaveProperty('error');
+    });
+
+    test('content that is not valid base64 but passes Joi still works (Buffer.from tolerates it)', async () => {
+      // Buffer.from(string, 'base64') is lenient and doesn't throw on invalid base64
+      // It will produce a buffer, which then gets validated by file content checks
+      const body = buildUploadBody({
+        fileName: 'test.txt',
+        content: 'not-really-base64!@#$%'
+      });
+
+      const response = await request(app)
+        .post('/v1/documents/upload')
+        .set('Authorization', AUTH_TOKEN)
+        .send(body);
+
+      // Buffer.from('not-really-base64!@#$%', 'base64') produces a small buffer
+      // file-type can't detect it, but .txt extension is in allowed list
+      // So it passes with a warning (unverifiable type)
+      expect(response.status).toBe(201);
+    });
+
+  });
+
 });

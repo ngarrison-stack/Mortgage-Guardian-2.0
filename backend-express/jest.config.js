@@ -14,12 +14,13 @@ module.exports = {
     '**/__tests__/**/*.test.ts'
   ],
 
-  // Coverage collection from services, routes, and middleware
+  // Coverage collection from services, routes, middleware, utils, and schemas
   collectCoverageFrom: [
     'services/**/*.js',
     'routes/**/*.js',
     'middleware/**/*.js',
     'schemas/**/*.js',
+    'utils/**/*.js',
     '!**/node_modules/**',
     '!**/__tests__/**'
   ],
