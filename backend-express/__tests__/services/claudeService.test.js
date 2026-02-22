@@ -138,4 +138,110 @@ describe('ClaudeService', () => {
       );
     });
   });
+
+  // ============================================================
+  // buildMortgageAnalysisPrompt
+  // ============================================================
+  describe('buildMortgageAnalysisPrompt', () => {
+    const sampleText = 'Monthly payment: $1,234.56. Principal balance: $250,000.';
+
+    it('returns mortgage_statement prompt containing document text', () => {
+      const prompt = claudeService.buildMortgageAnalysisPrompt(sampleText, 'mortgage_statement');
+
+      expect(prompt).toContain(sampleText);
+      expect(prompt).toMatch(/mortgage auditor/i);
+    });
+
+    it('returns escrow_statement prompt', () => {
+      const prompt = claudeService.buildMortgageAnalysisPrompt(sampleText, 'escrow_statement');
+
+      expect(prompt).toContain(sampleText);
+      expect(prompt).toMatch(/escrow/i);
+    });
+
+    it('returns payment_history prompt', () => {
+      const prompt = claudeService.buildMortgageAnalysisPrompt(sampleText, 'payment_history');
+
+      expect(prompt).toContain(sampleText);
+      expect(prompt).toMatch(/payment history/i);
+    });
+
+    it('returns default prompt for unknown type', () => {
+      const prompt = claudeService.buildMortgageAnalysisPrompt(sampleText, 'unknown_type');
+
+      expect(prompt).toContain(sampleText);
+      expect(prompt).toMatch(/document analyst/i);
+    });
+
+    it('returns default prompt when documentType is undefined', () => {
+      const prompt = claudeService.buildMortgageAnalysisPrompt(sampleText);
+
+      // Default parameter is 'mortgage_statement', not the fallback default
+      expect(prompt).toContain(sampleText);
+      expect(prompt).toMatch(/mortgage auditor/i);
+    });
+
+    it('embeds documentText in all prompt variants', () => {
+      const uniqueText = 'UNIQUE_MARKER_TEXT_12345';
+      const types = ['mortgage_statement', 'escrow_statement', 'payment_history', 'unknown_type'];
+
+      types.forEach((type) => {
+        const prompt = claudeService.buildMortgageAnalysisPrompt(uniqueText, type);
+        expect(prompt).toContain(uniqueText);
+      });
+    });
+  });
+
+  // ============================================================
+  // testConnection
+  // ============================================================
+  describe('testConnection', () => {
+    beforeEach(() => {
+      mockMessagesCreate.mockReset();
+    });
+
+    it('returns success with message when API responds', async () => {
+      mockMessagesCreate.mockResolvedValue({
+        content: [{ text: 'API connection successful' }],
+        model: 'claude-3-5-sonnet-20241022',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        stop_reason: 'end_turn'
+      });
+
+      const result = await claudeService.testConnection();
+
+      expect(result).toEqual({
+        success: true,
+        message: 'API connection successful'
+      });
+    });
+
+    it('returns failure with error when API throws', async () => {
+      mockMessagesCreate.mockRejectedValue(new Error('Connection refused'));
+
+      const result = await claudeService.testConnection();
+
+      expect(result).toEqual({
+        success: false,
+        error: 'Connection refused'
+      });
+    });
+
+    it('calls analyzeDocument with maxTokens: 20', async () => {
+      mockMessagesCreate.mockResolvedValue({
+        content: [{ text: 'OK' }],
+        model: 'claude-3-5-sonnet-20241022',
+        usage: { input_tokens: 10, output_tokens: 3 },
+        stop_reason: 'end_turn'
+      });
+
+      await claudeService.testConnection();
+
+      expect(mockMessagesCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_tokens: 20
+        })
+      );
+    });
+  });
 });
