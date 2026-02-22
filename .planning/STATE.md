@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-12)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** Phase 4 in progress — Document Upload Security (3/4 plans complete)
+**Current focus:** Phase 4 complete — Document Upload Security (4/4 plans complete). Ready for Phase 5.
 
 ## Current Position
 
-Phase: 4 of 8 (Document Upload Security)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-21 — Completed 04-03-PLAN.md
+Phase: 4 of 8 (Document Upload Security) — Complete
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-22 — Completed 04-04-PLAN.md
 
-Progress: ███░░░░░░░ 32%
+Progress: ███▌░░░░░░ 34%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 4.6 min
-- Total execution time: 1.08 hours
+- Total plans completed: 15
+- Average duration: 4.5 min
+- Total execution time: 1.13 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: ███░░░░░░░ 32%
 | 1 | 3/3 | 11 min | 3.7 min |
 | 2 | 3/3 | 13 min | 4.3 min |
 | 3 | 5/5 | 13 min | 2.6 min |
-| 4 | 3/4 | 32 min | 10.7 min |
+| 4 | 4/4 | 37 min | 9.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (2 min), 03-05 (5 min), 04-01 (6 min), 04-02 (3 min), 04-03 (23 min)
-- Trend: 04-03 duration includes user decision checkpoint wait time
+- Last 5 plans: 03-05 (5 min), 04-01 (6 min), 04-02 (3 min), 04-03 (23 min), 04-04 (5 min)
+- Trend: Phase 4 avg higher due to 04-03 decision checkpoint wait time
 
 ## Accumulated Context
 
@@ -61,6 +61,8 @@ Recent decisions affecting current work:
 - File validation in route handler (not middleware) — needs decoded buffer
 - Malware scanning deferred: serverless incompatible with ClamAV, VirusTotal async gap not justified at current scale
 - scanFileContent() stub exported as drop-in interface for future scanning integration
+- Real binary buffers with magic bytes for integration tests (not mocked file-type)
+- utils/**/*.js added to jest.config.js collectCoverageFrom
 
 ### Deferred Issues
 
@@ -76,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 04-03-PLAN.md — malware scanning deferred with stub for future integration
+Last session: 2026-02-22
+Stopped at: Completed 04-04-PLAN.md — Phase 4 complete. 19 upload security integration tests added.
 Resume file: None
