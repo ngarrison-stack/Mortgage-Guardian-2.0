@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const claudeService = require('../services/claudeService');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('claude-routes');
 const { validate } = require('../middleware/validate');
 const { analyzeSchema } = require('../schemas/claude');
 
@@ -16,7 +18,7 @@ router.post('/analyze', validate(analyzeSchema), async (req, res, next) => {
       analysisPrompt = claudeService.buildMortgageAnalysisPrompt(documentText, documentType);
     }
 
-    console.log(`Analyzing document (type: ${documentType || 'unknown'}, length: ${analysisPrompt.length} chars)`);
+    logger.info('Analyzing document', { documentType: documentType || 'unknown', promptLength: analysisPrompt.length });
 
     // Call Claude API
     const result = await claudeService.analyzeDocument({
@@ -35,7 +37,7 @@ router.post('/analyze', validate(analyzeSchema), async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Claude analysis error:', error);
+    logger.error('Claude analysis error', { error: error.message, status: error.status });
 
     // Handle specific error types
     if (error.status === 401) {
@@ -75,7 +77,7 @@ router.post('/test', async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Claude test error:', error);
+    logger.error('Claude test error', { error: error.message });
     next(error);
   }
 });

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const documentService = require('../services/documentService');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('document-routes');
 const { validate } = require('../middleware/validate');
 const { validateFileContent, sanitizeFileName } = require('../utils/fileValidation');
 const {
@@ -37,7 +39,7 @@ router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) =>
     // Sanitize the file name before any further use
     const safeFileName = sanitizeFileName(fileName);
 
-    console.log(`Uploading document: ${safeFileName} for user ${userId}`);
+    logger.info('Uploading document', { fileName: safeFileName, userId });
 
     const result = await documentService.uploadDocument({
       documentId,
@@ -57,7 +59,7 @@ router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) =>
     });
 
   } catch (error) {
-    console.error('Document upload error:', error);
+    logger.error('Document upload error', { error: error.message });
     next(error);
   }
 });
@@ -81,7 +83,7 @@ router.get('/', validate(getDocumentsSchema, 'query'), async (req, res, next) =>
     });
 
   } catch (error) {
-    console.error('Get documents error:', error);
+    logger.error('Get documents error', { error: error.message });
     next(error);
   }
 });
@@ -108,7 +110,7 @@ router.get('/:documentId', validate(getDocumentSchema, 'query'), async (req, res
     res.json(document);
 
   } catch (error) {
-    console.error('Get document error:', error);
+    logger.error('Get document error', { error: error.message });
     next(error);
   }
 });
@@ -131,7 +133,7 @@ router.delete('/:documentId', validate(deleteDocumentSchema, 'query'), async (re
     });
 
   } catch (error) {
-    console.error('Delete document error:', error);
+    logger.error('Delete document error', { error: error.message });
     next(error);
   }
 });

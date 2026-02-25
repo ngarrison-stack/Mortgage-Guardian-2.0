@@ -1,5 +1,7 @@
 // Mock Plaid service for development/testing when credentials aren't available
 const crypto = require('crypto');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('plaid-mock');
 
 class MockPlaidService {
   constructor() {
@@ -116,17 +118,17 @@ class MockPlaidService {
   }
 
   async createLinkToken({ userId, clientName }) {
-    console.log(`Mock: Creating link token for user ${userId}`);
+    logger.debug('Mock: creating link token', { userId });
     return this.generateMockToken('link-sandbox');
   }
 
   async createSandboxPublicToken({ institutionId, initialProducts }) {
-    console.log(`Mock: Creating sandbox public token for institution ${institutionId}`);
+    logger.debug('Mock: creating sandbox public token', { institutionId });
     return this.generateMockToken('public-sandbox');
   }
 
   async exchangePublicToken(publicToken) {
-    console.log(`Mock: Exchanging public token ${publicToken}`);
+    logger.debug('Mock: exchanging public token');
     return {
       accessToken: this.generateMockToken('access-sandbox'),
       itemId: this.generateMockToken('item')
@@ -134,12 +136,12 @@ class MockPlaidService {
   }
 
   async getAccounts(accessToken) {
-    console.log(`Mock: Getting accounts for token ${accessToken.substring(0, 20)}...`);
+    logger.debug('Mock: getting accounts');
     return this.mockData.accounts;
   }
 
   async getTransactions({ accessToken, startDate, endDate }) {
-    console.log(`Mock: Getting transactions for ${startDate} to ${endDate}`);
+    logger.debug('Mock: getting transactions', { startDate, endDate });
     // Filter transactions by date range
     return this.mockData.transactions.filter(txn => {
       return txn.date >= startDate && txn.date <= endDate;

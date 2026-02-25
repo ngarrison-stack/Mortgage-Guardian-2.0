@@ -6,6 +6,9 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const { createLogger, morganStream } = require('./utils/logger');
+const logger = createLogger('server');
+
 // Import middleware
 const { requireAuth } = require('./middleware/auth');
 
@@ -41,12 +44,8 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+// HTTP request logging via Winston
+app.use(morgan('combined', { stream: morganStream }));
 
 // Rate limiting - protect against abuse
 const limiter = rateLimit({
@@ -95,7 +94,7 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  logger.error('Unhandled error', { error: err.message, stack: err.stack, method: req.method, path: req.path });
 
   const statusCode = err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production'
@@ -116,20 +115,20 @@ app.use((err, req, res, next) => {
 // For local development and non-serverless deployments
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log('🚀 Mortgage Guardian Backend (AWS-Free)');
-    console.log('========================================');
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`✅ Claude API: ${process.env.ANTHROPIC_API_KEY ? 'Configured' : '❌ Missing'}`);
-    console.log(`✅ Plaid: ${process.env.PLAID_CLIENT_ID ? 'Configured' : '❌ Missing'}`);
-    console.log(`✅ Supabase: ${process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
-    console.log('========================================');
-    console.log(`📡 Ready to accept requests at http://localhost:${PORT}`);
+    logger.info('Server started', {
+      port: PORT,
+      env: process.env.NODE_ENV || 'development',
+      services: {
+        claude: !!process.env.ANTHROPIC_API_KEY,
+        plaid: !!process.env.PLAID_CLIENT_ID,
+        supabase: !!process.env.SUPABASE_URL
+      }
+    });
   });
 
   // Graceful shutdown
   process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully...');
+    logger.info('SIGTERM received, shutting down');
     process.exit(0);
   });
 }

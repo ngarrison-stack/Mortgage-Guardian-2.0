@@ -1,4 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('claude');
 
 // Initialize Anthropic client
 const client = new Anthropic({
@@ -34,7 +36,7 @@ class ClaudeService {
       };
 
     } catch (error) {
-      console.error('Claude API error:', error);
+      logger.error('Claude API error', { error: error.message, stack: error.stack });
       throw error;
     }
   }

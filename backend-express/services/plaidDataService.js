@@ -1,4 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('plaid-data');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -7,9 +9,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 let supabase = null;
 if (supabaseUrl && supabaseServiceKey) {
   supabase = createClient(supabaseUrl, supabaseServiceKey);
-  console.log('✅ Supabase client initialized for Plaid data');
+  logger.info('Supabase client initialized for Plaid data');
 } else {
-  console.warn('⚠️  Supabase not configured - Plaid data will use in-memory storage');
+  logger.warn('Supabase not configured - Plaid data will use in-memory storage');
 }
 
 class PlaidDataService {
@@ -50,7 +52,7 @@ class PlaidDataService {
 
       return { success: true, data };
     } catch (error) {
-      console.error('Error upserting Plaid item:', error);
+      logger.error('Error upserting Plaid item', { error: error.message, itemId });
       return { success: false, error: error.message };
     }
   }
@@ -102,10 +104,10 @@ class PlaidDataService {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      console.log(`✅ Stored ${transactions.length} transactions for item ${itemId}`);
+      logger.info('Transactions stored', { count: transactions.length, itemId });
       return { success: true, count: transactions.length, data };
     } catch (error) {
-      console.error('Error storing transactions:', error);
+      logger.error('Error storing transactions', { error: error.message, itemId });
       return { success: false, error: error.message };
     }
   }
@@ -128,10 +130,10 @@ class PlaidDataService {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      console.log(`✅ Removed ${transactionIds.length} transactions`);
+      logger.info('Transactions removed', { count: transactionIds.length });
       return { success: true, count: transactionIds.length, data };
     } catch (error) {
-      console.error('Error removing transactions:', error);
+      logger.error('Error removing transactions', { error: error.message });
       return { success: false, error: error.message };
     }
   }
@@ -161,10 +163,10 @@ class PlaidDataService {
         throw new Error(`Database error: ${dbError.message}`);
       }
 
-      console.log(`✅ Updated status for item ${itemId} to ${status}`);
+      logger.info('Item status updated', { itemId, status });
       return { success: true, data };
     } catch (error) {
-      console.error('Error updating item status:', error);
+      logger.error('Error updating item status', { error: error.message, itemId });
       return { success: false, error: error.message };
     }
   }
@@ -205,10 +207,10 @@ class PlaidDataService {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      console.log(`✅ Updated ${accounts.length} accounts for item ${itemId}`);
+      logger.info('Accounts updated', { count: accounts.length, itemId });
       return { success: true, count: accounts.length, data };
     } catch (error) {
-      console.error('Error upserting accounts:', error);
+      logger.error('Error upserting accounts', { error: error.message, itemId });
       return { success: false, error: error.message };
     }
   }
@@ -234,7 +236,7 @@ class PlaidDataService {
 
       return { success: true, data };
     } catch (error) {
-      console.error('Error fetching item:', error);
+      logger.error('Error fetching item', { error: error.message, itemId });
       return { success: false, error: error.message };
     }
   }
@@ -244,7 +246,7 @@ class PlaidDataService {
    */
   async createNotification({ userId, itemId, type, message, priority = 'medium' }) {
     if (!supabase) {
-      console.log(`📢 Notification (${priority}): ${message} for user ${userId}`);
+      logger.info('Mock notification', { priority, message, userId });
       return { success: true, mock: true };
     }
 
@@ -265,10 +267,10 @@ class PlaidDataService {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      console.log(`📢 Created ${priority} priority notification for user ${userId}`);
+      logger.info('Notification created', { priority, userId });
       return { success: true, data };
     } catch (error) {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification', { error: error.message, userId });
       return { success: false, error: error.message };
     }
   }
@@ -279,7 +281,7 @@ class PlaidDataService {
       ...item,
       updatedAt: new Date().toISOString()
     });
-    console.log(`📝 Mock: Stored item ${item.itemId}`);
+    logger.debug('Mock: stored item', { itemId: item.itemId });
     return { success: true, mock: true, data: item };
   }
 
@@ -292,13 +294,13 @@ class PlaidDataService {
         createdAt: new Date().toISOString()
       });
     });
-    console.log(`📝 Mock: Stored ${transactions.length} transactions`);
+    logger.debug('Mock: stored transactions', { count: transactions.length });
     return { success: true, mock: true, count: transactions.length };
   }
 
   mockRemoveTransactions({ transactionIds }) {
     transactionIds.forEach(id => this.mockTransactions.delete(id));
-    console.log(`📝 Mock: Removed ${transactionIds.length} transactions`);
+    logger.debug('Mock: removed transactions', { count: transactionIds.length });
     return { success: true, mock: true, count: transactionIds.length };
   }
 
@@ -306,7 +308,7 @@ class PlaidDataService {
     const item = this.mockItems.get(update.itemId);
     if (item) {
       this.mockItems.set(update.itemId, { ...item, ...update });
-      console.log(`📝 Mock: Updated item ${update.itemId} status to ${update.status}`);
+      logger.debug('Mock: updated item status', { itemId: update.itemId, status: update.status });
     }
     return { success: true, mock: true, data: update };
   }
@@ -320,7 +322,7 @@ class PlaidDataService {
         updatedAt: new Date().toISOString()
       });
     });
-    console.log(`📝 Mock: Stored ${accounts.length} accounts`);
+    logger.debug('Mock: stored accounts', { count: accounts.length });
     return { success: true, mock: true, count: accounts.length };
   }
 

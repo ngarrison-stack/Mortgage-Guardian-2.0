@@ -1,4 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('document');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -7,9 +9,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 let supabase = null;
 if (supabaseUrl && supabaseServiceKey) {
   supabase = createClient(supabaseUrl, supabaseServiceKey);
-  console.log('✅ Supabase client initialized');
+  logger.info('Supabase client initialized');
 } else {
-  console.warn('⚠️  Supabase not configured - document storage will use mock service');
+  logger.warn('Supabase not configured - document storage will use mock service');
 }
 
 class DocumentService {
@@ -70,7 +72,7 @@ class DocumentService {
       };
 
     } catch (error) {
-      console.error('Document upload error:', error);
+      logger.error('Document upload error', { error: error.message, documentId });
       throw error;
     }
   }
@@ -98,7 +100,7 @@ class DocumentService {
       return data || [];
 
     } catch (error) {
-      console.error('Get documents error:', error);
+      logger.error('Get documents error', { error: error.message, userId });
       throw error;
     }
   }
@@ -134,7 +136,7 @@ class DocumentService {
         .download(metadata.storage_path);
 
       if (storageError) {
-        console.warn('Could not download file:', storageError);
+        logger.warn('Could not download file', { error: storageError.message, documentId });
         // Return metadata even if file download fails
         return metadata;
       }
@@ -150,7 +152,7 @@ class DocumentService {
       };
 
     } catch (error) {
-      console.error('Get document error:', error);
+      logger.error('Get document error', { error: error.message, documentId });
       throw error;
     }
   }
@@ -182,7 +184,7 @@ class DocumentService {
         .remove([doc.storage_path]);
 
       if (storageError) {
-        console.warn('Storage deletion error:', storageError);
+        logger.warn('Storage deletion error', { error: storageError.message, documentId });
       }
 
       // Delete from database
@@ -199,7 +201,7 @@ class DocumentService {
       return { success: true };
 
     } catch (error) {
-      console.error('Delete document error:', error);
+      logger.error('Delete document error', { error: error.message, documentId });
       throw error;
     }
   }
@@ -222,21 +224,21 @@ class DocumentService {
       created_at: new Date().toISOString()
     });
 
-    console.log(`Mock: Uploaded document ${documentId} for user ${userId}`);
+    logger.debug('Mock: uploaded document', { documentId, userId });
     return { documentId, storagePath };
   }
 
   mockGetDocumentsByUser({ userId }) {
     const userDocs = Array.from(this.mockDocuments.values())
       .filter(doc => doc.user_id === userId);
-    console.log(`Mock: Retrieved ${userDocs.length} documents for user ${userId}`);
+    logger.debug('Mock: retrieved documents', { count: userDocs.length, userId });
     return userDocs;
   }
 
   mockGetDocument({ documentId, userId }) {
     const doc = this.mockDocuments.get(documentId);
     if (doc && doc.user_id === userId) {
-      console.log(`Mock: Retrieved document ${documentId}`);
+      logger.debug('Mock: retrieved document', { documentId });
       return doc;
     }
     return null;
@@ -246,7 +248,7 @@ class DocumentService {
     const doc = this.mockDocuments.get(documentId);
     if (doc && doc.user_id === userId) {
       this.mockDocuments.delete(documentId);
-      console.log(`Mock: Deleted document ${documentId}`);
+      logger.debug('Mock: deleted document', { documentId });
       return { success: true };
     }
     throw new Error('Document not found');

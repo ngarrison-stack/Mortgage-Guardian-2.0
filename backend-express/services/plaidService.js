@@ -1,6 +1,8 @@
 const { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } = require('plaid');
 const MockPlaidService = require('./mockPlaidService');
 const crypto = require('crypto');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('plaid');
 
 // Initialize Plaid client with enhanced configuration
 const plaidClientId = process.env.PLAID_CLIENT_ID;
@@ -25,7 +27,7 @@ let mockService = null;
 
 if (useMockService) {
   mockService = new MockPlaidService();
-  console.log('🧪 Using Mock Plaid Service (no valid credentials)');
+  logger.info('Using mock Plaid service (no valid credentials)');
 } else {
   const configuration = new Configuration({
     basePath: plaidEnvironment,
@@ -38,10 +40,7 @@ if (useMockService) {
     },
   });
   client = new PlaidApi(configuration);
-  console.log(`🔗 Using Real Plaid API (${plaidEnvironmentName})`);
-  if (webhookUrl) {
-    console.log(`📡 Webhook URL configured: ${webhookUrl}`);
-  }
+  logger.info('Using real Plaid API', { environment: plaidEnvironmentName, webhookConfigured: !!webhookUrl });
 }
 
 class PlaidService {
@@ -104,11 +103,7 @@ class PlaidService {
         request_id: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid createLinkToken error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      logger.error('Plaid createLinkToken error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -137,7 +132,7 @@ class PlaidService {
 
       return response.data.public_token;
     } catch (error) {
-      console.error('Plaid createSandboxPublicToken error:', error);
+      logger.error('Plaid createSandboxPublicToken error', { error: error.message });
       throw this.formatPlaidError(error);
     }
   }
@@ -163,8 +158,7 @@ class PlaidService {
         public_token: publicToken,
       });
 
-      // Log successful exchange (but not the tokens themselves)
-      console.log('Successfully exchanged public token for item:', response.data.item_id);
+      logger.info('Public token exchanged', { itemId: response.data.item_id });
 
       return {
         accessToken: response.data.access_token,
@@ -172,10 +166,7 @@ class PlaidService {
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid exchangePublicToken error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid exchangePublicToken error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -239,10 +230,7 @@ class PlaidService {
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid getAccounts error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid getAccounts error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -355,10 +343,7 @@ class PlaidService {
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid getTransactions error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid getTransactions error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -402,10 +387,7 @@ class PlaidService {
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid getItem error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid getItem error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -441,10 +423,7 @@ class PlaidService {
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid updateWebhook error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid updateWebhook error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -468,17 +447,14 @@ class PlaidService {
         access_token: accessToken
       });
 
-      console.log('Successfully removed item');
+      logger.info('Item removed');
 
       return {
         removed: true,
         requestId: response.data.request_id
       };
     } catch (error) {
-      console.error('Plaid removeItem error:', {
-        message: error.message,
-        status: error.response?.status
-      });
+      logger.error('Plaid removeItem error', { error: error.message, status: error.response?.status });
       throw this.formatPlaidError(error);
     }
   }
@@ -494,13 +470,13 @@ class PlaidService {
       const webhookVerificationKey = process.env.PLAID_WEBHOOK_VERIFICATION_KEY;
 
       if (!webhookVerificationKey) {
-        console.warn('PLAID_WEBHOOK_VERIFICATION_KEY not configured - skipping signature verification');
+        logger.warn('PLAID_WEBHOOK_VERIFICATION_KEY not configured - skipping signature verification');
         return true; // Allow in development, but should be required in production
       }
 
       const signature = headers['plaid-verification'];
       if (!signature) {
-        console.error('Missing Plaid-Verification header');
+        logger.error('Missing Plaid-Verification header');
         return false;
       }
 
@@ -515,7 +491,7 @@ class PlaidService {
         Buffer.from(expectedSignature, 'hex')
       );
     } catch (error) {
-      console.error('Webhook signature verification error:', error);
+      logger.error('Webhook signature verification error', { error: error.message });
       return false;
     }
   }

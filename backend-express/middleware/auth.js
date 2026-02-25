@@ -1,4 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
+const { createLogger } = require('../utils/logger');
+const logger = createLogger('auth');
 
 // Initialize Supabase client for JWT validation
 // Uses anon key (not service key) — correct for auth.getUser() token validation
@@ -9,7 +11,7 @@ let supabase = null;
 if (supabaseUrl && supabaseAnonKey) {
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } else {
-  console.warn('Warning: Supabase not configured - auth middleware will reject all requests unless mocked');
+  logger.warn('Supabase not configured - auth middleware will reject all requests unless mocked');
 }
 
 /**
