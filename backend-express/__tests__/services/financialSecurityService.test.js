@@ -56,7 +56,7 @@ jest.mock('rate-limiter-flexible', () => ({
   RateLimiterRedis: jest.fn(() => ({
     consume: mockRateLimiterConsume
   }))
-}));
+}), { virtual: true });
 
 jest.mock('jsonwebtoken', () => ({
   verify: jest.fn()
@@ -64,7 +64,7 @@ jest.mock('jsonwebtoken', () => ({
 
 jest.mock('speakeasy', () => ({
   totp: { verify: jest.fn() }
-}));
+}), { virtual: true });
 
 const mockLoggerInfo = jest.fn();
 const mockLoggerError = jest.fn();

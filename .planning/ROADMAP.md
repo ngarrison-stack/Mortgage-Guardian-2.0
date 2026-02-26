@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Document Processing Tests** - Test coverage for document workflows
 - [x] **Phase 7: Service Refactoring** - Break down large services into maintainable modules
 - [x] **Phase 8: Structured Logging** - Replace console.log with Winston structured logging
+- [x] **Phase 9: Dependency Security** - Fix npm audit vulnerabilities (90 Dependabot alerts → 0)
 
 ## Phase Details
 
@@ -136,4 +137,33 @@ All phases are integers (1-8) for initial milestone.
 | 7. Service Refactoring | 2/2 | Complete | 2026-02-25 |
 | 8. Structured Logging | 4/4 | Complete | 2026-02-25 |
 
-**Total Plans:** 28 plans across 8 phases — ALL COMPLETE
+### Phase 9: Dependency Security
+**Goal**: Fix npm audit vulnerabilities — remove unused dependencies, update safe patch/minor versions, evaluate major upgrades, verify clean audit
+**Depends on**: Phase 8 (all production hardening complete first)
+**Research**: Unlikely (dependency updates follow standard npm workflow)
+**Plans**: 4 plans
+
+Plans:
+- [x] 09-01: Remove unused dependencies (multer, winston-syslog, speakeasy, rate-limiter-flexible)
+- [x] 09-02: Update safe dependencies (patch/minor versions via npm update)
+- [x] 09-03: Evaluate major version upgrades (Anthropic SDK 0.78, Plaid 41.x applied; Express 5.x deferred)
+- [x] 09-04: Audit verification and cleanup (0 vulnerabilities across all workspaces)
+
+## Progress
+
+**Execution Order:**
+All phases are integers (1-9).
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation & Testing Infrastructure | 3/3 | Complete | 2026-02-20 |
+| 2. Authentication Layer | 3/3 | Complete | 2026-02-20 |
+| 3. Input Validation Framework | 5/5 | Complete | 2026-02-21 |
+| 4. Document Upload Security | 4/4 | Complete | 2026-02-22 |
+| 5. Core Service Tests | 5/5 | Complete | 2026-02-25 |
+| 6. Document Processing Tests | 2/2 | Complete | 2026-02-25 |
+| 7. Service Refactoring | 2/2 | Complete | 2026-02-25 |
+| 8. Structured Logging | 4/4 | Complete | 2026-02-25 |
+| 9. Dependency Security | 4/4 | Complete | 2026-02-25 |
+
+**Total Plans:** 32 plans across 9 phases — ALL COMPLETE

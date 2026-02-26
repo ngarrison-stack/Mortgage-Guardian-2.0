@@ -1,5 +1,4 @@
 {
-  "dependencies": {
-    "plaid": "^39.1.0"
-  }
+  "private": true,
+  "description": "Mortgage Guardian 2.0 — monorepo root (no dependencies, see backend-express/ and frontend/)"
 }

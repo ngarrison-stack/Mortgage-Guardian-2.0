@@ -4,17 +4,21 @@
  */
 
 const crypto = require('crypto');
-const AWS = require('aws-sdk');
 const { promisify } = require('util');
-const { RateLimiterRedis } = require('rate-limiter-flexible');
 const Redis = require('ioredis');
 const winston = require('winston');
-const { ElasticsearchTransport } = require('winston-elasticsearch');
 
-// Initialize AWS services
-const kms = new AWS.KMS({ region: process.env.AWS_REGION || 'us-east-1' });
-const secretsManager = new AWS.SecretsManager({ region: process.env.AWS_REGION || 'us-east-1' });
-const cloudHSM = new AWS.CloudHSMV2({ region: process.env.AWS_REGION || 'us-east-1' });
+// Optional dependencies — these are for future AWS/enterprise deployment.
+// The service degrades gracefully when they're not installed.
+let AWS, RateLimiterRedis, ElasticsearchTransport;
+try { AWS = require('aws-sdk'); } catch { AWS = null; }
+try { ({ RateLimiterRedis } = require('rate-limiter-flexible')); } catch { RateLimiterRedis = null; }
+try { ({ ElasticsearchTransport } = require('winston-elasticsearch')); } catch { ElasticsearchTransport = null; }
+
+// Initialize AWS services (null when aws-sdk not installed)
+const kms = AWS ? new AWS.KMS({ region: process.env.AWS_REGION || 'us-east-1' }) : null;
+const secretsManager = AWS ? new AWS.SecretsManager({ region: process.env.AWS_REGION || 'us-east-1' }) : null;
+const cloudHSM = AWS ? new AWS.CloudHSMV2({ region: process.env.AWS_REGION || 'us-east-1' }) : null;
 
 // Initialize Redis for session management and rate limiting
 const redis = new Redis({
@@ -50,7 +54,7 @@ const logger = winston.createLogger({
             maxsize: 5242880,
             maxFiles: 30
         }),
-        new ElasticsearchTransport({
+        ...(ElasticsearchTransport ? [new ElasticsearchTransport({
             level: 'info',
             clientOpts: {
                 node: process.env.ELASTICSEARCH_URL || 'https://localhost:9200',
@@ -60,7 +64,7 @@ const logger = winston.createLogger({
                 }
             },
             index: 'security-audit'
-        })
+        })] : [])
     ]
 });
 

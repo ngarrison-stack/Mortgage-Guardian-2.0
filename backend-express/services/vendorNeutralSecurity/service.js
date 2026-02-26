@@ -5,8 +5,11 @@
 
 const winston = require('winston');
 const Redis = require('ioredis');
-const { RateLimiterMemory, RateLimiterRedis } = require('rate-limiter-flexible');
 const path = require('path');
+
+// Optional: rate-limiter-flexible (falls back to no-op if not installed)
+let RateLimiterMemory, RateLimiterRedis;
+try { ({ RateLimiterMemory, RateLimiterRedis } = require('rate-limiter-flexible')); } catch { RateLimiterMemory = null; RateLimiterRedis = null; }
 const { NativeEncryptionProvider, HashicorpVaultProvider, HardwareHSMProvider } = require('./encryptionProviders');
 const { FilesystemSecretManager, DatabaseSecretManager, KubernetesSecretManager, DockerSecretManager, EnvironmentSecretManager } = require('./secretManagers');
 const { InMemorySessionManager, RedisSessionManager } = require('./sessionManagers');
@@ -82,26 +85,30 @@ class VendorNeutralSecurityService {
         );
 
         if (this.config.syslogHost) {
-            const Syslog = require('winston-syslog').Syslog;
-            transports.push(new Syslog({
-                host: this.config.syslogHost,
-                port: this.config.syslogPort || 514,
-                protocol: 'tls4',
-                facility: 'auth',
-                app_name: 'mortgage-guardian'
-            }));
+            try {
+                const Syslog = require('winston-syslog').Syslog;
+                transports.push(new Syslog({
+                    host: this.config.syslogHost,
+                    port: this.config.syslogPort || 514,
+                    protocol: 'tls4',
+                    facility: 'auth',
+                    app_name: 'mortgage-guardian'
+                }));
+            } catch { /* winston-syslog not installed — skipping syslog transport */ }
         }
 
         if (this.config.elasticEndpoint) {
-            const { ElasticsearchTransport } = require('winston-elasticsearch');
-            transports.push(new ElasticsearchTransport({
-                level: 'info',
-                clientOpts: {
-                    node: this.config.elasticEndpoint,
-                    auth: this.config.elasticAuth
-                },
-                index: 'security-audit'
-            }));
+            try {
+                const { ElasticsearchTransport } = require('winston-elasticsearch');
+                transports.push(new ElasticsearchTransport({
+                    level: 'info',
+                    clientOpts: {
+                        node: this.config.elasticEndpoint,
+                        auth: this.config.elasticAuth
+                    },
+                    index: 'security-audit'
+                }));
+            } catch { /* winston-elasticsearch not installed — skipping elastic transport */ }
         }
 
         return winston.createLogger({
@@ -115,6 +122,10 @@ class VendorNeutralSecurityService {
     }
 
     createRateLimiter() {
+        if (!RateLimiterMemory) {
+            return { api: null, auth: null, transaction: null };
+        }
+
         if (this.config.redisHost) {
             const redis = new Redis({
                 host: this.config.redisHost,

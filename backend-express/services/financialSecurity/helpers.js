@@ -5,8 +5,11 @@
  */
 
 const crypto = require('crypto');
-const speakeasy = require('speakeasy');
 const { redis, logger } = require('./config');
+
+// Optional: speakeasy for MFA/TOTP (future deployment)
+let speakeasy;
+try { speakeasy = require('speakeasy'); } catch { speakeasy = null; }
 
 module.exports = {
     sanitizeForLog(value) {
@@ -21,6 +24,9 @@ module.exports = {
     },
 
     async verifyMFA(userId, token) {
+        if (!speakeasy) {
+            throw new Error('MFA not available: speakeasy package not installed');
+        }
         const secret = await this.getUserMFASecret(userId);
         return speakeasy.totp.verify({
             secret,

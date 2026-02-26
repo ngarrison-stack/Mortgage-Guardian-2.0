@@ -58,10 +58,10 @@ jest.mock('rate-limiter-flexible', () => ({
   RateLimiterRedis: jest.fn(() => ({
     consume: jest.fn().mockResolvedValue(true)
   }))
-}));
+}), { virtual: true });
 
 jest.mock('jsonwebtoken');
-jest.mock('speakeasy');
+jest.mock('speakeasy', () => ({}), { virtual: true });
 jest.mock('argon2', () => ({
   hash: jest.fn().mockResolvedValue('hashed'),
   verify: jest.fn().mockResolvedValue(true)
