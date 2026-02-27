@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 10 of 17 (Document Intake & Classification Pipeline)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed 10-03-PLAN.md
+Last activity: 2026-02-27 — Completed 10-04-PLAN.md
 
-Progress: ██░░░░░░░░░░░░░░░░░░ 12% (v3.0 Milestone — 3 of ~25 plans)
+Progress: ███░░░░░░░░░░░░░░░░░ 16% (v3.0 Milestone — 4 of ~25 plans)
 
 ## Performance Metrics
 
@@ -51,6 +51,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 10-02 | 50-char threshold for meaningful PDF text | Prevents scanned PDFs with metadata-only text from being misclassified |
 | 10-03 | claude-sonnet-4-5 for classification (not opus) | Fast, cost-effective for structured classification; opus reserved for deep analysis |
 | 10-03 | Graceful JSON parse fallback on Claude responses | Returns { rawResponse, parseError } instead of throwing; prevents pipeline crashes |
+| 10-04 | Best-effort DB persistence for pipeline state | Pipeline never blocks on Supabase write failures; logs warning, continues in-memory |
+| 10-04 | Dual input via Joi .or() (documentText or fileBuffer) | Supports iOS pre-extracted text and server-side OCR from same endpoint |
+| 10-04 | Single-case auto-association only | Avoids ambiguity: 0 or 2+ open cases skip association, user assigns manually |
 
 ### Deferred Issues
 
@@ -71,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 10-03-PLAN.md
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
