@@ -16,6 +16,7 @@ const { requireAuth } = require('./middleware/auth');
 const claudeRoutes = require('./routes/claude');
 const plaidRoutes = require('./routes/plaid');
 const documentRoutes = require('./routes/documents');
+const caseRoutes = require('./routes/cases');
 const healthRoutes = require('./routes/health');
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/', healthRoutes);
 app.use('/v1/ai/claude', claudeRoutes);
 app.use('/v1/plaid', plaidRoutes);
 app.use('/v1/documents', documentRoutes);
+app.use('/v1/cases', caseRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -85,9 +87,21 @@ app.use((req, res) => {
       'POST /v1/plaid/accounts',
       'POST /v1/plaid/transactions',
       'POST /v1/documents/upload',
+      'POST /v1/documents/process',
+      'GET /v1/documents/pipeline',
+      'GET /v1/documents/:documentId/status',
+      'POST /v1/documents/:documentId/retry',
+      'POST /v1/documents/:documentId/complete',
       'GET /v1/documents',
       'GET /v1/documents/:documentId',
-      'DELETE /v1/documents/:documentId'
+      'DELETE /v1/documents/:documentId',
+      'POST /v1/cases',
+      'GET /v1/cases',
+      'GET /v1/cases/:caseId',
+      'PUT /v1/cases/:caseId',
+      'DELETE /v1/cases/:caseId',
+      'POST /v1/cases/:caseId/documents',
+      'DELETE /v1/cases/:caseId/documents/:documentId'
     ]
   });
 });
