@@ -1,8 +1,10 @@
+const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const documentService = require('./documentService');
 const claudeService = require('./claudeService');
 const ocrService = require('./ocrService');
 const classificationService = require('./classificationService');
+const caseFileService = require('./caseFileService');
 const logger = createLogger('document-pipeline');
 
 /**
@@ -16,6 +18,11 @@ const logger = createLogger('document-pipeline');
  *   uploaded -> ocr -> classifying -> analyzing -> analyzed -> review -> complete
  *                                       |
  *                                     failed (at any step, with retry)
+ *
+ * Persistence:
+ *   - In-memory Map is the primary store for active pipelines (fast).
+ *   - Supabase pipeline_state table is the recovery mechanism for server restarts.
+ *   - DB persistence is best-effort — pipeline never blocks on DB failures.
  */
 
 const PIPELINE_STATES = {
@@ -39,11 +46,199 @@ const STATE_TRANSITIONS = {
   [PIPELINE_STATES.REVIEW]: PIPELINE_STATES.COMPLETE
 };
 
+// Initialize Supabase client for pipeline state persistence
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  logger.info('Supabase client initialized for pipeline state persistence');
+} else {
+  logger.warn('Supabase not configured - pipeline state will be in-memory only');
+}
+
 class DocumentPipelineService {
   constructor() {
-    // In-memory tracking (will be replaced by DB table in production)
+    // In-memory tracking — primary store for active pipelines
     this.pipelineState = new Map();
   }
+
+  // ============================================
+  // DATABASE PERSISTENCE (best-effort)
+  // ============================================
+
+  /**
+   * Persist pipeline state to the database.
+   * Best-effort: logs warning on failure but never throws.
+   * Uses document_id as the natural key for upsert.
+   *
+   * @param {Object} pipeline - Pipeline state object
+   */
+  async _persistPipeline(pipeline) {
+    if (!supabase) return;
+
+    try {
+      const row = {
+        document_id: pipeline.documentId,
+        user_id: pipeline.userId,
+        document_type: pipeline.documentType,
+        file_name: pipeline.fileName || null,
+        status: pipeline.status,
+        steps: pipeline.steps,
+        extracted_text: pipeline.extractedText,
+        classification_results: pipeline.classificationResults,
+        analysis_results: pipeline.analysisResults,
+        case_id: pipeline.caseId,
+        error: pipeline.error,
+        retry_count: pipeline.retryCount,
+        created_at: pipeline.createdAt,
+        updated_at: pipeline.updatedAt
+      };
+
+      const { error } = await supabase
+        .from('pipeline_state')
+        .upsert(row, { onConflict: 'document_id' });
+
+      if (error) {
+        logger.warn('Failed to persist pipeline state', {
+          documentId: pipeline.documentId,
+          error: error.message
+        });
+      }
+    } catch (err) {
+      logger.warn('Pipeline state persistence error', {
+        documentId: pipeline.documentId,
+        error: err.message
+      });
+    }
+  }
+
+  /**
+   * Load pipeline state from the database.
+   * Falls back to in-memory Map if DB is unavailable.
+   * When loaded from DB, populates the in-memory Map for fast access.
+   *
+   * @param {string} documentId - Document identifier
+   * @returns {Object|null} Pipeline state or null if not found
+   */
+  async _loadPipeline(documentId) {
+    // Check in-memory first (fast path)
+    const cached = this.pipelineState.get(documentId);
+    if (cached) return cached;
+
+    // Try database fallback
+    if (!supabase) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('pipeline_state')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
+
+      if (error || !data) return null;
+
+      // Convert DB row to pipeline object
+      const pipeline = {
+        documentId: data.document_id,
+        userId: data.user_id,
+        documentType: data.document_type,
+        fileName: data.file_name,
+        status: data.status,
+        steps: data.steps || {},
+        extractedText: data.extracted_text,
+        classificationResults: data.classification_results,
+        analysisResults: data.analysis_results,
+        caseId: data.case_id,
+        error: data.error,
+        retryCount: data.retry_count || 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
+      // Populate in-memory Map for subsequent fast access
+      this.pipelineState.set(documentId, pipeline);
+
+      logger.info('Pipeline state recovered from database', {
+        documentId,
+        status: pipeline.status
+      });
+
+      return pipeline;
+    } catch (err) {
+      logger.warn('Failed to load pipeline from database', {
+        documentId,
+        error: err.message
+      });
+      return null;
+    }
+  }
+
+  // ============================================
+  // CASE FILE AUTO-ASSOCIATION
+  // ============================================
+
+  /**
+   * Auto-associate document with an open case file after classification.
+   *
+   * Rules:
+   * - If exactly one open case exists for the user, auto-associate.
+   * - If no open cases, skip (user can manually associate later).
+   * - If multiple open cases, skip (ambiguous — user decides).
+   *
+   * Best-effort: never blocks pipeline on association failure.
+   *
+   * @param {Object} pipeline - Pipeline state object
+   */
+  async _associateWithCase(pipeline) {
+    try {
+      const openCases = await caseFileService.getCasesByUser({
+        userId: pipeline.userId,
+        status: 'open'
+      });
+
+      if (openCases.length === 1) {
+        const caseId = openCases[0].id;
+
+        await caseFileService.addDocumentToCase({
+          caseId,
+          documentId: pipeline.documentId,
+          userId: pipeline.userId
+        });
+
+        pipeline.caseId = caseId;
+        this.pipelineState.set(pipeline.documentId, pipeline);
+
+        logger.info('Document auto-associated with case', {
+          documentId: pipeline.documentId,
+          caseId,
+          caseName: openCases[0].case_name
+        });
+      } else if (openCases.length === 0) {
+        logger.info('No open cases for auto-association', {
+          documentId: pipeline.documentId,
+          userId: pipeline.userId
+        });
+      } else {
+        logger.info('Multiple open cases — skipping auto-association', {
+          documentId: pipeline.documentId,
+          userId: pipeline.userId,
+          openCaseCount: openCases.length
+        });
+      }
+    } catch (err) {
+      // Best-effort — don't block pipeline on association failure
+      logger.warn('Case auto-association failed', {
+        documentId: pipeline.documentId,
+        error: err.message
+      });
+    }
+  }
+
+  // ============================================
+  // PIPELINE LIFECYCLE
+  // ============================================
 
   /**
    * Initialize pipeline tracking for a newly uploaded document.
@@ -74,14 +269,42 @@ class DocumentPipelineService {
     };
 
     this.pipelineState.set(documentId, pipeline);
+    // Best-effort DB persistence (fire and forget)
+    this._persistPipeline(pipeline).catch(() => {});
     logger.info('Pipeline initialized', { documentId, userId, documentType });
     return pipeline;
   }
 
   /**
    * Get the current pipeline status for a document.
+   * Tries in-memory Map first, falls back to database.
    */
-  getStatus(documentId) {
+  async getStatus(documentId) {
+    // Try loading from DB if not in memory
+    const pipeline = await this._loadPipeline(documentId);
+    if (!pipeline) {
+      return null;
+    }
+
+    return {
+      documentId: pipeline.documentId,
+      status: pipeline.status,
+      steps: pipeline.steps,
+      error: pipeline.error,
+      retryCount: pipeline.retryCount,
+      hasAnalysis: !!pipeline.analysisResults,
+      hasClassification: !!pipeline.classificationResults,
+      caseId: pipeline.caseId,
+      createdAt: pipeline.createdAt,
+      updatedAt: pipeline.updatedAt
+    };
+  }
+
+  /**
+   * Synchronous version for cases where async is not feasible.
+   * Only checks in-memory Map (no DB fallback).
+   */
+  getStatusSync(documentId) {
     const pipeline = this.pipelineState.get(documentId);
     if (!pipeline) {
       return null;
@@ -106,7 +329,8 @@ class DocumentPipelineService {
    * Picks up from the last completed step so retries skip finished work.
    */
   async processDocument(documentId, userId, { documentText, fileBuffer, documentType }) {
-    let pipeline = this.pipelineState.get(documentId);
+    // Try loading from DB before checking in-memory
+    let pipeline = await this._loadPipeline(documentId);
 
     if (!pipeline) {
       pipeline = this.initPipeline(documentId, userId, documentType);
@@ -121,6 +345,8 @@ class DocumentPipelineService {
       // Step 2: Classification — identify document type
       if (this._shouldRunStep(pipeline, PIPELINE_STATES.CLASSIFYING)) {
         await this._runClassification(pipeline);
+        // Auto-associate with case file after classification
+        await this._associateWithCase(pipeline);
       }
 
       // Step 3: AI Analysis
@@ -158,6 +384,8 @@ class DocumentPipelineService {
       };
       pipeline.updatedAt = new Date().toISOString();
       this.pipelineState.set(documentId, pipeline);
+      // Persist failure state
+      this._persistPipeline(pipeline).catch(() => {});
 
       logger.error('Pipeline failed', {
         documentId,
@@ -179,7 +407,8 @@ class DocumentPipelineService {
    * Retry a failed document from the step it failed at.
    */
   async retryDocument(documentId, userId, { documentText, fileBuffer } = {}) {
-    const pipeline = this.pipelineState.get(documentId);
+    // Try loading from DB if not in memory
+    const pipeline = await this._loadPipeline(documentId);
 
     if (!pipeline) {
       throw new Error(`No pipeline found for document ${documentId}`);
@@ -254,7 +483,7 @@ class DocumentPipelineService {
     for (const pipeline of this.pipelineState.values()) {
       if (pipeline.userId !== userId) continue;
       if (status && pipeline.status !== status) continue;
-      results.push(this.getStatus(pipeline.documentId));
+      results.push(this.getStatusSync(pipeline.documentId));
     }
     return results.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
@@ -320,6 +549,8 @@ class DocumentPipelineService {
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
+    // Persist after OCR completion
+    this._persistPipeline(pipeline).catch(() => {});
   }
 
   /**
@@ -355,6 +586,8 @@ class DocumentPipelineService {
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
+    // Persist after classification completion
+    this._persistPipeline(pipeline).catch(() => {});
 
     logger.info('Classification complete', {
       documentId: pipeline.documentId,
@@ -407,6 +640,8 @@ class DocumentPipelineService {
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
+    // Persist after analysis completion
+    this._persistPipeline(pipeline).catch(() => {});
 
     logger.info('AI analysis complete', {
       documentId: pipeline.documentId,
@@ -442,6 +677,8 @@ class DocumentPipelineService {
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
+    // Best-effort persistence on every state transition
+    this._persistPipeline(pipeline).catch(() => {});
 
     logger.info('Pipeline state transition', {
       documentId: pipeline.documentId,

@@ -189,7 +189,7 @@ router.post('/process', validate(processDocumentSchema), async (req, res, next) 
 // Check where a document is in the processing pipeline
 router.get('/:documentId/status', async (req, res) => {
   const { documentId } = req.params;
-  const status = documentPipeline.getStatus(documentId);
+  const status = await documentPipeline.getStatus(documentId);
 
   if (!status) {
     return res.status(404).json({
