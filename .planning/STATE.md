@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 11 of 17 (Isolated Secure Document Storage)
-Plan: 0 of 5 in current phase — planned, not yet executing
-Status: Phase planned
-Last activity: 2026-02-27 — Created 5 plans for Phase 11
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-02-27 — Completed 11-01-PLAN.md
 
-Progress: ████░░░░░░░░░░░░░░░░ 20% (v3.0 Milestone — 5 of ~30 plans)
+Progress: ████▌░░░░░░░░░░░░░░░ 23% (v3.0 Milestone — 6 of ~30 plans)
 
 ## Performance Metrics
 
@@ -56,6 +56,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 10-04 | Single-case auto-association only | Avoids ambiguity: 0 or 2+ open cases skip association, user assigns manually |
 | 10-05 | userId from req.user.id (JWT) not request body | More secure than v2.0 pattern; prevents client-side userId spoofing |
 | 10-05 | Integration tests mock external boundaries only | Internal pipeline logic runs for real; realistic coverage without API dependencies |
+| 11-01 | Idempotent DO $$ guards on all 14 RLS policies | Safe to re-run migration multiple times |
+| 11-01 | document_classifications uses EXISTS join RLS | No direct user_id column; joins through documents table |
+| 11-01 | No service_role bypass policy | Supabase service_role bypasses RLS by default |
 
 ### Deferred Issues
 
@@ -76,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Planned Phase 11 (5 plans created)
-Resume file: .planning/phases/11-isolated-secure-storage/11-01-PLAN.md
+Stopped at: Completed 11-01-PLAN.md (RLS migration)
+Resume file: .planning/phases/11-isolated-secure-storage/11-02-PLAN.md
