@@ -5,25 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v2.0 Production Hardening milestone complete. Planning next milestone.
+**Current focus:** v3.0 Forensic Analysis Engine — litigation-grade document analysis with lending law compliance.
 
 ## Current Position
 
-Phase: 9 of 9 (Dependency Security) — Complete
-Plan: 4 of 4 in current phase (done)
-Status: MILESTONE v2.0 SHIPPED — All 9 phases complete, archived
-Last activity: 2026-02-26 — v2.0 milestone archived and tagged
+Phase: 10 of 17 (Document Intake & Classification Pipeline)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-26 — Milestone v3.0 created
 
-Progress: ████████████████████ 100% (v2.0 Milestone)
+Progress: ░░░░░░░░░░░░░░░░░░░░ 0% (v3.0 Milestone)
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (v2.0):**
 - Total plans completed: 32
 - Average duration: ~4 min
 - Total execution time: ~2.5 hours
 
-**By Phase:**
+**By Phase (v2.0):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -55,8 +55,12 @@ None.
 
 None.
 
+### Roadmap Evolution
+
+- Milestone v3.0 created: Forensic Analysis Engine, 8 phases (Phase 10-17)
+
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: v2.0 milestone archived. All 9 phases (32 plans) shipped. 488 tests. 0 vulnerabilities. Tagged v2.0.
+Stopped at: Milestone v3.0 initialization
 Resume file: None
