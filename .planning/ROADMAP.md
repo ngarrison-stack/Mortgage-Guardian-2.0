@@ -45,7 +45,11 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 **Plans**: TBD
 
 Plans:
-- [ ] 10-01: TBD (run /gsd:plan-phase 10 to break down)
+- [ ] 10-01: Case File Data Model & Service
+- [ ] 10-02: Server-Side OCR Service
+- [ ] 10-03: Document Classification Engine
+- [ ] 10-04: Enhanced Intake Pipeline
+- [ ] 10-05: Intake API Routes & Verification
 
 #### Phase 11: Isolated Secure Document Storage
 
@@ -135,7 +139,7 @@ Plans:
 | 7. Service Refactoring | v2.0 | 2/2 | Complete | 2026-02-25 |
 | 8. Structured Logging | v2.0 | 4/4 | Complete | 2026-02-25 |
 | 9. Dependency Security | v2.0 | 4/4 | Complete | 2026-02-25 |
-| 10. Document Intake & Classification Pipeline | v3.0 | 0/? | Not started | - |
+| 10. Document Intake & Classification Pipeline | v3.0 | 0/5 | Planned | - |
 | 11. Isolated Secure Document Storage | v3.0 | 0/? | Not started | - |
 | 12. Individual Document Analysis Engine | v3.0 | 0/? | Not started | - |
 | 13. Cross-Document Forensic Analysis | v3.0 | 0/? | Not started | - |
