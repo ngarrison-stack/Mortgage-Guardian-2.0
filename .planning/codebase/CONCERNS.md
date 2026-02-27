@@ -1,235 +1,156 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-01-12
+**Analysis Date:** 2026-02-26
 
 ## Tech Debt
 
-**No test infrastructure:**
-- Issue: Zero automated tests, placeholder test scripts only
-- Files: `backend-express/package.json` (line 10: `"test": "echo \"No tests yet\" && exit 0"`)
-- Why: Rapid MVP development prioritized shipping over testing
-- Impact: No regression detection, unsafe refactoring, manual testing burden
-- Fix approach: Implement Jest or Vitest, add unit tests for services, integration tests for API endpoints
+**Aspirational security services not integrated:**
+- Issue: `services/financialSecurity/` and `services/vendorNeutralSecurity/` contain 15+ files of bank-level security features (AWS KMS, CloudHSM, Elasticsearch, zero-knowledge auth) that are never imported by any route or active service
+- Why: Built speculatively for future compliance requirements
+- Impact: Maintenance overhead; try-catch optional requires for packages not installed (`aws-sdk`, `rate-limiter-flexible`, `speakeasy`, `winston-syslog`, `winston-elasticsearch`)
+- Fix approach: Either integrate into production code with real tests, or move to `services/_aspirational/` directory and exclude from coverage
 
-**Console.log debugging in production code:**
-- Issue: 66+ console.log/console.error statements throughout backend code
-- Files: `backend-express/server.js`, `backend-express/routes/*.js`, services
-- Why: Quick debugging during development
-- Impact: Clutters production logs, no structured logging, performance overhead
-- Fix approach: Replace with Winston logger calls, remove debug console.logs, keep only error logging
+**Webhook handlers log but don't persist:**
+- Issue: `routes/plaid.js` webhook handlers (`handleTransactionWebhook`, `handleItemWebhook`) log events but don't call `plaidDataService.storeTransactions()`
+- Why: Handlers written as stubs during initial development
+- Impact: Real-time transaction updates from Plaid are silently ignored
+- Fix approach: Implement actual data persistence in webhook handlers
 
-**Duplicate project structure:**
-- Issue: `Mortgage-Guardian-2.0/` subdirectory contains duplicate/outdated codebase
-- Files: Root `/Mortgage-Guardian-2.0/` directory mirrors main structure
-- Why: Likely leftover from restructuring or accidental commit
-- Impact: Confusion about which code is canonical, wasted repository space, maintenance burden
-- Fix approach: Delete `Mortgage-Guardian-2.0/` subdirectory, verify .gitignore, clean git history
-
-**Large service files without decomposition:**
-- Issue: `financialSecurityService.js` (848 lines) and `vendorNeutralSecurityService.js` (827 lines) are very large
-- Files:
-  - `backend-express/services/financialSecurityService.js` (848 lines)
-  - `backend-express/services/vendorNeutralSecurityService.js` (827 lines)
-- Why: Feature growth without refactoring, single-file service pattern
-- Impact: Hard to navigate, difficult to test individual functions, merge conflicts
-- Fix approach: Split into smaller modules by responsibility (e.g., `services/security/analysis.js`, `services/security/encryption.js`)
-
-**Mixed deployment configurations:**
-- Issue: Multiple deployment targets configured (Vercel, Railway, Netlify, Render) with overlapping scripts
-- Files: `backend-express/vercel.json`, `railway.json`, `railway.toml`, `deploy-*.sh` scripts
-- Why: Testing different platforms, migration between providers
-- Impact: Confusion about production target, maintenance burden, potential config conflicts
-- Fix approach: Standardize on one deployment platform, archive unused configs, document deployment process
+**Mock service tight coupling:**
+- Issue: Every Plaid method checks `useMockService` at runtime with duplicated `if (useMockService)` in 15+ methods
+- Files: `services/plaidService.js`
+- Why: Quick solution for dev/sandbox testing
+- Impact: Hard to test real behavior; mock responses may not match real API shapes
+- Fix approach: Use dependency injection or factory pattern to select service at initialization
 
 ## Known Bugs
 
-**No known bugs explicitly documented**
-- Check: No TODO/FIXME comments found in codebase
-- Recommendation: Add issue tracking (GitHub Issues) for bug reports
+**None confirmed at this time.**
+- 488 tests passing, 0 npm audit vulnerabilities
+- All 9 phases of production hardening complete
 
 ## Security Considerations
 
-**API keys in environment variables:**
-- Risk: API keys stored in `.env.local`, `.env.production` files (gitignored but risky)
-- Files: `backend-express/.env.local`, `backend-express/.env.production`, `backend-express/.env.railway.local`
-- Current mitigation: Files in .gitignore, not committed to repository
-- Recommendations:
-  - Use secret management service (Vercel environment variables, Railway secrets)
-  - Rotate keys regularly
-  - Implement key expiration
-  - Audit `.env.*` files are never committed
+**Plaid access tokens returned to client:**
+- Risk: `routes/plaid.js` returns `access_token` in exchange response; if intercepted, attacker gains persistent bank access
+- Current mitigation: SSL/TLS in transit, JWT auth on endpoint
+- Recommendations: Store access tokens server-side only; issue short-lived references to client
 
-**No input validation framework:**
-- Risk: Manual validation in route handlers, inconsistent sanitization
-- Files: All `backend-express/routes/*.js` files
-- Current mitigation: Manual `if (!field)` checks in route handlers
-- Recommendations:
-  - Implement Joi schema validation (already in dependencies)
-  - Create validation middleware
-  - Add request schema documentation
-  - Validate all user inputs at API boundary
+**Webhook signature verification has silent fallback:**
+- Risk: `services/plaidService.js` skips signature verification if `PLAID_WEBHOOK_VERIFICATION_KEY` env var is missing, allowing forged webhook requests
+- Current mitigation: Warning logged
+- Recommendations: Make verification key mandatory when `NODE_ENV=production`
 
-**Large file upload limit (50MB):**
-- Risk: Potential DoS via large document uploads
-- Files: `backend-express/server.js` (line 38: `{ limit: '50mb' }`)
-- Current mitigation: Express rate limiting (100 requests per 15 minutes)
-- Recommendations:
-  - Implement file size validation before processing
-  - Add file type validation (allow only PDFs, images)
-  - Stream large files instead of buffering
-  - Consider cloud storage with presigned URLs
+**CORS too permissive by default:**
+- Risk: `ALLOWED_ORIGINS=*` in `.env.example` allows any domain to make authenticated requests
+- Current mitigation: Works correctly when configured properly
+- Recommendations: Log warning in production when CORS is set to `*`; document proper configuration
 
-**No authentication middleware:**
-- Risk: API endpoints have no authentication checks
-- Files: All `backend-express/routes/*.js` - no auth middleware applied
-- Current mitigation: None detected (JWT package present but not enforced)
-- Recommendations:
-  - Implement JWT verification middleware
-  - Protect all `/v1/` routes with authentication
-  - Add role-based access control (RBAC)
-  - Document public vs protected endpoints
+**Database tokens stored unencrypted:**
+- Risk: `migrations/001_plaid_tables.sql` stores `access_token` as plaintext TEXT column
+- Current mitigation: Supabase provides encryption at rest
+- Recommendations: Add application-layer field encryption for sensitive tokens
 
-**Secrets visible in command-line arguments:**
-- Risk: Shell scripts may expose secrets in process lists
-- Files: Various `*.sh` scripts pass tokens as arguments
-- Current mitigation: Scripts use environment variables mostly
-- Recommendations:
-  - Always read secrets from env vars or files
-  - Never pass secrets as command-line arguments
-  - Audit shell scripts for secret exposure
+**Prompt injection risk in Claude integration:**
+- Risk: User-provided `documentText` is interpolated directly into Claude prompt in `services/claudeService.js`
+- Current mitigation: None (Claude handles some injection resistance natively)
+- Recommendations: Use separate message blocks or content type separation for user-provided text
 
 ## Performance Bottlenecks
 
-**Synchronous Claude AI calls:**
-- Problem: Document analysis blocks request until AI response completes
-- Files: `backend-express/routes/claude.js` (line 30+), `backend-express/services/claudeService.js`
-- Measurement: Potential 10-30 second response times for large documents
-- Cause: Synchronous await on Anthropic API call
-- Improvement path: Implement async job queue (Bull/BullMQ with Redis), return job ID immediately, poll for results
-
-**No caching layer:**
-- Problem: Repeated Plaid API calls for same data
-- Files: `backend-express/services/plaidService.js`, `backend-express/services/plaidDataService.js`
-- Measurement: Unnecessary API calls, slower response times
-- Cause: No caching implementation despite Redis available
-- Improvement path: Implement Redis caching with TTL for Plaid transactions, bank accounts
-
-**No database connection pooling visible:**
-- Problem: Supabase client may create new connections per request
-- Files: Services using Supabase (no connection pooling configuration visible)
-- Measurement: Potential connection exhaustion under load
-- Cause: Direct client usage without explicit pool management
-- Improvement path: Verify Supabase client connection pooling, implement explicit pool if needed
+**Large file base64 buffering:**
+- Problem: Document uploads decode full base64 to in-memory buffer (up to 20MB PDFs)
+- Files: `routes/documents.js`
+- Measurement: Not yet measured; theoretical concern for concurrent uploads
+- Cause: `Buffer.from(content, 'base64')` creates full buffer before validation
+- Improvement path: Consider streaming validation for large files; monitor memory in production
 
 ## Fragile Areas
 
-**Error handling in route handlers:**
-- Files: All `backend-express/routes/*.js`
-- Why fragile: Inconsistent error status codes, some errors not caught
-- Common failures: Unhandled promise rejections, generic 500 errors
-- Safe modification: Always wrap async handlers in try/catch, use consistent error response format
-- Test coverage: None - all error paths untested
-
-**Environment variable parsing:**
-- Files: `backend-express/server.js` (lines with `parseInt(process.env.*)`)
-- Why fragile: No validation of env var format, silent failures
-- Common failures: Invalid number format causes NaN, missing required vars
-- Safe modification: Add env var validation at startup, fail fast on missing/invalid vars
-- Test coverage: None
-
-**Multi-platform deployment configs:**
-- Files: `backend-express/vercel.json`, `railway.json`, various deploy scripts
-- Why fragile: Different platforms have different requirements, easy to misconfigure
-- Common failures: Missing env vars on deployment, platform-specific errors
-- Safe modification: Test deployments in staging before production
-- Test coverage: Manual smoke tests only (`test-live-backend.sh`)
+**Security services with optional dependencies:**
+- Files: `services/financialSecurity/config.js`, `services/vendorNeutralSecurity/service.js`
+- Why fragile: 5 packages loaded via try-catch optional requires; all resolve to `null` in current deployment
+- Common failures: Code paths that assume packages exist will fail with cryptic null errors
+- Safe modification: Always check `if (!Package)` before using optional packages
+- Test coverage: Tested with `{ virtual: true }` mocks; 155+ tests for these services
 
 ## Scaling Limits
 
-**Stateless but no horizontal scaling config:**
-- Current capacity: Single instance deployment
-- Limit: CPU/memory of single container/serverless instance
-- Symptoms at limit: Slow response times, timeouts, 502 errors
-- Scaling path: Enable auto-scaling on Vercel/Railway, implement health checks
+**Vercel serverless cold starts:**
+- Current capacity: Adequate for low-moderate traffic
+- Limit: Each cold start initializes Anthropic, Plaid, Supabase, Redis clients
+- Symptoms at limit: Increased latency for first request after idle period
+- Scaling path: Connection pooling, lazy client initialization, or move to persistent server (Railway)
 
-**Redis single instance:**
-- Current capacity: Single Redis instance for rate limiting and caching
-- Limit: Redis memory limit, no high availability
-- Symptoms at limit: Rate limiting failures, cache misses, connection errors
-- Scaling path: Upgrade to Redis cluster, implement Redis Sentinel for HA
-
-**Supabase free tier:**
-- Current capacity: Depends on Supabase plan (likely free tier)
-- Limit: API rate limits, storage limits, connection limits
-- Symptoms at limit: 429 rate limit errors, connection pool exhausted
-- Scaling path: Upgrade Supabase plan, implement connection pooling, add caching layer
+**Rate limiting:**
+- Current: 100 requests per 15 minutes per IP (global for all endpoints)
+- Limit: Same limit for lightweight health checks and expensive document analysis
+- Scaling path: Tiered rate limiting by endpoint; user-specific limits
 
 ## Dependencies at Risk
 
-**No automated dependency updates:**
-- Risk: Security vulnerabilities in outdated packages
-- Impact: Unpatched CVEs, compatibility issues
-- Migration plan: Implement Dependabot or Renovate for automated PR generation
+**Express 4.x:**
+- Risk: Express 5.x available (5.2.1); v4 entering LTS maintenance
+- Impact: No current vulnerabilities on 4.22.1
+- Migration plan: Plan Express 5 upgrade as future phase; test breaking changes (error handler signatures, route handling)
 
-**@anthropic-ai/sdk rapid evolution:**
-- Risk: SDK at v0.68.0, API potentially unstable (pre-1.0)
-- Impact: Breaking changes in minor versions
-- Migration plan: Pin to specific version, monitor release notes, test before upgrading
+**file-type 16.x:**
+- Risk: Last CJS-compatible version; v17+ is ESM-only
+- Impact: Can't upgrade without migrating entire backend to ES modules
+- Migration plan: Monitor for security advisories; plan ESM migration if vulnerability found
 
-**Next.js 15 (recently released):**
-- Risk: Next.js 15.5.4 is very new, potential stability issues
-- Impact: Bugs in framework, Turbopack instability
-- Migration plan: Monitor Next.js issues, consider downgrade to v14 if problems arise
+**Plaid API version 2020-09-14:**
+- Risk: API version is 6+ years old; Plaid has released newer versions
+- Impact: May miss newer features; old versions eventually deprecated
+- Migration plan: Check Plaid changelog; plan API version upgrade
 
 ## Missing Critical Features
 
-**No audit logging:**
-- Problem: No audit trail for sensitive operations (document access, bank data queries)
-- Current workaround: None - no logging of who accessed what
-- Blocks: Compliance requirements (SOC 2, HIPAA), security investigations
-- Implementation complexity: Medium - add audit log table, middleware to capture events
+**Backend CI/CD pipeline:**
+- Problem: No GitHub Actions workflow for backend testing
+- Current workaround: Tests run manually via `npm test`
+- Blocks: Automated quality gates, PR checks, deployment automation
+- Implementation complexity: Low (add `.github/workflows/backend-test.yml`)
 
-**No webhook handling:**
-- Problem: Plaid webhooks configured but not fully implemented
-- Current workaround: Polling for updates (inefficient)
-- Blocks: Real-time transaction updates, account status changes
-- Implementation complexity: Low - implement webhook endpoint with signature verification
+**Error tracking service:**
+- Problem: No Sentry, Datadog, or similar for production error monitoring
+- Current workaround: Winston logs to stdout, checked manually in Vercel/Railway dashboards
+- Blocks: Proactive error detection, alerting, error trend analysis
+- Implementation complexity: Low-Medium (add Sentry SDK + DSN env var)
 
-**No email notifications:**
-- Problem: No way to notify users of analysis completion, alerts
-- Current workaround: Users must poll API
-- Blocks: User engagement, critical alerts
-- Implementation complexity: Low - integrate SendGrid or similar service
+**API documentation:**
+- Problem: No OpenAPI/Swagger spec; routes documented only in JSDoc comments
+- Current workaround: Developers read route files directly
+- Blocks: API consumers (iOS app team) need reference documentation
+- Implementation complexity: Medium (add swagger-jsdoc + serve at `/api/docs`)
 
-**No document retention policy:**
-- Problem: Uploaded documents stored indefinitely
-- Current workaround: None - manual cleanup
-- Blocks: Compliance (GDPR, data retention policies), storage costs
-- Implementation complexity: Medium - implement TTL, automatic deletion, user-controlled retention
+**Environment variable validation at startup:**
+- Problem: Missing env vars cause runtime errors on first request, not at startup
+- Current workaround: Health check endpoint partially validates
+- Blocks: Fast failure detection after deployment
+- Implementation complexity: Low (add validation in `server.js` before listen)
+
+**Request ID correlation:**
+- Problem: No unique request IDs for tracing across logs
+- Current workaround: Timestamps used for rough correlation
+- Blocks: Debugging production issues involving multiple service calls
+- Implementation complexity: Low (add UUID middleware)
 
 ## Test Coverage Gaps
 
-**All core functionality untested:**
-- What's not tested: Claude AI integration, Plaid integration, document processing, all services
-- Risk: Breaking changes go unnoticed, regressions in production
-- Priority: High - critical business logic has zero test coverage
-- Difficulty to test: Medium - requires mocking external APIs
+**Webhook flow end-to-end:**
+- What's not tested: Full Plaid webhook receipt -> data persistence flow
+- Risk: Webhook handlers silently drop data (they only log currently)
+- Priority: High (functional gap, not just test gap)
+- Difficulty to test: Low once handlers are implemented
 
-**No integration tests:**
-- What's not tested: End-to-end API flows, authentication, error handling
-- Risk: Integration issues between services go undetected
-- Priority: High - multi-service flows are complex and error-prone
-- Difficulty to test: Medium - requires test database, mock external services
-
-**No security tests:**
-- What's not tested: SQL injection, XSS, CSRF, authentication bypass
-- Risk: Security vulnerabilities go undetected
-- Priority: High - financial data requires robust security
-- Difficulty to test: Medium - requires security testing framework, OWASP test cases
+**Cross-service integration:**
+- What's not tested: Document upload -> Claude analysis -> Plaid cross-reference flow
+- Risk: Integration issues between services could go undetected
+- Priority: Medium
+- Difficulty to test: Medium (requires orchestrating multiple mock services)
 
 ---
 
-*Concerns audit: 2026-01-12*
+*Concerns audit: 2026-02-26*
 *Update as issues are fixed or new ones discovered*
-
-**Overall Assessment:** Codebase is functional MVP with solid external integrations but lacks production hardening (tests, monitoring, security). Priority fixes: Add test infrastructure, implement authentication middleware, add audit logging.

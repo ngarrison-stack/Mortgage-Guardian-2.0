@@ -1,178 +1,174 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-01-12
+**Analysis Date:** 2026-02-26
 
 ## Naming Patterns
 
 **Files:**
-- camelCase.js for all backend JavaScript files (`server.js`, `claudeService.js`)
-- camelCase.tsx for React components (`layout.tsx`, `page.tsx`)
-- kebab-case.sh for shell scripts (`deploy-railway.sh`, `test-live-backend.sh`)
-- UPPERCASE.md for important documentation (README.md, CLAUDE.md)
-- Test files: `test-{feature}.js` (e.g., `test-claude.js`)
+- camelCase for all source files: `claudeService.js`, `fileValidation.js`
+- `*Service.js` suffix for service classes: `plaidService.js`, `documentService.js`
+- `*.test.js` in `__tests__/` directory (not colocated)
+- `index.js` for barrel exports in refactored module directories
 
 **Functions:**
-- camelCase for all functions (`analyzeDocument`, `buildMortgageAnalysisPrompt`)
-- No special prefix for async functions (async keyword used)
-- Async/await pattern throughout (no .then() chains)
+- camelCase for all functions: `analyzeDocument()`, `createLinkToken()`
+- Descriptive names: `buildMortgageAnalysisPrompt()`, `verifyWebhookSignature()`
+- No special prefix for async functions
 
 **Variables:**
-- camelCase for variables (`documentText`, `analysisPrompt`, `maxTokens`)
-- UPPER_SNAKE_CASE for constants and env vars (`PORT`, `ANTHROPIC_API_KEY`, `NODE_ENV`)
-- No underscore prefix for private members (CommonJS modules, no classes)
+- camelCase for regular variables: `accessToken`, `documentId`
+- UPPER_SNAKE_CASE for constants: `PUBLIC_PATHS`
+- No underscore prefix for private members
 
-**Types:**
-- TypeScript enabled but minimal type annotations
-- Implicit typing used in .js files
-- tsconfig.json present in both `backend-express/` and `frontend/`
+**Classes:**
+- PascalCase: `ClaudeService`, `PlaidService`, `FinancialSecurityService`
+- PascalCase for provider/manager classes: `NativeEncryptionProvider`, `RedisSessionManager`
 
 ## Code Style
 
 **Formatting:**
-- No Prettier config detected (no .prettierrc file)
-- 2-space indentation (observed in code samples)
-- Single quotes for strings (backend)
-- Double quotes for strings (frontend, per ESLint config)
-- Semicolons required in backend, optional in frontend
-- Line length: Not enforced (no config)
+- No Prettier config (manual formatting)
+- No ESLint config in backend (frontend uses `eslint-config-next`)
+- 2 space indentation (consistent throughout)
+- Single quotes for strings
+- Semicolons required
 
 **Linting:**
-- **Frontend**: ESLint with Next.js config
-  - File: `frontend/eslint.config.mjs`
-  - Extends: `next/core-web-vitals`, `next/typescript`
-  - Ignores: node_modules, .next, out, build, next-env.d.ts
-  - Run: `npm run lint` in frontend/
-- **Backend**: No ESLint config detected
-  - No .eslintrc or eslint.config.js file
-  - Relies on editor defaults
+- Frontend only: ESLint with `eslint-config-next`
+- Backend: No linter configured (relies on conventions)
 
 ## Import Organization
 
-**Backend (CommonJS):**
-1. Node.js built-ins (`const express = require('express')`)
-2. External packages (`const cors = require('cors')`)
-3. Local modules (`const claudeService = require('../services/claudeService')`)
+**Order:**
+1. External packages: `const express = require('express');`
+2. Local utilities: `const { createLogger } = require('../utils/logger');`
+3. Logger instantiation: `const logger = createLogger('service-name');`
+4. Local services/middleware: `const claudeService = require('../services/claudeService');`
+5. Schemas (in routes): `const { analyzeSchema } = require('../schemas/claude');`
 
-**Frontend (ES Modules):**
-1. External packages (`import { dirname } from "path"`)
-2. Framework-specific (`@clerk/nextjs`, `next`)
-3. Type imports (TypeScript `import type`)
-
-**Grouping:**
-- No blank lines between import groups currently
-- No consistent sorting pattern
-
-**Path Aliases:**
-- None configured currently
-- Relative imports used (../, ./)
+**Style:**
+- CommonJS `require()` throughout backend (no ES modules)
+- Destructuring for named exports: `const { createLogger } = require(...)`
+- Direct require for singletons: `const claudeService = require(...)`
 
 ## Error Handling
 
 **Patterns:**
-- Try/catch at route handler level
-- Errors thrown from services bubble up
-- Global Express error middleware: 4-parameter function in `backend-express/server.js`
-- HTTP status codes: 400 (bad request), 401 (auth), 404 (not found), 500 (internal error)
+- Try/catch in all async route handlers
+- Known errors (401, 429) handled with specific status codes in routes
+- Unknown errors passed to `next(error)` for centralized handler
+- Services throw errors with context, caught by routes
 
-**Error Types:**
-- Standard Error objects with message property
-- Custom statusCode property added: `error.status` or `error.statusCode`
-- Error responses include: `error`, `message`, optionally `details` fields
+**Error Response Format:**
+```javascript
+res.status(statusCode).json({
+  error: 'ErrorType',
+  message: 'Human-readable description'
+});
+```
 
-**Async:**
-- All async functions use try/catch
-- No .catch() chains - await with try/catch preferred
-- Next.js: async/await in Server Components
+**Service Error Pattern:**
+```javascript
+try {
+  // ... business logic
+} catch (error) {
+  logger.error('Operation failed', { error: error.message, stack: error.stack });
+  throw error;
+}
+```
 
 ## Logging
 
 **Framework:**
-- Winston v3.11.0 for application logging (backend, configured but not heavily used)
-- Morgan v1.10.0 for HTTP request logging
-- console.log/console.error for development debugging
+- Winston with child logger pattern
+- `const { createLogger } = require('../utils/logger');`
+- `const logger = createLogger('service-name');`
 
 **Patterns:**
-- Morgan logging:
-  - Development: `morgan('dev')` - colored, minimal
-  - Production: `morgan('combined')` - Apache combined log format
-- Console logging throughout: `console.log(...)`, `console.error(...)`
-- Format: Plain text messages, no structured logging currently
-- When: Log request start/end (Morgan), errors (console.error), debugging (console.log)
+- Structured logging with context objects:
+  ```javascript
+  logger.info('Token exchanged', { userId, itemId });
+  logger.error('API error', { error: error.message, status: error.status });
+  ```
+- Log at service boundaries, not in utilities
+- No `console.log` in committed code (replaced in Phase 8)
+- Silent in test environment (`NODE_ENV=test`)
+
+**Log Levels:**
+- `info` - Successful operations, state changes
+- `warn` - Missing optional config, fallback behavior
+- `error` - Failed operations, exceptions
+- `debug` - Detailed diagnostic info (dev only)
 
 ## Comments
 
 **When to Comment:**
-- Section headers in server.js (e.g., `// ============================================`)
-- API endpoint descriptions (route handlers)
-- Complex logic explanation (rare currently)
-- TODO comments for future work (not observed yet)
+- JSDoc for public service methods (params, returns)
+- Section dividers in large files: `// ============ SECTION ============`
+- Business logic explanations: `// Users must verify email within 24 hours`
+- Warnings: `// WARNING: In production, store access_token in database`
 
-**JSDoc/TSDoc:**
-- Not used currently
-- No function documentation with @param, @returns tags
-- Inline comments preferred
+**JSDoc Pattern:**
+```javascript
+/**
+ * Create Plaid Link token for bank connection flow
+ * @param {string} userId - Unique user identifier
+ * @param {string} clientName - Display name for Link UI
+ * @returns {Promise<Object>} Link token and metadata
+ */
+```
 
 **TODO Comments:**
-- Pattern: Not standardized (no TODOs found in sampled code)
-- Expected: `// TODO: description` format
+- Not widely used; deferred issues tracked in `.planning/STATE.md` instead
 
 ## Function Design
 
 **Size:**
-- Route handlers: 20-50 lines typically
-- Service functions: 30-100 lines
-- No strict limit enforced
+- 30-100 lines typical for service methods
+- Complex methods have clear try/catch structure
+- Helper methods extracted to separate module files in refactored services
 
 **Parameters:**
-- Object destructuring common: `const { prompt, model, maxTokens } = req.body`
-- Options objects used for services: `claudeService.analyzeDocument({ prompt, model, maxTokens })`
-- Max parameters: Typically 1-3 (often destructured from req)
+- Destructured objects for multiple params:
+  ```javascript
+  async getTransactions({ accessToken, startDate, endDate, accountIds = null, count = 100, offset = 0 })
+  ```
+- Default values for optional params
+- Input validation at function start (token format checks, date validation)
 
 **Return Values:**
-- Explicit return statements
-- Early returns for validation: `return res.status(400).json(...)`
-- Async functions return Promises (implicitly via async/await)
+- Formatted response objects with clear field names
+- Consistent shape within a service
 
 ## Module Design
 
 **Exports:**
-- **Backend**: CommonJS - `module.exports = { ... }` or `module.exports = router`
-- **Frontend**: ES modules - `export default` for React components
-- Named exports rare in current code
+- Singleton pattern (default): `module.exports = new ServiceClass();`
+- Re-export facade: `module.exports = require('./submodule');`
+- Named exports for schemas: `module.exports = { schema1, schema2 };`
+- Named exports for utilities: `module.exports = { fn1, fn2 };`
 
-**Barrel Files:**
-- Not used currently
-- No index.js files for re-exporting
-- Direct imports from specific files
+**Prototype Mixin Pattern (refactored services):**
+```javascript
+// Sub-module exports methods as object
+module.exports = {
+  methodA() { /* uses `this` for shared state */ },
+  methodB() { ... }
+};
 
-**Module Pattern:**
-- Backend: Express Router modules (`const router = express.Router()`)
-- Services: Plain object exports with functions
-- Frontend: React functional components
+// index.js assembles class
+Object.assign(ClassName.prototype, subModuleMethods);
+module.exports = new ClassName();
+```
 
-## Request/Response Patterns
-
-**API Responses:**
-- Success: `{ success: true, data: ..., timestamp: ... }`
-- Error: `{ error: 'Error Type', message: '...', details?: ... }`
-- Consistent JSON structure
-- ISO 8601 timestamps
-
-**Validation:**
-- Manual validation in route handlers
-- Joi v18.0.1 available but not heavily used
-- Early return pattern: `if (!field) return res.status(400).json(...)`
-
-## Environment Configuration
-
-**Pattern:**
-- dotenv package for .env file loading
-- `require('dotenv').config()` at top of server.js
-- Access via `process.env.VARIABLE_NAME`
-- Type coercion: `parseInt(process.env.PORT)` for numbers
-- Defaults: `process.env.VAR || defaultValue`
+**Try-Catch Optional Require (aspirational deps):**
+```javascript
+let Package;
+try { Package = require('package-name'); } catch { Package = null; }
+// Guard usage: if (!Package) throw new Error('Package not available');
+```
 
 ---
 
-*Convention analysis: 2026-01-12*
+*Convention analysis: 2026-02-26*
 *Update when patterns change*
