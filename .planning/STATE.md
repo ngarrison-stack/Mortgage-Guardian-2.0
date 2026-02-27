@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 11 of 17 (Isolated Secure Document Storage)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed 11-02-PLAN.md
+Last activity: 2026-02-27 — Completed 11-03-PLAN.md
 
-Progress: █████░░░░░░░░░░░░░░░ 27% (v3.0 Milestone — 7 of ~30 plans)
+Progress: █████░░░░░░░░░░░░░░░ 29% (v3.0 Milestone — 8 of ~30 plans)
 
 ## Performance Metrics
 
@@ -62,6 +62,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 11-02 | storage.foldername(name)[2] for userId extraction | Path is documents/{userId}/{docId}; PG 1-indexed arrays |
 | 11-02 | schemaname='storage' in pg_policies guard | Avoids false-positive match against public schema policies |
 | 11-02 | validateStoragePath as defense-in-depth | Paths constructed internally; guards against future untrusted path changes |
+| 11-03 | Pack format iv+authTag+ciphertext in single buffer | Simplifies storage (one blob) and unpacking (fixed offsets) |
+| 11-03 | HKDF info string 'mortgage-guardian-doc-v1' | Domain separation ensures keys cannot be reused across apps |
 
 ### Deferred Issues
 
@@ -82,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 11-02-PLAN.md (Storage Path Isolation & Enforcement)
-Resume file: .planning/phases/11-isolated-secure-storage/11-03-PLAN.md
+Stopped at: Completed 11-03-PLAN.md (Document Encryption Service TDD)
+Resume file: .planning/phases/11-isolated-secure-storage/11-04-PLAN.md
