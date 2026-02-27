@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Mortgage Guardian 2.0 is a multi-platform mortgage servicing audit system that uses AI-powered document analysis (Claude AI) to detect errors in mortgage loan servicing, cross-references with bank data via Plaid, and generates RESPA-compliant dispute letters. Currently an MVP with Express backend, Next.js frontend, and iOS mobile app - now being hardened for production deployment with comprehensive security, testing, and maintainability improvements.
+Mortgage Guardian 2.0 is a production-hardened multi-platform mortgage servicing audit system that uses AI-powered document analysis (Claude AI) to detect errors in mortgage loan servicing, cross-references with bank data via Plaid, and generates RESPA-compliant dispute letters. Express backend with comprehensive security layers, Next.js frontend, and iOS mobile app — deployed with JWT auth, input validation, file security, structured logging, and 488 automated tests.
 
 ## Core Value
 
@@ -12,7 +12,7 @@ The platform must reliably and securely analyze mortgage documents to detect ser
 
 ### Validated
 
-<!-- Shipped functionality confirmed working in existing codebase -->
+<!-- Shipped functionality confirmed working -->
 
 - ✓ Claude AI document analysis integration - Document error detection with confidence scoring — existing
 - ✓ Plaid banking integration - Bank account verification and transaction data retrieval — existing
@@ -24,71 +24,70 @@ The platform must reliably and securely analyze mortgage documents to detect ser
 - ✓ Multi-platform architecture - Decoupled Express backend + Next.js frontend + iOS app — existing
 - ✓ Security headers and CORS - Helmet.js and configurable CORS middleware — existing
 - ✓ Document processing pipeline - Upload, OCR/text extraction, AI analysis workflow — existing
+- ✓ JWT authentication enforcement - Supabase Auth on all `/v1/` routes with Bearer token validation — v2.0
+- ✓ Critical path test coverage - 488 tests across 15 suites covering Claude AI, Plaid, security, documents — v2.0
+- ✓ Input validation framework - Joi schemas at all 13 API boundaries with consistent error responses — v2.0
+- ✓ File upload security - Magic number validation, filename sanitization, size limits, malware scanning stub — v2.0
+- ✓ Service layer refactoring - Monolithic 800+ line services split into focused domain modules — v2.0
+- ✓ Structured logging system - Winston replacing 119 console.log with child logger pattern — v2.0
 
 ### Active
 
-<!-- Current hardening scope - building toward production readiness -->
+<!-- Next milestone scope -->
 
-- [ ] JWT authentication enforcement - Require authentication for all `/v1/` API routes using Supabase Auth
-- [ ] Critical path test coverage - Automated tests for Claude AI analysis, Plaid integration, document processing flows
-- [ ] Input validation framework - Joi schema validation at all API boundaries with consistent error responses
-- [ ] File upload security - Type validation, size limits, malware scanning for document uploads
-- [ ] Service layer refactoring - Break down large services (800+ lines) into focused, maintainable modules
-- [ ] Structured logging system - Replace 66+ console.log statements with Winston structured logging
+(None yet — plan next milestone)
 
 ### Out of Scope
 
-<!-- Explicit boundaries to prevent scope creep -->
+<!-- Explicit boundaries -->
 
-- New feature development - No additional document types, AI capabilities, or user-facing features — Focus is pure hardening, not expansion
-- Performance optimization (beyond security) - Not addressing caching strategies or database query optimization in this phase — Separate performance milestone
-- DevOps automation - No CI/CD pipeline setup or deployment automation beyond basic configs — Can be added after hardening complete
+- Performance optimization (beyond security) - Not addressing caching strategies or database query optimization — Separate performance milestone
+- DevOps automation - No CI/CD pipeline setup or deployment automation beyond basic configs — Can be added as next milestone
 - Monitoring and observability - No error tracking (Sentry) or analytics integration — Post-hardening enhancement
-- Frontend refactoring - Next.js app stays as-is unless changes needed for authentication flow — Backend-focused hardening
+- Frontend refactoring - Next.js app stays as-is unless changes needed for authentication flow — Backend-focused hardening complete
 
 ## Context
 
+**Current State (post v2.0 hardening):**
+- 488 automated tests, 15 test suites, 90%+ coverage on critical paths
+- 0 npm audit vulnerabilities across all workspaces
+- All `/v1/` routes JWT-authenticated via Supabase Auth
+- Joi validation on all 13 API endpoint boundaries
+- Winston structured logging (zero console.log in production code)
+- Services refactored into focused domain modules
+- File uploads validated with magic numbers and filename sanitization
+
 **Technical Environment:**
-- Node.js 20+ backend with Express 4.18
-- TypeScript 5.9 enabled but minimal type annotations currently
+- Node.js 20+ backend with Express 4.22.1
 - Supabase PostgreSQL for data, Redis for caching
-- Anthropic Claude AI (SDK v0.68) and Plaid (v39.1) integrations
+- Anthropic Claude AI (SDK v0.78) and Plaid (v41) integrations
 - Vercel/Railway deployment targets (serverless-ready)
+- Jest 29.x test framework with ts-jest
 
-**Current State (from codebase analysis):**
-- Zero automated tests - Placeholder test scripts only
-- No API authentication - All `/v1/` endpoints publicly accessible
-- Manual validation - Inconsistent input checking across routes
-- Large service files - `financialSecurityService.js` (848 lines), `vendorNeutralSecurityService.js` (827 lines)
-- Console.log debugging - 66+ debug statements throughout backend
-- 50MB upload limit - No file type or content validation
-
-**Why Hardening Matters:**
-- Handles sensitive financial data (bank accounts, mortgage documents, PII)
-- Production deployment requires security guarantees and reliability
-- Maintainability essential for solo developer working with AI assistance
-- Test coverage enables safe refactoring and feature additions
-
-**Existing Infrastructure to Leverage:**
-- Joi 18.0.1 already in dependencies (unused)
-- Winston 3.11.0 already integrated (underutilized)
-- jsonwebtoken 9.0.2 + Supabase Auth ready for enforcement
-- Express middleware patterns established
+**Accepted Technical Debt:**
+- Express 5.x deferred (0 vulns on 4.22.1, breaking changes not justified)
+- file-type v16.x (ESM-only from v17+, CJS project constraint)
+- Malware scanning stub only (scanFileContent() placeholder for future integration)
 
 ## Constraints
 
-- **No breaking changes**: Existing iOS app and frontend must continue working during incremental rollout — Can add authentication gradually without disruption
-- **Full flexibility otherwise**: No timeline pressure, tech stack locked, or deployment constraints — Optimize for best practices and long-term quality
+- **No breaking changes**: Existing iOS app and frontend must continue working during incremental rollout
+- **Full flexibility otherwise**: No timeline pressure, tech stack locked, or deployment constraints
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| JWT authentication for all /v1/ routes | Supabase Auth already integrated, standard bearer token pattern, protects sensitive financial data | — Pending |
-| Jest as test framework | Industry standard, excellent TypeScript support, rich ecosystem, integrates with existing Node.js tooling | — Pending |
-| Joi for input validation | Already in dependencies, declarative schema approach, comprehensive validation rules | — Pending |
-| Winston structured logging | Already integrated, production-grade, supports multiple transports (console, file, syslog) | — Pending |
-| Service refactoring by domain | Break large files into focused modules: analysis.js, encryption.js, validation.js per service | — Pending |
+| JWT authentication for all /v1/ routes | Supabase Auth already integrated, standard bearer token pattern | ✓ Good — 27 auth tests, all routes protected |
+| Jest as test framework | Industry standard, excellent TypeScript support, rich ecosystem | ✓ Good — 488 tests, 15 suites |
+| Joi for input validation | Already in dependencies, declarative schema approach | ✓ Good — 13 schemas, 100% validation coverage |
+| Winston structured logging | Already integrated, production-grade, serverless-compatible | ✓ Good — 119 console.log replaced, silent in tests |
+| Service refactoring by domain | Prototype mixin + re-export facade for backward compatibility | ✓ Good — 800+ line files split, all tests pass |
+| Express 5.x deferred | 0 vulnerabilities on 4.22.1, breaking changes not justified | ⚠️ Revisit when Express 5 stabilizes |
+| file-type v16 kept | ESM-only from v17+, CJS project | ⚠️ Revisit if project migrates to ESM |
+| Malware scanning deferred | Serverless incompatible with ClamAV, VirusTotal async gap | ⚠️ Revisit at scale |
+| Anthropic SDK 0.68→0.78 | Stable API surface, no code changes needed | ✓ Good |
+| Plaid SDK 39→41 | All 9 methods unchanged | ✓ Good |
 
 ---
-*Last updated: 2026-01-12 after initialization*
+*Last updated: 2026-02-26 after v2.0 milestone*
