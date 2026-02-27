@@ -40,9 +40,65 @@ const deleteDocumentSchema = Joi.object({
   userId: Joi.string().trim().required()
 });
 
+/**
+ * Schema for POST /v1/documents/process
+ * Triggers the full processing pipeline for an uploaded document.
+ *
+ * documentText is optional — server-side OCR handles text extraction
+ * when fileBuffer is provided instead.
+ */
+const processDocumentSchema = Joi.object({
+  documentId: Joi.string().trim().required(),
+  userId: Joi.string().trim().required(),
+  documentText: Joi.string().optional(),
+  fileBuffer: Joi.string().optional(),   // base64-encoded file content
+  documentType: Joi.string().trim().valid(
+    // Broad taxonomy categories
+    'origination', 'servicing', 'correspondence', 'legal', 'financial', 'regulatory',
+    // Legacy types for backward compatibility
+    'mortgage_statement', 'escrow_statement', 'payment_history',
+    'bank_statement', 'tax_document', 'legal_document',
+    'unknown'
+  ).default('unknown')
+}).or('documentText', 'fileBuffer');  // At least one must be provided
+
+/**
+ * Schema for POST /v1/documents/:documentId/retry
+ * Retries a failed pipeline from the last successful step.
+ */
+const retryDocumentSchema = Joi.object({
+  userId: Joi.string().trim().required(),
+  documentText: Joi.string(),
+  fileBuffer: Joi.string()   // base64-encoded file content
+});
+
+/**
+ * Schema for POST /v1/documents/:documentId/complete
+ * Marks a document as complete after user review.
+ */
+const completeDocumentSchema = Joi.object({
+  userId: Joi.string().trim().required()
+});
+
+/**
+ * Schema for GET /v1/documents/pipeline
+ * Lists documents in the processing pipeline for a user.
+ */
+const getPipelineSchema = Joi.object({
+  userId: Joi.string().trim().required(),
+  status: Joi.string().trim().valid(
+    'uploaded', 'ocr', 'classifying', 'analyzing', 'analyzed',
+    'review', 'complete', 'failed'
+  )
+});
+
 module.exports = {
   uploadDocumentSchema,
   getDocumentsSchema,
   getDocumentSchema,
-  deleteDocumentSchema
+  deleteDocumentSchema,
+  processDocumentSchema,
+  retryDocumentSchema,
+  completeDocumentSchema,
+  getPipelineSchema
 };
