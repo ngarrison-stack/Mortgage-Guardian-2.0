@@ -20,6 +20,37 @@ class DocumentService {
   }
 
   /**
+   * Validate that a storage path is safe and belongs to the authenticated user.
+   * Defense-in-depth: even though paths are constructed internally, this guards
+   * against future code changes that might pass untrusted paths.
+   *
+   * @param {string} userId - The authenticated user's ID
+   * @param {string} storagePath - The storage path to validate
+   * @throws {Error} If the path is invalid or does not belong to the user
+   */
+  validateStoragePath(userId, storagePath) {
+    const expectedPrefix = `documents/${userId}/`;
+
+    // Reject directory traversal attempts
+    if (storagePath.includes('..')) {
+      logger.warn('Path traversal attempt detected', { userId, storagePath });
+      throw new Error('Invalid storage path: directory traversal not allowed');
+    }
+
+    // Reject double-slash injection
+    if (storagePath.includes('//')) {
+      logger.warn('Double-slash injection attempt detected', { userId, storagePath });
+      throw new Error('Invalid storage path: invalid path format');
+    }
+
+    // Verify path starts with expected user-scoped prefix
+    if (!storagePath.startsWith(expectedPrefix)) {
+      logger.warn('Storage path userId mismatch', { userId, storagePath, expectedPrefix });
+      throw new Error('Invalid storage path: user path mismatch');
+    }
+  }
+
+  /**
    * Upload document to Supabase Storage and save metadata to database
    */
   async uploadDocument({ documentId, userId, fileName, documentType, content, analysisResults, metadata }) {
@@ -31,6 +62,7 @@ class DocumentService {
     try {
       // 1. Upload file content to Supabase Storage
       const storagePath = `documents/${userId}/${documentId}`;
+      this.validateStoragePath(userId, storagePath);
       const fileBuffer = Buffer.from(content, 'base64');
 
       const { data: storageData, error: storageError } = await supabase.storage
@@ -130,6 +162,9 @@ class DocumentService {
         return null;
       }
 
+      // Validate storage path before downloading
+      this.validateStoragePath(userId, metadata.storage_path);
+
       // Get file from storage
       const { data: fileData, error: storageError } = await supabase.storage
         .from('documents')
@@ -177,6 +212,9 @@ class DocumentService {
       if (!doc) {
         throw new Error('Document not found');
       }
+
+      // Validate storage path before deleting
+      this.validateStoragePath(userId, doc.storage_path);
 
       // Delete from storage
       const { error: storageError } = await supabase.storage
