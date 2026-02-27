@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 10 of 17 (Document Intake & Classification Pipeline)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed 10-02-PLAN.md
+Last activity: 2026-02-27 — Completed 10-03-PLAN.md
 
-Progress: ██░░░░░░░░░░░░░░░░░░ 8% (v3.0 Milestone — 2 of ~25 plans)
+Progress: ██░░░░░░░░░░░░░░░░░░ 12% (v3.0 Milestone — 3 of ~25 plans)
 
 ## Performance Metrics
 
@@ -49,6 +49,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 10-01 | Status CHECK constraint (open/in_review/complete/archived) | Enforced at DB level for data integrity |
 | 10-02 | Lazy Anthropic client initialization in ocrService | Allows text PDF extraction without API key; only errors when Vision needed |
 | 10-02 | 50-char threshold for meaningful PDF text | Prevents scanned PDFs with metadata-only text from being misclassified |
+| 10-03 | claude-sonnet-4-5 for classification (not opus) | Fast, cost-effective for structured classification; opus reserved for deep analysis |
+| 10-03 | Graceful JSON parse fallback on Claude responses | Returns { rawResponse, parseError } instead of throwing; prevents pipeline crashes |
 
 ### Deferred Issues
 
@@ -69,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 10-02-PLAN.md
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None

@@ -165,6 +165,10 @@ backend-express/
 - `backend-express/services/claudeService.js` - AI document analysis
 - `backend-express/services/plaidService.js` - Bank integration
 - `backend-express/services/documentService.js` - Document storage
+- `backend-express/services/caseFileService.js` - Case file CRUD operations (v3.0)
+- `backend-express/services/ocrService.js` - Hybrid PDF text/Vision OCR extraction (v3.0)
+- `backend-express/services/classificationService.js` - AI-powered forensic document classification (v3.0)
+- `backend-express/services/documentPipelineService.js` - Document intake pipeline orchestration (v3.0)
 - `backend-express/middleware/auth.js` - JWT authentication
 
 **Testing:**
