@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 12 of 17 (Individual Document Analysis Engine)
-Plan: 0 of 3 in current phase
-Status: Planned — ready for execution
-Last activity: 2026-02-27 — Created Phase 12 plans (12-01 through 12-03)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-27 — Completed 12-01-PLAN.md
 
-Progress: ██████▓░░░░░░░░░░░░░ 33% (v3.0 Milestone — 10 of ~30 plans)
+Progress: ██████▓░░░░░░░░░░░░░ 37% (v3.0 Milestone — 11 of ~30 plans)
 
 ## Performance Metrics
 
@@ -69,6 +69,10 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 11-04 | Pipeline never encrypts/decrypts directly | Encryption is a storage concern in documentService, not a processing concern |
 | 11-05 | Test real encryption, mock only Supabase boundary | Validates actual AES-256-GCM round-trip rather than mocking crypto |
 | 11-05 | 10 user-isolation tests (exceeding 7+ target) | Includes negative + positive controls for complete cross-user coverage |
+| 12-01 | Schema-first design for analysis output | Define contract before building analysis service; ensures consistent AI output |
+| 12-01 | Flexible Joi.object().pattern() for extractedData | Different document types produce different field names; validates structure not field names |
+| 12-01 | Three-tier field classification (critical/expected/optional) | Drives completeness scoring severity levels |
+| 12-01 | Generic fallback for unknown subtypes | Ensures pipeline resilience for unrecognized documents |
 
 ### Deferred Issues
 
@@ -89,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Created Phase 12 plans — ready for 12-01 execution
+Stopped at: Completed 12-01-PLAN.md — ready for 12-02 execution
 Resume file: None
