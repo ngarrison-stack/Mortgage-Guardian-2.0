@@ -49,7 +49,7 @@ Plans:
 - [x] 10-02: Server-Side OCR Service
 - [x] 10-03: Document Classification Engine
 - [x] 10-04: Enhanced Intake Pipeline
-- [ ] 10-05: Intake API Routes & Verification
+- [x] 10-05: Intake API Routes & Verification
 
 #### Phase 11: Isolated Secure Document Storage
 
@@ -139,7 +139,7 @@ Plans:
 | 7. Service Refactoring | v2.0 | 2/2 | Complete | 2026-02-25 |
 | 8. Structured Logging | v2.0 | 4/4 | Complete | 2026-02-25 |
 | 9. Dependency Security | v2.0 | 4/4 | Complete | 2026-02-25 |
-| 10. Document Intake & Classification Pipeline | v3.0 | 4/5 | In progress | - |
+| 10. Document Intake & Classification Pipeline | v3.0 | 5/5 | Complete | 2026-02-27 |
 | 11. Isolated Secure Document Storage | v3.0 | 0/? | Not started | - |
 | 12. Individual Document Analysis Engine | v3.0 | 0/? | Not started | - |
 | 13. Cross-Document Forensic Analysis | v3.0 | 0/? | Not started | - |

@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 10 of 17 (Document Intake & Classification Pipeline)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-02-27 — Completed 10-04-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-02-27 — Completed 10-05-PLAN.md
 
-Progress: ███░░░░░░░░░░░░░░░░░ 16% (v3.0 Milestone — 4 of ~25 plans)
+Progress: ████░░░░░░░░░░░░░░░░ 20% (v3.0 Milestone — 5 of ~25 plans)
 
 ## Performance Metrics
 
@@ -54,6 +54,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 10-04 | Best-effort DB persistence for pipeline state | Pipeline never blocks on Supabase write failures; logs warning, continues in-memory |
 | 10-04 | Dual input via Joi .or() (documentText or fileBuffer) | Supports iOS pre-extracted text and server-side OCR from same endpoint |
 | 10-04 | Single-case auto-association only | Avoids ambiguity: 0 or 2+ open cases skip association, user assigns manually |
+| 10-05 | userId from req.user.id (JWT) not request body | More secure than v2.0 pattern; prevents client-side userId spoofing |
+| 10-05 | Integration tests mock external boundaries only | Internal pipeline logic runs for real; realistic coverage without API dependencies |
 
 ### Deferred Issues
 
@@ -74,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 10-04-PLAN.md
+Stopped at: Completed 10-05-PLAN.md — Phase 10 complete
 Resume file: None
