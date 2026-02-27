@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 11 of 17 (Isolated Secure Document Storage)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-02-27 — Completed 11-04-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-02-27 — Completed 11-05-PLAN.md
 
-Progress: ██████░░░░░░░░░░░░░░ 30% (v3.0 Milestone — 9 of ~30 plans)
+Progress: ██████▓░░░░░░░░░░░░░ 33% (v3.0 Milestone — 10 of ~30 plans)
 
 ## Performance Metrics
 
@@ -67,6 +67,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 11-04 | Lazy-load encryption service with env var guard | Constructor throws without key; lazy loading provides graceful degradation |
 | 11-04 | Encrypted flag in document metadata | Enables backward compatibility: old unencrypted docs download alongside encrypted |
 | 11-04 | Pipeline never encrypts/decrypts directly | Encryption is a storage concern in documentService, not a processing concern |
+| 11-05 | Test real encryption, mock only Supabase boundary | Validates actual AES-256-GCM round-trip rather than mocking crypto |
+| 11-05 | 10 user-isolation tests (exceeding 7+ target) | Includes negative + positive controls for complete cross-user coverage |
 
 ### Deferred Issues
 
@@ -87,5 +89,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 11-04-PLAN.md (Document Encryption Integration)
-Resume file: .planning/phases/11-isolated-secure-storage/11-05-PLAN.md
+Stopped at: Completed 11-05-PLAN.md — Phase 11 Complete
+Resume file: None (Phase 12 not yet planned)

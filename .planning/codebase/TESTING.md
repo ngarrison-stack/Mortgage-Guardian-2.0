@@ -46,6 +46,7 @@ backend-express/
     middleware/                   # Middleware tests
     routes/                      # Route integration tests
     services/                    # Service unit tests
+    integration/                 # Cross-cutting integration tests
     utils/                       # Utility tests
     validation/                  # Schema tests
 ```
@@ -181,7 +182,7 @@ npm run test:coverage
 open coverage/index.html
 ```
 
-**Current Status:** 519 tests passing
+**Current Status:** 690 tests passing (as of Phase 11-05)
 
 ## Test Types
 
@@ -195,6 +196,12 @@ open coverage/index.html
 - Mock external APIs but use real middleware chain
 - Clear module cache and re-require app after mocking
 - Examples: `documents-routes.test.js`, `auth-integration.test.js`
+
+**Security Integration Tests:**
+- Test cross-cutting security concerns (encryption, isolation, RLS)
+- Exercise real crypto services, mock only storage boundaries
+- Location: `__tests__/integration/`
+- Examples: `document-security.test.js`, `user-isolation.test.js`
 
 **Integration Test Pattern:**
 ```javascript
