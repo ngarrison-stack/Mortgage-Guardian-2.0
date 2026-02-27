@@ -1,224 +1,255 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-01-12
+**Analysis Date:** 2026-02-26
 
 ## Test Framework
 
 **Runner:**
-- Jest 29.7.0 with ts-jest preset
-- Configuration: `backend-express/jest.config.js`
-- passWithNoTests enabled for bootstrapping phase
+- Jest 29.7.0
+- Config: `backend-express/jest.config.js`
+- Preset: ts-jest (TypeScript support available)
 
 **Assertion Library:**
-- Jest built-in expect() assertions
-- @types/jest for TypeScript type support
-- @jest/globals for ESM-style imports
+- Jest built-in expect
+- Common matchers: `toBe`, `toEqual`, `toHaveBeenCalledWith`, `toThrow`, `rejects.toThrow`
 
 **Run Commands:**
 ```bash
-cd backend-express
 npm test                              # Run all tests
-npm run test:watch                    # TDD watch mode
-npm run test:coverage                 # Generate coverage report
-npm run test:verbose                  # Detailed test output
+npm run test:watch                    # Watch mode
+npm run test:coverage                 # Coverage report
+npm run test:verbose                  # Detailed output
+npm test -- path/to/file.test.js     # Single file
 ```
 
 ## Test File Organization
 
 **Location:**
-- **Backend**: Test files at root of `backend-express/`
-  - `test-claude.js` - Claude AI integration test
-  - `test-live-backend.sh` - Backend API smoke test script
-- **Root**: `test-plaid-corrected.js` - Plaid integration test
-- No organized test directory structure
+- All tests in `__tests__/` directory (not colocated with source)
+- Mirrors source structure: `__tests__/services/`, `__tests__/routes/`, etc.
 
 **Naming:**
-- `test-{feature}.js` for integration tests
-- `test-{feature}.sh` for shell-based smoke tests
-- No unit test convention established
+- Unit tests: `{sourceName}.test.js` (e.g., `claudeService.test.js`)
+- Integration tests: `{feature}-integration.test.js` or `{feature}-routes.test.js`
+- Security tests: `{feature}-upload-security.test.js`
 
 **Structure:**
 ```
 backend-express/
-  test-claude.js              # Claude AI test
-  test-live-backend.sh        # API smoke tests
-test-plaid-corrected.js       # Plaid test (root level)
+  __tests__/
+    mocks/                        # Shared mock factories
+      mockSupabaseClient.js
+      mockClaudeService.js
+      mockRedisClient.js
+    fixtures/                     # Test data
+      dbFixtures.js
+    middleware/                   # Middleware tests
+    routes/                      # Route integration tests
+    services/                    # Service unit tests
+    utils/                       # Utility tests
+    validation/                  # Schema tests
 ```
 
 ## Test Structure
 
 **Suite Organization:**
-- No test suite structure currently
-- Integration tests are standalone scripts
-- Manual execution and verification
+```javascript
+describe('ClaudeService', () => {
+  describe('analyzeDocument', () => {
+    const mockApiResponse = { /* test data at describe scope */ };
+
+    beforeEach(() => {
+      mockMessagesCreate.mockReset();
+    });
+
+    it('returns formatted response on success', async () => {
+      mockMessagesCreate.mockResolvedValue(mockApiResponse);
+      const result = await claudeService.analyzeDocument({ prompt: 'test' });
+      expect(result).toEqual({ /* expected */ });
+    });
+
+    it('throws on API error', async () => {
+      mockMessagesCreate.mockRejectedValue(new Error('API error'));
+      await expect(claudeService.analyzeDocument({ prompt: 'test' }))
+        .rejects.toThrow('API error');
+    });
+  });
+});
+```
 
 **Patterns:**
-- Integration tests make real API calls
-- Shell scripts test deployed endpoints
-- No automated test runner
+- `beforeEach()` resets mocks before each test
+- Test data defined at `describe` block level (shared across tests)
+- One logical assertion per test
+- Async tests use `async/await` with `expect().rejects` for errors
 
 ## Mocking
 
 **Framework:**
-- Jest built-in mocking (jest.fn(), jest.mock())
-- Dedicated mock modules in `backend-express/__tests__/mocks/`
-- Configurable service doubles with setResponse/setError/reset pattern
+- Jest built-in mocking (`jest.fn()`, `jest.mock()`)
 
-**Mock Modules:**
-- `__tests__/mocks/mockClaudeService.js` - Claude AI (analyzeDocument, buildMortgageAnalysisPrompt, testConnection)
-- `__tests__/mocks/mockSupabaseClient.js` - Supabase factory (auth, query builder, storage)
-- `__tests__/mocks/mockRedisClient.js` - Redis in-memory store (string/set/key ops, expiry tracking)
-- `services/mockPlaidService.js` - Plaid (legacy mock, pre-existing)
-
-**Patterns:**
+**Hoisted Module Mocking:**
 ```javascript
-// Configurable mock pattern (all new mocks)
-const mock = require('./__tests__/mocks/mockClaudeService');
-mock.setResponse({ analysis: 'custom' }); // Override default response
-mock.setError(new Error('API down'));      // Simulate failure
-mock.reset();                              // Restore defaults
-mock.getCallHistory();                     // Inspect calls
+// Declare mock functions BEFORE jest.mock (hoisted)
+const mockMessagesCreate = jest.fn();
+
+jest.mock('@anthropic-ai/sdk', () => {
+  return jest.fn().mockImplementation(() => ({
+    messages: { create: mockMessagesCreate }
+  }));
+});
+
+// THEN require the module under test
+const claudeService = require('../../services/claudeService');
+```
+
+**Virtual Mocks (for removed/optional packages):**
+```javascript
+jest.mock('rate-limiter-flexible', () => ({
+  RateLimiterRedis: jest.fn(() => ({ /* mock methods */ }))
+}), { virtual: true });  // virtual: true allows mocking uninstalled packages
+
+jest.mock('speakeasy', () => ({
+  totp: { verify: jest.fn() }
+}), { virtual: true });
+```
+
+**Supabase Client Factory:**
+```javascript
+const { createMockSupabaseClient } = require('../mocks/mockSupabaseClient');
+const mockClient = createMockSupabaseClient();
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockClient)
+}));
+
+// Chainable query builder: mockClient.from('table').select().eq('col', 'val')
 ```
 
 **What to Mock:**
-- Anthropic Claude API: mockClaudeService.js
-- Supabase (database/auth/storage): mockSupabaseClient.js
-- Redis/ioredis: mockRedisClient.js
-- Plaid: services/mockPlaidService.js
+- External SDKs: Anthropic, Plaid, Supabase
+- Redis client
+- Optional/aspirational packages (aws-sdk, speakeasy, rate-limiter-flexible)
 
 **What NOT to Mock:**
-- Express request/response (use supertest for integration tests)
-- Internal business logic functions
+- Pure utility functions
+- Joi schemas (test real validation)
+- Winston logger (silenced automatically via `NODE_ENV=test`)
 
 ## Fixtures and Factories
 
-**Test Data:**
-- No formal fixture system
-- Mock data embedded in `mockPlaidService.js`
-- Test scripts generate data inline
+**Mock Factories (in `__tests__/mocks/`):**
+- `mockSupabaseClient.js` - Chainable query builder with `setResponse`/`setError`
+- `mockClaudeService.js` - Claude AI mock with preset responses
+- `mockRedisClient.js` - Redis client mock
 
-**Location:**
-- Mock services: `backend-express/services/mockPlaidService.js`
-- No dedicated fixtures/ or factories/ directories
+**Test Data (inline):**
+```javascript
+const mockApiResponse = {
+  content: [{ text: 'Analysis result' }],
+  model: 'claude-3-5-sonnet-20241022',
+  usage: { input_tokens: 100, output_tokens: 50 },
+  stop_reason: 'end_turn'
+};
+```
+
+**Database Fixtures:**
+- `__tests__/fixtures/dbFixtures.js` - Mock database records
 
 ## Coverage
 
 **Requirements:**
-- 90% minimum across statements, branches, functions, and lines
-- Enforced via jest.config.js coverageThreshold
+- 90% minimum globally (statements, branches, functions, lines)
+- Enforced by Jest config
 
 **Configuration:**
-- collectCoverageFrom: services/**/*.js, routes/**/*.js (excludes node_modules, __tests__)
-- coverageReporters: text (console), lcov (CI), html (browsable)
+```javascript
+collectCoverageFrom: [
+  'services/**/*.js',
+  'routes/**/*.js',
+  'middleware/**/*.js',
+  'schemas/**/*.js',
+  'utils/**/*.js',
+  '!**/node_modules/**',
+  '!**/__tests__/**'
+]
+```
 
 **View Coverage:**
 ```bash
-cd backend-express
-npm run test:coverage                 # Generate and display coverage report
-# HTML report: coverage/index.html
+npm run test:coverage
+open coverage/index.html
 ```
+
+**Current Status:** 519 tests passing
 
 ## Test Types
 
-**Integration Tests:**
-- Scope: Test full API endpoints with real external services
-- Examples:
-  - `backend-express/test-claude.js` - Tests Claude AI document analysis
-  - `backend-express/test-live-backend.sh` - Tests deployed backend health and endpoints
-  - Root `test-plaid-corrected.js` - Tests Plaid integration flow
-- Mocking: Uses real APIs (sandbox/development environments)
-- Setup: Requires valid API keys in environment
-
 **Unit Tests:**
-- Not implemented currently
-- No isolated function testing
+- Test single service method in isolation
+- Mock all external dependencies
+- Examples: `claudeService.test.js`, `plaidService.test.js`
 
-**E2E Tests:**
-- Not implemented
-- Shell scripts provide basic smoke testing for deployed services
-
-## Common Patterns
+**Integration Tests:**
+- Test routes with middleware + services via supertest
+- Mock external APIs but use real middleware chain
+- Clear module cache and re-require app after mocking
+- Examples: `documents-routes.test.js`, `auth-integration.test.js`
 
 **Integration Test Pattern:**
 ```javascript
-// Example structure (from test-claude.js)
-require('dotenv').config();
-const { analyzeDocument } = require('./services/claudeService');
+const request = require('supertest');
+jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn(() => mockClient) }));
 
-async function testAnalysis() {
-  try {
-    const result = await analyzeDocument({ /* params */ });
-    console.log('Test passed:', result);
-  } catch (error) {
-    console.error('Test failed:', error);
-  }
-}
+let app;
+beforeAll(() => {
+  delete require.cache[require.resolve('../../server')];
+  app = require('../../server');
+});
 
-testAnalysis();
+test('GET /v1/documents returns 200', async () => {
+  const response = await request(app)
+    .get('/v1/documents')
+    .set('Authorization', 'Bearer valid-token')
+    .query({ userId: 'user-123' });
+  expect(response.status).toBe(200);
+});
 ```
 
-**Shell Test Pattern:**
-```bash
-# Example from test-live-backend.sh
-#!/bin/bash
-echo "Testing health endpoint..."
-curl -X GET https://api-url/health
-echo "Testing Claude endpoint..."
-curl -X POST https://api-url/v1/ai/claude/analyze -H "Content-Type: application/json" -d '{"documentText":"..."}'
-```
+## Common Patterns
 
 **Async Testing:**
-- All async functions use async/await
-- No Promise.then() chains in tests
+```javascript
+it('should handle async operation', async () => {
+  const result = await service.method();
+  expect(result).toEqual(expected);
+});
+```
 
 **Error Testing:**
-- Try/catch blocks capture errors
-- Manual verification of error messages
-- No assertion library for structured error validation
+```javascript
+it('should throw on invalid input', async () => {
+  await expect(service.method(invalid))
+    .rejects.toThrow('Expected error message');
+});
+```
 
-**Environment Configuration:**
-- Tests use dotenv to load .env.local
-- Requires valid API keys for real API testing
-- Sandbox modes used where available (Plaid)
+**Silent Logger:**
+- Winston logger auto-silences in test env (`silent: isTest` in logger.js)
+- No need to mock logger — just works
+- Tests verify logger behavior by checking `logger.info.mock.calls` when needed
 
-## Current Testing Gaps
-
-**Missing Infrastructure:**
-- No test framework (Jest, Vitest, Mocha)
-- No assertion library (expect, chai)
-- No test runner automation
-- No continuous integration testing
-- No code coverage tracking
-
-**Missing Test Types:**
-- Unit tests for services and utilities
-- Automated integration test suite
-- End-to-end user flow testing
-- Performance/load testing
-- Security testing
-
-**Testing Best Practices Needed:**
-- Test isolation (mocking external dependencies)
-- Automated test execution
-- CI/CD pipeline integration
-- Test-driven development workflow
-- Code coverage requirements
-
-## Deployment Testing
-
-**Manual Smoke Tests:**
-- `backend-express/test-live-backend.sh` - Tests deployed backend endpoints
-- Manual curl commands for API validation
-- Health check monitoring
-
-**Deployment Scripts:**
-- `backend-express/deploy-railway.sh` - Railway deployment
-- `backend-express/deploy-render.sh` - Render deployment
-- Deployment scripts include basic verification
+**Module Cache Reset (Integration Tests):**
+```javascript
+beforeAll(() => {
+  const serverPath = require.resolve('../../server');
+  delete require.cache[serverPath];
+  app = require('../../server');
+});
+```
+This ensures mocks are applied before Express app initializes its middleware chain.
 
 ---
 
-*Testing analysis: 2026-01-12*
-*Update when test infrastructure is added*
-
-**Recommendation:** Implement Jest or Vitest with proper unit and integration test structure. Add CI/CD pipeline with automated test execution.
+*Testing analysis: 2026-02-26*
+*Update when test patterns change*
