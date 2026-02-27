@@ -72,10 +72,12 @@ Plans:
 **Depends on**: Phase 11
 **Research**: Likely (Claude AI structured output, prompt engineering for mortgage document analysis, context window management)
 **Research topics**: Claude API structured output/tool use for data extraction, domain-specific prompt design, analysis report schema
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 12-01: TBD
+- [ ] 12-01: Analysis Report Schema & Document Field Definitions
+- [ ] 12-02: Document Analysis Service & Unit Tests
+- [ ] 12-03: Pipeline Integration & Analysis API
 
 #### Phase 13: Cross-Document Forensic Analysis
 
@@ -145,7 +147,7 @@ Plans:
 | 9. Dependency Security | v2.0 | 4/4 | Complete | 2026-02-25 |
 | 10. Document Intake & Classification Pipeline | v3.0 | 5/5 | Complete | 2026-02-27 |
 | 11. Isolated Secure Document Storage | v3.0 | 5/5 | Complete | 2026-02-27 |
-| 12. Individual Document Analysis Engine | v3.0 | 0/? | Not started | - |
+| 12. Individual Document Analysis Engine | v3.0 | 0/3 | Planned | - |
 | 13. Cross-Document Forensic Analysis | v3.0 | 0/? | Not started | - |
 | 14. Federal Lending Law Compliance Engine | v3.0 | 0/? | Not started | - |
 | 15. State Lending Law Compliance Engine | v3.0 | 0/? | Not started | - |
