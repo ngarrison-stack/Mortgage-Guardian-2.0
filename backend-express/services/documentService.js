@@ -2,6 +2,32 @@ const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('document');
 
+// Lazy-loaded encryption service — only initialized when DOCUMENT_ENCRYPTION_KEY is set.
+// Cannot require at module load because the constructor throws if the env var is missing,
+// and we need graceful degradation for dev environments without encryption configured.
+let _encryptionService = null;
+let _encryptionWarningLogged = false;
+
+function getEncryptionService() {
+  if (_encryptionService) return _encryptionService;
+
+  if (!process.env.DOCUMENT_ENCRYPTION_KEY) {
+    if (!_encryptionWarningLogged) {
+      logger.warn('DOCUMENT_ENCRYPTION_KEY not set — documents will be stored unencrypted');
+      _encryptionWarningLogged = true;
+    }
+    return null;
+  }
+
+  try {
+    _encryptionService = require('./documentEncryptionService');
+    return _encryptionService;
+  } catch (err) {
+    logger.error('Failed to initialize encryption service', { error: err.message });
+    return null;
+  }
+}
+
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
@@ -65,9 +91,21 @@ class DocumentService {
       this.validateStoragePath(userId, storagePath);
       const fileBuffer = Buffer.from(content, 'base64');
 
+      // Encrypt file buffer if encryption is configured
+      const encryptionService = getEncryptionService();
+      let uploadBuffer;
+      let encrypted = false;
+      if (encryptionService) {
+        uploadBuffer = encryptionService.encrypt(userId, fileBuffer);
+        encrypted = true;
+        logger.debug('Document encrypted for upload', { documentId, userId });
+      } else {
+        uploadBuffer = fileBuffer;
+      }
+
       const { data: storageData, error: storageError } = await supabase.storage
         .from('documents')
-        .upload(storagePath, fileBuffer, {
+        .upload(storagePath, uploadBuffer, {
           contentType: this.getContentType(fileName),
           upsert: true
         });
@@ -87,6 +125,7 @@ class DocumentService {
           analysis_results: analysisResults || null,
           metadata: metadata || {},
           storage_path: storagePath,
+          encrypted,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -176,9 +215,22 @@ class DocumentService {
         return metadata;
       }
 
-      // Convert file to base64
+      // Convert downloaded data to buffer
       const arrayBuffer = await fileData.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      let buffer = Buffer.from(arrayBuffer);
+
+      // Decrypt if the document was stored encrypted
+      if (metadata.encrypted) {
+        const encryptionService = getEncryptionService();
+        if (encryptionService) {
+          buffer = encryptionService.decrypt(userId, buffer);
+          logger.debug('Document decrypted for download', { documentId, userId });
+        } else {
+          logger.error('Document is encrypted but encryption service unavailable', { documentId });
+          throw new Error('Cannot decrypt document: encryption service unavailable');
+        }
+      }
+
       const contentBase64 = buffer.toString('base64');
 
       return {

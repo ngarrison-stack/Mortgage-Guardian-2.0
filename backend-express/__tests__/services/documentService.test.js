@@ -2,6 +2,7 @@
  * Unit tests for DocumentService (services/documentService.js)
  *
  * Tests all CRUD operations in both Supabase and mock modes.
+ * Includes encryption integration tests for upload/download.
  * Supabase mock is hoisted because the module creates a client at load time.
  */
 
@@ -54,6 +55,15 @@ jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => mockSupabase)
 }));
 
+// --- Encryption service mock ---
+const mockEncrypt = jest.fn();
+const mockDecrypt = jest.fn();
+
+jest.mock('../../services/documentEncryptionService', () => ({
+  encrypt: mockEncrypt,
+  decrypt: mockDecrypt
+}));
+
 // Set env vars BEFORE requiring service
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
@@ -78,6 +88,17 @@ describe('DocumentService (Supabase mode)', () => {
     mockStorageUpload.mockResolvedValue({ data: {}, error: null });
     mockStorageDownload.mockResolvedValue({ data: null, error: null });
     mockStorageRemove.mockResolvedValue({ data: {}, error: null });
+    // Default encryption mock behavior
+    mockEncrypt.mockImplementation((userId, buffer) => {
+      // Return a distinguishable "encrypted" buffer
+      return Buffer.concat([Buffer.from('ENC:'), buffer]);
+    });
+    mockDecrypt.mockImplementation((userId, buffer) => {
+      // Strip the "ENC:" prefix to simulate decryption
+      return buffer.subarray(4);
+    });
+    // Ensure encryption key is NOT set by default (tests opt in)
+    delete process.env.DOCUMENT_ENCRYPTION_KEY;
   });
 
   // ----------------------------------------------------------
@@ -171,6 +192,44 @@ describe('DocumentService (Supabase mode)', () => {
         })
       );
     });
+
+    it('uploads plaintext when DOCUMENT_ENCRYPTION_KEY is not set', async () => {
+      // Key is not set (default in beforeEach)
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
+
+      await documentService.uploadDocument(uploadArgs);
+
+      // encrypt should NOT have been called
+      expect(mockEncrypt).not.toHaveBeenCalled();
+      // Uploaded buffer should be the raw plaintext
+      const uploadedBuffer = mockStorageUpload.mock.calls[0][1];
+      expect(uploadedBuffer.toString()).toBe('mock-pdf-content');
+      // Metadata should have encrypted: false
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ encrypted: false })
+      );
+    });
+
+    it('encrypts file buffer when DOCUMENT_ENCRYPTION_KEY is set', async () => {
+      process.env.DOCUMENT_ENCRYPTION_KEY = 'a'.repeat(64);
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
+
+      await documentService.uploadDocument(uploadArgs);
+
+      // encrypt should have been called with userId and the plaintext buffer
+      expect(mockEncrypt).toHaveBeenCalledWith('user-1', expect.any(Buffer));
+      const plaintextArg = mockEncrypt.mock.calls[0][1];
+      expect(plaintextArg.toString()).toBe('mock-pdf-content');
+      // Uploaded buffer should be the encrypted result
+      const uploadedBuffer = mockStorageUpload.mock.calls[0][1];
+      expect(uploadedBuffer.toString()).toBe('ENC:mock-pdf-content');
+      // Metadata should have encrypted: true
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ encrypted: true })
+      );
+
+      delete process.env.DOCUMENT_ENCRYPTION_KEY;
+    });
   });
 
   // ----------------------------------------------------------
@@ -193,7 +252,7 @@ describe('DocumentService (Supabase mode)', () => {
 
       await documentService.getDocumentsByUser({ userId: 'user-1' });
 
-      // Default: limit=50, offset=0 → range(0, 49)
+      // Default: limit=50, offset=0 -> range(0, 49)
       expect(mockRange).toHaveBeenCalledWith(0, 49);
       expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
     });
@@ -299,6 +358,73 @@ describe('DocumentService (Supabase mode)', () => {
         userId: 'user-1'
       })).rejects.toThrow('Database error: Connection lost');
     });
+
+    it('downloads unencrypted document without calling decrypt (backward compatibility)', async () => {
+      // Document metadata does NOT have encrypted: true
+      const metadata = {
+        document_id: 'doc-old',
+        storage_path: 'documents/user-1/doc-old',
+        file_name: 'old.pdf'
+        // no 'encrypted' field — pre-encryption document
+      };
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
+
+      const fileContent = Buffer.from('old-plaintext-content');
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(fileContent.buffer.slice(
+          fileContent.byteOffset,
+          fileContent.byteOffset + fileContent.byteLength
+        ))
+      };
+      mockStorageDownload.mockResolvedValue({ data: mockBlob, error: null });
+
+      const result = await documentService.getDocument({
+        documentId: 'doc-old',
+        userId: 'user-1'
+      });
+
+      // decrypt should NOT have been called
+      expect(mockDecrypt).not.toHaveBeenCalled();
+      // Content should be raw base64
+      expect(result.content).toBe(fileContent.toString('base64'));
+    });
+
+    it('decrypts document when metadata has encrypted: true', async () => {
+      process.env.DOCUMENT_ENCRYPTION_KEY = 'a'.repeat(64);
+
+      const metadata = {
+        document_id: 'doc-enc',
+        storage_path: 'documents/user-1/doc-enc',
+        file_name: 'encrypted.pdf',
+        encrypted: true
+      };
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
+
+      // Storage returns "encrypted" content
+      const encryptedContent = Buffer.from('ENC:real-document-data');
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(encryptedContent.buffer.slice(
+          encryptedContent.byteOffset,
+          encryptedContent.byteOffset + encryptedContent.byteLength
+        ))
+      };
+      mockStorageDownload.mockResolvedValue({ data: mockBlob, error: null });
+
+      const result = await documentService.getDocument({
+        documentId: 'doc-enc',
+        userId: 'user-1'
+      });
+
+      // decrypt should have been called with userId and the encrypted buffer
+      expect(mockDecrypt).toHaveBeenCalledWith('user-1', expect.any(Buffer));
+      const encryptedArg = mockDecrypt.mock.calls[0][1];
+      expect(encryptedArg.toString()).toBe('ENC:real-document-data');
+      // Content should be the decrypted result as base64
+      const expectedDecrypted = Buffer.from('real-document-data');
+      expect(result.content).toBe(expectedDecrypted.toString('base64'));
+
+      delete process.env.DOCUMENT_ENCRYPTION_KEY;
+    });
   });
 
   // ----------------------------------------------------------
@@ -306,10 +432,10 @@ describe('DocumentService (Supabase mode)', () => {
   // ----------------------------------------------------------
   describe('deleteDocument', () => {
     // Helper: set up the two-phase delete mock chain.
-    // Phase 1 (SELECT): from → select → eq → eq → single → returns doc
-    // Phase 2 (DELETE): from → delete → eq → eq → resolves with { error }
+    // Phase 1 (SELECT): from -> select -> eq -> eq -> single -> returns doc
+    // Phase 2 (DELETE): from -> delete -> eq -> eq -> resolves with { error }
     // Since `await mockSupabase` resolves to mockSupabase itself (plain object),
-    // and mockSupabase has no `error` property, dbError is undefined → happy path.
+    // and mockSupabase has no `error` property, dbError is undefined -> happy path.
     function setupDeleteMocks({ docData, storageError = null, dbDeleteError = null }) {
       mockEq.mockReturnValue(mockSupabase);
       mockSingle.mockResolvedValue({ data: docData });
