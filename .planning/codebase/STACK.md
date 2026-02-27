@@ -1,91 +1,92 @@
 # Technology Stack
 
-**Analysis Date:** 2026-01-12
+**Analysis Date:** 2026-02-26
 
 ## Languages
 
 **Primary:**
-- JavaScript (Node.js) - Backend API service (`backend-express/`)
-- TypeScript - Frontend application and type definitions
+- JavaScript (ES2024) - All backend application code (Node.js)
+- TypeScript 5.9.3 - Frontend application code (Next.js)
 
 **Secondary:**
-- JavaScript - Configuration files, build scripts
-- Swift - iOS mobile app (referenced in documentation, not in this repository)
+- Python 3.x - Token server utility (`tools/token_server/`)
+- SQL - Database migrations (`backend-express/migrations/`)
+- Swift/SwiftUI - iOS app (separate Xcode project)
 
 ## Runtime
 
 **Environment:**
-- Node.js >=20.0.0 - `backend-express/package.json`
-- Next.js 15.5.4 runtime - `frontend/package.json`
-- React 19.1.0 - `frontend/package.json`
+- Node.js >=20.0.0 (engines constraint in package.json)
+- npm >=9.0.0
 
 **Package Manager:**
-- npm >=9.0.0 - `backend-express/package.json`
-- Lockfiles: `package-lock.json` present in both backend-express/ and frontend/
+- npm 10.x
+- Lockfile: `package-lock.json` present and tracked in git (backend-express)
 
 ## Frameworks
 
 **Core:**
-- Express 4.18.2 - Backend HTTP server (`backend-express/`)
-- Next.js 15.5.4 - Frontend framework with Turbopack (`frontend/`)
-- React 19.1.0 - UI library (`frontend/`)
+- Express 4.18.2 - REST API server (`backend-express/`)
+- Next.js 15.5.12 - Frontend with Turbopack (`frontend/`)
+- React 19.1.0 - UI framework
 
 **Testing:**
-- Jest 29.7.0 with ts-jest preset for TypeScript support
-- supertest 7.2.2 for Express HTTP assertion testing
-- jest.config.js: node environment, 90% coverage thresholds, __tests__/ convention
-- Scripts: test, test:watch, test:coverage, test:verbose
+- Jest 29.7.0 - Unit and integration tests
+- ts-jest 29.4.6 - TypeScript test transpilation
+- supertest 7.2.2 - HTTP assertion library for route integration tests
 
 **Build/Dev:**
-- Turbopack - Next.js bundler (via `--turbopack` flag in `frontend/package.json`)
-- TypeScript 5.9.3 - Type checking (`backend-express/` and `frontend/`)
-- nodemon 3.0.2 - Development server hot reload (`backend-express/`)
+- nodemon 3.0.2 - Auto-reload in development
+- Turbopack - Next.js bundler (via `--turbopack` flag)
+- TypeScript 5.9.3 - Compiler for frontend
 
 ## Key Dependencies
 
 **Critical:**
-- @anthropic-ai/sdk ^0.68.0 - Claude AI integration for document analysis (`backend-express/`)
-- plaid ^39.1.0 - Bank account integration and transaction data (`backend-express/` and root)
-- @supabase/supabase-js ^2.80.0 - Database and authentication (`backend-express/`)
-- @clerk/nextjs ^6.34.5 - Frontend authentication (`frontend/`)
+- `@anthropic-ai/sdk` 0.78.0 - Claude AI document analysis
+- `plaid` 41.3.0 - Bank account linking and transaction data
+- `@supabase/supabase-js` 2.80.0 - Database, auth, and storage
+- `@clerk/nextjs` 6.34.5 - Frontend authentication (Clerk)
 
 **Infrastructure:**
-- express ^4.18.2 - HTTP routing (`backend-express/`)
-- ioredis ^5.3.2 - Redis client for caching/rate limiting (`backend-express/`)
-- express-rate-limit ^8.2.1 - API rate limiting (`backend-express/`)
-- helmet ^8.1.0 - Security headers middleware (`backend-express/`)
-- winston ^3.11.0 - Logging framework (`backend-express/`)
-- jsonwebtoken ^9.0.2 - JWT authentication (`backend-express/`)
-- multer ^1.4.5-lts.1 - File upload handling (`backend-express/`)
+- `ioredis` 5.3.2 - Redis client for caching/rate limiting
+- `express-rate-limit` 8.2.1 - Per-IP rate limiting
+- `winston` 3.11.0 - Structured logging (JSON prod, colorized dev)
+- `joi` 18.0.1 - Input validation schemas
+
+**Security:**
+- `helmet` 8.1.0 - Security headers
+- `cors` 2.8.5 - Cross-origin resource sharing
+- `argon2` 0.44.0 - Password hashing
+- `jsonwebtoken` 9.0.2 - JWT token handling
+- `file-type` 16.5.4 - Magic number file validation (last CJS version)
+- `pdf-parse` 2.4.5 - Lightweight PDF text extraction (serverless-compatible, no native deps)
 
 ## Configuration
 
 **Environment:**
-- `.env` files with dotenv package (`backend-express/`)
-- `.env.example` templates in `backend-express/` and `frontend/`
-- Key configs: `ANTHROPIC_API_KEY`, `PLAID_CLIENT_ID`, `PLAID_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- `.env` files (gitignored) for secrets
+- Key backend vars: `ANTHROPIC_API_KEY`, `PLAID_CLIENT_ID`, `PLAID_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- Key frontend vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
 
 **Build:**
-- `tsconfig.json` - TypeScript configuration (`backend-express/`, `frontend/`)
-- `next.config.ts` - Next.js configuration (`frontend/`)
-- `vercel.json` - Vercel deployment configuration (`backend-express/`)
-- `railway.json` / `railway.toml` - Railway deployment configuration (`backend-express/`)
+- `jest.config.js` - Test runner (90% coverage threshold)
+- `vercel.json` - Vercel deployment config
+- `railway.toml` - Railway deployment config
+- `tsconfig.json` - TypeScript config (frontend)
 
 ## Platform Requirements
 
 **Development:**
 - macOS/Linux/Windows (any platform with Node.js 20+)
-- Docker Compose for local services (PostgreSQL, Redis, MinIO, Mailhog)
-- Optional: Redis for caching and rate limiting
+- Docker for local infrastructure (PostgreSQL, Redis, MinIO, Mailhog)
 
 **Production:**
-- **Backend**: Vercel, Railway, or any Node.js hosting platform
-- **Frontend**: Vercel, Netlify (configured in `frontend/.netlify/`)
-- **Database**: Supabase (PostgreSQL)
-- **Caching**: Redis (ioredis client)
-- **Storage**: MinIO (S3-compatible) or Supabase Storage
+- Vercel - Serverless backend (via `api/index.js` handler wrapper)
+- Railway - Alternative backend deployment (Nixpacks builder)
+- Vercel - Frontend deployment (Next.js optimized)
 
 ---
 
-*Stack analysis: 2026-01-12*
+*Stack analysis: 2026-02-26*
 *Update after major dependency changes*
