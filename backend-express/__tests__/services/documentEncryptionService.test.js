@@ -106,25 +106,24 @@ describe('DocumentEncryptionService', () => {
 
   // 7. Missing DOCUMENT_ENCRYPTION_KEY env var throws descriptive error
   test('missing DOCUMENT_ENCRYPTION_KEY env var throws descriptive error', () => {
-    // Clear module cache and env var to test initialization error
     const savedKey = process.env.DOCUMENT_ENCRYPTION_KEY;
     delete process.env.DOCUMENT_ENCRYPTION_KEY;
 
-    // Clear cached module so fresh require picks up missing env
-    const modulePath = require.resolve('../../services/documentEncryptionService');
-    const cachedModule = require.cache[modulePath];
-    delete require.cache[modulePath];
-
     try {
-      expect(() => require('../../services/documentEncryptionService')).toThrow(
-        /DOCUMENT_ENCRYPTION_KEY/
-      );
+      // Use jest.isolateModules for a clean require without cache
+      let loadError = null;
+      jest.isolateModules(() => {
+        try {
+          require('../../services/documentEncryptionService');
+        } catch (err) {
+          loadError = err;
+        }
+      });
+
+      expect(loadError).not.toBeNull();
+      expect(loadError.message).toMatch(/DOCUMENT_ENCRYPTION_KEY/);
     } finally {
-      // Restore env and cached module
       process.env.DOCUMENT_ENCRYPTION_KEY = savedKey;
-      if (cachedModule) {
-        require.cache[modulePath] = cachedModule;
-      }
     }
   });
 
