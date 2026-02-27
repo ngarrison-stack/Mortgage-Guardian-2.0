@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 11 of 17 (Isolated Secure Document Storage)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed 11-03-PLAN.md
+Last activity: 2026-02-27 — Completed 11-04-PLAN.md
 
-Progress: █████░░░░░░░░░░░░░░░ 29% (v3.0 Milestone — 8 of ~30 plans)
+Progress: ██████░░░░░░░░░░░░░░ 30% (v3.0 Milestone — 9 of ~30 plans)
 
 ## Performance Metrics
 
@@ -64,6 +64,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 11-02 | validateStoragePath as defense-in-depth | Paths constructed internally; guards against future untrusted path changes |
 | 11-03 | Pack format iv+authTag+ciphertext in single buffer | Simplifies storage (one blob) and unpacking (fixed offsets) |
 | 11-03 | HKDF info string 'mortgage-guardian-doc-v1' | Domain separation ensures keys cannot be reused across apps |
+| 11-04 | Lazy-load encryption service with env var guard | Constructor throws without key; lazy loading provides graceful degradation |
+| 11-04 | Encrypted flag in document metadata | Enables backward compatibility: old unencrypted docs download alongside encrypted |
+| 11-04 | Pipeline never encrypts/decrypts directly | Encryption is a storage concern in documentService, not a processing concern |
 
 ### Deferred Issues
 
@@ -84,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 11-03-PLAN.md (Document Encryption Service TDD)
-Resume file: .planning/phases/11-isolated-secure-storage/11-04-PLAN.md
+Stopped at: Completed 11-04-PLAN.md (Document Encryption Integration)
+Resume file: .planning/phases/11-isolated-secure-storage/11-05-PLAN.md
