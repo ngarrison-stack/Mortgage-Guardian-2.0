@@ -89,6 +89,7 @@ app.use((req, res) => {
       'POST /v1/documents/upload',
       'POST /v1/documents/process',
       'GET /v1/documents/pipeline',
+      'GET /v1/documents/:documentId/analysis',
       'GET /v1/documents/:documentId/status',
       'POST /v1/documents/:documentId/retry',
       'POST /v1/documents/:documentId/complete',

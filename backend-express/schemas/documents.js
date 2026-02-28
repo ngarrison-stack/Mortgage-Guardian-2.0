@@ -92,6 +92,14 @@ const getPipelineSchema = Joi.object({
   )
 });
 
+/**
+ * Schema for GET /v1/documents/:documentId/analysis
+ * Validates route params for retrieving a document's analysis report.
+ */
+const analysisParamsSchema = Joi.object({
+  documentId: Joi.string().required().trim()
+});
+
 module.exports = {
   uploadDocumentSchema,
   getDocumentsSchema,
@@ -100,5 +108,6 @@ module.exports = {
   processDocumentSchema,
   retryDocumentSchema,
   completeDocumentSchema,
-  getPipelineSchema
+  getPipelineSchema,
+  analysisParamsSchema
 };

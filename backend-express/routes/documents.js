@@ -14,7 +14,8 @@ const {
   processDocumentSchema,
   retryDocumentSchema,
   completeDocumentSchema,
-  getPipelineSchema
+  getPipelineSchema,
+  analysisParamsSchema
 } = require('../schemas/documents');
 
 // POST /v1/documents/upload
@@ -103,6 +104,51 @@ router.get('/', validate(getDocumentsSchema, 'query'), async (req, res, next) =>
 
   } catch (error) {
     logger.error('Get documents error', { error: error.message });
+    next(error);
+  }
+});
+
+// GET /v1/documents/:documentId/analysis
+// Get the structured analysis report for a document
+// NOTE: Must be defined before /:documentId to prevent Express matching "analysis" as a param
+router.get('/:documentId/analysis', validate(analysisParamsSchema, 'params'), async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+    const userId = req.user.id;
+
+    // Get document (respects user isolation)
+    const document = await documentService.getDocument({ documentId, userId });
+
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const analysisResults = document.analysis_results;
+
+    if (!analysisResults) {
+      return res.status(404).json({
+        error: 'Analysis not available',
+        message: 'Document has not been analyzed yet. Process the document first via POST /v1/documents/process'
+      });
+    }
+
+    // If analysis had an error, return it with appropriate status
+    if (analysisResults.error) {
+      return res.status(200).json({
+        documentId,
+        status: 'error',
+        error: analysisResults.errorMessage || 'Analysis failed',
+        rawResponse: analysisResults.rawResponse || null
+      });
+    }
+
+    res.json({
+      documentId,
+      status: 'complete',
+      analysis: analysisResults
+    });
+  } catch (error) {
+    logger.error('Get analysis error', { error: error.message });
     next(error);
   }
 });
