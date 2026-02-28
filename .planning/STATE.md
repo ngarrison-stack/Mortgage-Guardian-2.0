@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 12 of 17 (Individual Document Analysis Engine)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed 12-01-PLAN.md
+Last activity: 2026-02-28 — Completed 12-02-PLAN.md
 
-Progress: ██████▓░░░░░░░░░░░░░ 37% (v3.0 Milestone — 11 of ~30 plans)
+Progress: ██████▓░░░░░░░░░░░░░ 40% (v3.0 Milestone — 12 of ~30 plans)
 
 ## Performance Metrics
 
@@ -73,6 +73,10 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 12-01 | Flexible Joi.object().pattern() for extractedData | Different document types produce different field names; validates structure not field names |
 | 12-01 | Three-tier field classification (critical/expected/optional) | Drives completeness scoring severity levels |
 | 12-01 | Generic fallback for unknown subtypes | Ensures pipeline resilience for unrecognized documents |
+| 12-02 | Dynamic extraction templates from field definitions | Prompts stay in sync with field definition changes; not hardcoded |
+| 12-02 | Anomaly severity elevation for critical fields | Critical field anomalies auto-elevated to 'high' regardless of Claude's initial assessment |
+| 12-02 | Markdown code fence extraction fallback | Claude occasionally wraps JSON in markdown; graceful extraction |
+| 12-02 | Schema validation as warnings not rejections | Pipeline never fails on minor schema deviations; warnings attached instead |
 
 ### Deferred Issues
 
@@ -92,6 +96,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 12-01-PLAN.md — ready for 12-02 execution
+Last session: 2026-02-28
+Stopped at: Completed 12-02-PLAN.md — ready for 12-03 execution
 Resume file: None
