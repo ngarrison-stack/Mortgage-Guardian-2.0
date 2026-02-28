@@ -90,23 +90,36 @@ function setupAnthropicMockResponses({
     stop_reason: 'end_turn'
   });
 
-  // Analysis response
+  // Analysis response (matches analysisReportSchema format expected by documentAnalysisService)
   responses.push(analysisResponse || {
     content: [{
       text: JSON.stringify({
-        issues: [
+        extractedData: {
+          dates: { statementDate: '2024-01-15' },
+          amounts: { principalBalance: 250000, monthlyPayment: 1500 },
+          rates: { interestRate: 3.75 },
+          parties: { borrower: 'Test Borrower', servicer: 'Test Bank' },
+          identifiers: { loanNumber: '12345' },
+          terms: {},
+          custom: {}
+        },
+        anomalies: [
           {
-            type: 'escrow_discrepancy',
-            description: 'Escrow payment appears higher than expected',
-            confidence: 0.78,
-            severity: 'medium'
+            field: 'escrowPayment',
+            type: 'unusual_value',
+            severity: 'medium',
+            description: 'Escrow payment appears higher than expected'
           }
         ],
-        summary: 'One potential escrow discrepancy identified',
-        riskLevel: 'medium'
+        summary: {
+          overview: 'One potential escrow discrepancy identified',
+          keyFindings: ['Escrow payment may be higher than expected'],
+          riskLevel: 'medium',
+          recommendations: ['Request escrow analysis from servicer']
+        }
       })
     }],
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-sonnet-4-5-20250514',
     usage: { input_tokens: 1000, output_tokens: 500 },
     stop_reason: 'end_turn'
   });
@@ -193,9 +206,9 @@ describe('Full pipeline with pre-extracted text', () => {
     expect(result.classificationResults.classificationType).toBe('servicing');
     expect(result.classificationResults.classificationSubtype).toBe('monthly_statement');
 
-    // Verify analysis results populated
+    // Verify analysis results populated (new documentAnalysisService format)
     expect(result.analysisResults).toBeDefined();
-    expect(result.analysisResults.analysis.issues).toHaveLength(1);
+    expect(result.analysisResults.anomalies).toHaveLength(1);
 
     // Verify steps are tracked
     expect(result.steps.uploaded).toBeDefined();
@@ -288,24 +301,10 @@ describe('Full pipeline with fileBuffer (server-side OCR)', () => {
 // RETRY FROM FAILED STATE
 // ============================================================
 describe('Pipeline retry from failed state', () => {
-  it('retries from failed analysis and completes', async () => {
-    // First run: classification succeeds, analysis fails
+  it('retries from failed classification and completes', async () => {
+    // First run: classification fails (documentAnalysisService catches analysis
+    // errors gracefully, so we fail at classification instead to test retry)
     mockAnthropicCreate
-      .mockResolvedValueOnce({
-        // Classification response
-        content: [{
-          text: JSON.stringify({
-            classificationType: 'servicing',
-            classificationSubtype: 'monthly_statement',
-            confidence: 0.90,
-            keyMetadata: {},
-            summary: 'Monthly statement'
-          })
-        }],
-        model: 'claude-sonnet-4-5-20250514',
-        usage: { input_tokens: 500, output_tokens: 200 },
-        stop_reason: 'end_turn'
-      })
       .mockRejectedValueOnce(new Error('API rate limit exceeded'));
 
     const docId = 'doc-retry';
@@ -313,7 +312,7 @@ describe('Pipeline retry from failed state', () => {
 
     documentPipeline.initPipeline(docId, userId, 'unknown');
 
-    // First attempt — should fail at analysis
+    // First attempt — should fail at classification
     const failResult = await documentPipeline.processDocument(docId, userId, {
       documentText: 'Test document for retry.',
       documentType: 'unknown'
@@ -486,9 +485,9 @@ describe('Encryption integration with pipeline storage', () => {
     expect(result.success).toBe(true);
     expect(result.status).toBe('review');
 
-    // Pipeline produces plaintext analysis results
+    // Pipeline produces plaintext analysis results (new documentAnalysisService format)
     expect(result.analysisResults).toBeDefined();
-    expect(result.analysisResults.analysis.issues).toHaveLength(1);
+    expect(result.analysisResults.anomalies).toHaveLength(1);
 
     // Now simulate what the API route does: store via documentService
     // documentService is in mock mode (Supabase is null), so it uses
