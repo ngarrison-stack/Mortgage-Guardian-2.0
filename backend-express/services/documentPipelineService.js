@@ -5,6 +5,7 @@ const claudeService = require('./claudeService');
 const ocrService = require('./ocrService');
 const classificationService = require('./classificationService');
 const caseFileService = require('./caseFileService');
+const documentAnalysisService = require('./documentAnalysisService');
 const logger = createLogger('document-pipeline');
 
 /**
@@ -598,55 +599,46 @@ class DocumentPipelineService {
   }
 
   /**
-   * Step 3: Send extracted text to Claude for AI analysis.
+   * Step 3: Deep document analysis using documentAnalysisService.
+   *
+   * Passes classification results (from _runClassification step) to enable
+   * type-specific analysis prompts, completeness scoring, and anomaly detection.
    */
   async _runAnalysis(pipeline) {
     this._advanceState(pipeline, PIPELINE_STATES.ANALYZING);
 
-    const prompt = claudeService.buildMortgageAnalysisPrompt(
+    // Use classification results from pipeline (set during _runClassification step)
+    const classification = {
+      classificationType: pipeline.classificationResults?.classificationType || pipeline.documentType || 'unknown',
+      classificationSubtype: pipeline.classificationResults?.classificationSubtype || 'unknown',
+      confidence: pipeline.classificationResults?.confidence || 0,
+      extractedMetadata: pipeline.classificationResults?.extractedMetadata || {}
+    };
+
+    const analysisResult = await documentAnalysisService.analyzeDocument(
       pipeline.extractedText,
-      pipeline.documentType
+      classification,
+      { userId: pipeline.userId }
     );
 
-    const result = await claudeService.analyzeDocument({
-      prompt,
-      maxTokens: 4096,
-      temperature: 0.1
-    });
-
-    // Parse Claude's response into structured data
-    let parsedAnalysis;
-    try {
-      parsedAnalysis = JSON.parse(result.content);
-    } catch {
-      // If Claude didn't return valid JSON, wrap the raw response
-      parsedAnalysis = {
-        rawAnalysis: result.content,
-        parseWarning: 'AI response was not structured JSON'
-      };
-    }
-
-    pipeline.analysisResults = {
-      analysis: parsedAnalysis,
-      model: result.model,
-      usage: result.usage,
-      analyzedAt: new Date().toISOString()
-    };
+    pipeline.analysisResults = analysisResult;
 
     pipeline.steps.analyzing = {
       completedAt: new Date().toISOString(),
-      model: result.model,
-      tokensUsed: result.usage.inputTokens + result.usage.outputTokens
+      classificationType: classification.classificationType,
+      classificationSubtype: classification.classificationSubtype
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
     // Persist after analysis completion
     this._persistPipeline(pipeline).catch(() => {});
 
-    logger.info('AI analysis complete', {
+    // Log analysis completion with key metrics
+    logger.info('Document analysis complete', {
       documentId: pipeline.documentId,
-      model: result.model,
-      issuesFound: parsedAnalysis.issues?.length || 0
+      riskLevel: analysisResult?.summary?.riskLevel || 'unknown',
+      completenessScore: analysisResult?.completeness?.score || null,
+      anomalyCount: analysisResult?.anomalies?.length || 0
     });
   }
 
