@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 12 of 17 (Individual Document Analysis Engine)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-28 — Completed 12-03-PLAN.md (Phase 12 complete)
+Phase: 13 of 17 (Cross-Document Forensic Analysis)
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-03-01 — Completed 13-01-PLAN.md
 
-Progress: ██████▓▓░░░░░░░░░░░░ 43% (v3.0 Milestone — 13 of ~30 plans)
+Progress: ██████▓░░░░░░░░░░░░░ 47% (v3.0 Milestone — 14 of ~30 plans)
 
 ## Performance Metrics
 
@@ -80,6 +80,11 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 12-03 | Pass classification results directly to analysis service | Avoids redundant re-classification; pipeline already has classification from earlier step |
 | 12-03 | Analysis route BEFORE /:documentId | Prevents Express treating "analysis" as a documentId param |
 | 12-03 | Return 200 with status:'error' for failed analysis | Client distinguishes "not analyzed" (404) from "analysis failed" (200 + error status) |
+| 13-01 | Schema-first for cross-document analysis | Define output contract before building comparison engine |
+| 13-01 | 9 comparison pairs for mortgage doc relationships | Covers stmt-vs-stmt, stmt-vs-closing, legal-vs-stmt, etc. |
+| 13-01 | Bidirectional matching with wildcard subtypes | Single pair definition matches both document orderings |
+| 13-01 | Severity elevation tied to field tiers | Critical tier fields auto-elevate discrepancy severity |
+| 13-01 | paymentVerification nullable | Graceful degradation when no Plaid data available |
 
 ### Deferred Issues
 
@@ -99,6 +104,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Completed 12-03-PLAN.md — Phase 12 complete, ready for Phase 13
+Last session: 2026-03-01
+Stopped at: Completed 13-01-PLAN.md — 1 of 6 plans in Phase 13
 Resume file: None
