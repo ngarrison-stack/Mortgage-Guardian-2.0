@@ -85,10 +85,15 @@ Plans:
 **Depends on**: Phase 12
 **Research**: Likely (multi-document context management with Claude, Plaid transaction API for cross-referencing, forensic analysis patterns)
 **Research topics**: Claude multi-turn analysis for large document sets, Plaid transactions API extensions, discrepancy detection algorithms
-**Plans**: TBD
+**Plans**: 6
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01: Cross-Document Analysis Schema & Comparison Configuration
+- [ ] 13-02: Document Data Aggregation & Comparison Pairs (TDD)
+- [ ] 13-03: Cross-Document Claude AI Comparison Service
+- [ ] 13-04: Plaid Transaction Cross-Reference Service (TDD)
+- [ ] 13-05: Forensic Analysis Orchestrator
+- [ ] 13-06: Cross-Document API Routes, Integration Tests & Verification
 
 #### Phase 14: Federal Lending Law Compliance Engine
 
