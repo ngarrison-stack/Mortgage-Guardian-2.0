@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 12 of 17 (Individual Document Analysis Engine)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-28 — Completed 12-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-28 — Completed 12-03-PLAN.md (Phase 12 complete)
 
-Progress: ██████▓░░░░░░░░░░░░░ 40% (v3.0 Milestone — 12 of ~30 plans)
+Progress: ██████▓▓░░░░░░░░░░░░ 43% (v3.0 Milestone — 13 of ~30 plans)
 
 ## Performance Metrics
 
@@ -77,6 +77,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 12-02 | Anomaly severity elevation for critical fields | Critical field anomalies auto-elevated to 'high' regardless of Claude's initial assessment |
 | 12-02 | Markdown code fence extraction fallback | Claude occasionally wraps JSON in markdown; graceful extraction |
 | 12-02 | Schema validation as warnings not rejections | Pipeline never fails on minor schema deviations; warnings attached instead |
+| 12-03 | Pass classification results directly to analysis service | Avoids redundant re-classification; pipeline already has classification from earlier step |
+| 12-03 | Analysis route BEFORE /:documentId | Prevents Express treating "analysis" as a documentId param |
+| 12-03 | Return 200 with status:'error' for failed analysis | Client distinguishes "not analyzed" (404) from "analysis failed" (200 + error status) |
 
 ### Deferred Issues
 
@@ -97,5 +100,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 12-02-PLAN.md — ready for 12-03 execution
+Stopped at: Completed 12-03-PLAN.md — Phase 12 complete, ready for Phase 13
 Resume file: None
