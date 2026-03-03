@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 13 of 17 (Cross-Document Forensic Analysis)
-Plan: 1 of 6 in current phase
+Plan: 2 of 6 in current phase
 Status: In progress
-Last activity: 2026-03-01 — Completed 13-01-PLAN.md
+Last activity: 2026-03-02 — Completed 13-02-PLAN.md (TDD)
 
-Progress: ██████▓░░░░░░░░░░░░░ 47% (v3.0 Milestone — 14 of ~30 plans)
+Progress: ███████░░░░░░░░░░░░░ 50% (v3.0 Milestone — 15 of ~30 plans)
 
 ## Performance Metrics
 
@@ -85,6 +85,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 13-01 | Bidirectional matching with wildcard subtypes | Single pair definition matches both document orderings |
 | 13-01 | Severity elevation tied to field tiers | Critical tier fields auto-elevate discrepancy severity |
 | 13-01 | paymentVerification nullable | Graceful degradation when no Plaid data available |
+| 13-02 | Direct pipeline Map access for analysis fallback | getStatus() omits analysisResults; pipelineState.get() provides full data |
+| 13-02 | Classification from analysisReport.documentInfo first | Primary source; pipeline classificationResults as fallback |
+| 13-02 | Synchronous _normalizeDocument | Pipeline Map access is sync; no async needed for normalization |
 
 ### Deferred Issues
 
@@ -104,6 +107,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 13-01-PLAN.md — 1 of 6 plans in Phase 13
+Last session: 2026-03-02
+Stopped at: Completed 13-02-PLAN.md (TDD) — 2 of 6 plans in Phase 13
 Resume file: None
