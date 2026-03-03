@@ -21,14 +21,14 @@
 // ---------------------------------------------------------------------------
 
 const mockGetCase = jest.fn();
-const mockGetStatus = jest.fn();
+const mockPipelineState = new Map();
 
 jest.mock('../../services/caseFileService', () => ({
   getCase: mockGetCase
 }));
 
 jest.mock('../../services/documentPipelineService', () => ({
-  getStatus: mockGetStatus
+  pipelineState: mockPipelineState
 }));
 
 const crossDocumentAggregationService = require('../../services/crossDocumentAggregationService');
@@ -105,8 +105,7 @@ function createMockDocument({
 describe('CrossDocumentAggregationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default: pipeline returns null (no in-memory analysis)
-    mockGetStatus.mockResolvedValue(null);
+    mockPipelineState.clear();
   });
 
   describe('aggregateForCase()', () => {
@@ -215,7 +214,7 @@ describe('CrossDocumentAggregationService', () => {
         ]
       });
 
-      mockGetStatus.mockResolvedValue(null); // No in-memory analysis either
+      // mockPipelineState is empty — no in-memory analysis either
 
       const result = await crossDocumentAggregationService.aggregateForCase('case-003', 'user-123');
 
@@ -255,23 +254,16 @@ describe('CrossDocumentAggregationService', () => {
         ]
       });
 
-      // Pipeline has analysis for doc-pipeline
-      mockGetStatus.mockImplementation(async (docId) => {
-        if (docId === 'doc-pipeline') {
-          return {
-            documentId: 'doc-pipeline',
-            status: 'analyzed',
-            hasAnalysis: true,
-            hasClassification: true,
-            analysisResults: pipelineAnalysis,
-            classificationResults: {
-              classificationType: 'servicing',
-              classificationSubtype: 'monthly_statement',
-              confidence: 0.9
-            }
-          };
+      // Pipeline has analysis for doc-pipeline in-memory
+      mockPipelineState.set('doc-pipeline', {
+        documentId: 'doc-pipeline',
+        status: 'analyzed',
+        analysisResults: pipelineAnalysis,
+        classificationResults: {
+          classificationType: 'servicing',
+          classificationSubtype: 'monthly_statement',
+          confidence: 0.9
         }
-        return null;
       });
 
       const result = await crossDocumentAggregationService.aggregateForCase('case-003b', 'user-123');
