@@ -14,6 +14,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { createLogger } = require('../utils/logger');
 const { getStatuteById } = require('../config/federalStatuteTaxonomy');
+const { getStateStatuteById, getStateSectionById } = require('../config/stateStatuteTaxonomy');
 
 const logger = createLogger('compliance-analysis');
 
@@ -156,21 +157,124 @@ class ComplianceAnalysisService {
   }
 
   /**
+   * Analyze state violations with AI-generated legal context.
+   * Same batching pattern as federal analyzeViolations().
+   *
+   * @param {Array} stateViolations - State violation objects from ComplianceRuleEngine.evaluateStateFindings()
+   * @param {Object} [caseContext] - Case context { caseId, documentTypes, discrepancySummary }
+   * @returns {Promise<Object>} { enhancedViolations, analysisMetadata }
+   */
+  async analyzeStateViolations(stateViolations, caseContext) {
+    const startTime = Date.now();
+    const context = caseContext || {};
+
+    if (!Array.isArray(stateViolations) || stateViolations.length === 0) {
+      logger.info('No state violations to analyze', { caseId: context.caseId });
+      return {
+        enhancedViolations: [],
+        analysisMetadata: {
+          totalViolations: 0,
+          claudeCallsMade: 0,
+          durationMs: Date.now() - startTime,
+          model: DEFAULT_MODEL
+        }
+      };
+    }
+
+    // Group violations by statuteId for batched analysis
+    const groupedByStatute = this._groupByStatute(stateViolations);
+    let enhancedViolations = [];
+    let claudeCallsMade = 0;
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+
+    for (const [statuteId, statuteViolations] of Object.entries(groupedByStatute)) {
+      const batches = this._createBatches(statuteViolations, MAX_VIOLATIONS_PER_BATCH);
+
+      for (const batch of batches) {
+        try {
+          const prompt = this._buildStateViolationPrompt(batch, context);
+
+          const client = this._getClient();
+          const response = await client.messages.create({
+            model: DEFAULT_MODEL,
+            max_tokens: VIOLATION_MAX_TOKENS,
+            temperature: DEFAULT_TEMPERATURE,
+            messages: [{ role: 'user', content: prompt }]
+          });
+
+          claudeCallsMade++;
+          const usage = response.usage || {};
+          totalInputTokens += usage.input_tokens || 0;
+          totalOutputTokens += usage.output_tokens || 0;
+
+          const responseText = response.content[0].text;
+          const parsed = this._parseClaudeResponse(responseText);
+
+          if (parsed.parseError) {
+            logger.warn('Failed to parse Claude state compliance response', {
+              statuteId,
+              parseError: parsed.parseError
+            });
+            enhancedViolations.push(...batch);
+          } else {
+            const enhanced = this._mergeEnhancements(batch, parsed);
+            enhancedViolations.push(...enhanced);
+          }
+        } catch (error) {
+          logger.error('Claude state compliance analysis call failed', {
+            error: error.message,
+            statuteId,
+            batchSize: batch.length
+          });
+          enhancedViolations.push(...batch);
+        }
+      }
+    }
+
+    const durationMs = Date.now() - startTime;
+    logger.info('State compliance analysis completed', {
+      caseId: context.caseId,
+      totalViolations: stateViolations.length,
+      claudeCallsMade,
+      durationMs,
+      totalInputTokens,
+      totalOutputTokens
+    });
+
+    return {
+      enhancedViolations,
+      analysisMetadata: {
+        totalViolations: stateViolations.length,
+        claudeCallsMade,
+        durationMs,
+        model: DEFAULT_MODEL,
+        totalInputTokens,
+        totalOutputTokens
+      }
+    };
+  }
+
+  /**
    * Generate a case-level legal narrative summarizing all violations.
    *
    * @param {Array} violations - Enhanced violations array
    * @param {Object} [caseContext] - Case context
+   * @param {Array} [stateViolations] - Optional state violations to include in narrative
    * @returns {Promise<string>} Markdown-formatted legal narrative
    */
-  async generateLegalNarrative(violations, caseContext) {
+  async generateLegalNarrative(violations, caseContext, stateViolations) {
     const context = caseContext || {};
 
-    if (!Array.isArray(violations) || violations.length === 0) {
+    const hasFederal = Array.isArray(violations) && violations.length > 0;
+    const hasState = Array.isArray(stateViolations) && stateViolations.length > 0;
+
+    if (!hasFederal && !hasState) {
       return '';
     }
 
     try {
-      const prompt = this._buildNarrativePrompt(violations, context);
+      const prompt = this._buildNarrativePrompt(violations || [], context, stateViolations);
       const client = this._getClient();
 
       const response = await client.messages.create({
@@ -276,11 +380,12 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
   /**
    * Build the narrative prompt for case-level legal summary.
    *
-   * @param {Array} enhancedViolations - All enhanced violations
+   * @param {Array} enhancedViolations - All enhanced federal violations
    * @param {Object} caseContext - Case context
+   * @param {Array} [stateViolations] - Optional state violations to include
    * @returns {string} Prompt string
    */
-  _buildNarrativePrompt(enhancedViolations, caseContext) {
+  _buildNarrativePrompt(enhancedViolations, caseContext, stateViolations) {
     // Collect unique statute names
     const statuteNames = [...new Set(enhancedViolations.map(v => v.statuteName).filter(Boolean))];
 
@@ -293,30 +398,163 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
       citation: v.citation
     }));
 
+    // Build state violations section if present
+    let stateSection = '';
+    if (Array.isArray(stateViolations) && stateViolations.length > 0) {
+      const stateStatuteNames = [...new Set(stateViolations.map(v => v.statuteName).filter(Boolean))];
+      const stateJurisdictions = [...new Set(stateViolations.map(v => v.jurisdiction).filter(Boolean))];
+      statuteNames.push(...stateStatuteNames);
+
+      const stateSummaries = stateViolations.map(v => ({
+        id: v.id,
+        jurisdiction: v.jurisdiction,
+        statuteName: v.statuteName,
+        sectionTitle: v.sectionTitle,
+        severity: v.severity,
+        description: v.description,
+        citation: v.citation,
+        potentialPenalties: v.potentialPenalties
+      }));
+
+      stateSection = `
+
+## State Law Violations
+
+States Analyzed: ${stateJurisdictions.join(', ')}
+State Statutes Implicated: ${stateStatuteNames.join(', ') || 'N/A'}
+
+${JSON.stringify(stateSummaries, null, 2)}
+`;
+    }
+
+    const stateInstructions = stateSection ? `
+5. **State Law Analysis**: Summarize applicable state lending law violations, reference state-specific penalties and enforcement bodies, and explain how state claims supplement the federal violations` : '';
+
     return `You are a senior regulatory compliance attorney preparing a compliance report narrative for a mortgage servicing audit case.
 
 ## Case Context
 
 Case ID: ${caseContext.caseId || 'N/A'}
 Document Types: ${Array.isArray(caseContext.documentTypes) ? caseContext.documentTypes.join(', ') : 'N/A'}
-Statutes Implicated: ${statuteNames.join(', ') || 'N/A'}
+Statutes Implicated: ${[...new Set(statuteNames)].join(', ') || 'N/A'}
 
-## Violations Found
+## Federal Violations Found
+
+${JSON.stringify(violationSummaries, null, 2)}
+${stateSection}
+## Instructions
+
+Write a ${stateSection ? '4-6' : '3-5'} paragraph legal narrative suitable for inclusion in a formal compliance report. The narrative should:
+
+1. **Overview**: Summarize the nature and scope of violations found
+2. **Most Serious Concerns**: Highlight the most critical violations and their implications for the borrower
+3. **Regulatory Implications**: Explain the regulatory exposure and potential enforcement consequences
+4. **Recommended Actions**: Outline specific remedial steps the servicer should take${stateInstructions}
+
+Use professional legal tone. Reference specific statutes and regulations. This narrative will accompany the detailed violation findings in the compliance report.
+
+Respond with the narrative text in markdown format (no JSON wrapper needed).`;
+  }
+
+  /**
+   * Build a state-specific prompt for Claude to enhance state violations.
+   *
+   * @param {Array} violations - State violations for this batch
+   * @param {Object} caseContext - Case context
+   * @returns {string} Prompt string
+   */
+  _buildStateViolationPrompt(violations, caseContext) {
+    // Derive state info from the first violation in batch
+    const stateCode = violations[0] && violations[0].jurisdiction ? violations[0].jurisdiction : 'Unknown';
+
+    // Collect statute and section details from state taxonomy
+    const sectionDetails = [];
+    const statuteInfo = {};
+
+    for (const v of violations) {
+      if (v.statuteId && v.jurisdiction) {
+        const statute = getStateStatuteById(v.jurisdiction, v.statuteId);
+        if (statute && !statuteInfo[v.statuteId]) {
+          statuteInfo[v.statuteId] = {
+            name: statute.name,
+            citation: statute.citation,
+            enforcementBody: statute.enforcementBody
+          };
+        }
+      }
+      if (v.sectionId && v.jurisdiction) {
+        const section = getStateSectionById(v.jurisdiction, v.sectionId);
+        if (section) {
+          sectionDetails.push({
+            id: section.id,
+            section: section.section,
+            title: section.title,
+            regulatoryReference: section.regulatoryReference,
+            requirements: section.requirements,
+            penalties: section.penalties
+          });
+        }
+      }
+    }
+
+    const statutes = Object.values(statuteInfo);
+    const statuteNames = statutes.map(s => s.name).join(', ') || 'Unknown State Statute';
+    const enforcementBodies = [...new Set(statutes.map(s => s.enforcementBody).filter(Boolean))].join(', ') || 'State Attorney General';
+
+    const violationSummaries = violations.map((v, i) => ({
+      index: i,
+      id: v.id,
+      sectionId: v.sectionId,
+      sectionTitle: v.sectionTitle,
+      severity: v.severity,
+      description: v.description,
+      evidence: v.evidence,
+      legalBasis: v.legalBasis,
+      potentialPenalties: v.potentialPenalties,
+      jurisdiction: v.jurisdiction
+    }));
+
+    return `You are a state regulatory compliance attorney specializing in ${stateCode} mortgage lending law. Analyze the following state-level violations under ${statuteNames}, enforced by ${enforcementBodies}.
+
+## State Context
+
+**State:** ${stateCode}
+**Statutes:** ${statutes.map(s => `${s.name} (${s.citation})`).join('; ') || 'Unknown'}
+**Enforcement Bodies:** ${enforcementBodies}
+
+### Relevant Sections:
+${JSON.stringify(sectionDetails, null, 2)}
+
+## Case Context
+
+Case ID: ${caseContext.caseId || 'N/A'}
+Document Types: ${Array.isArray(caseContext.documentTypes) ? caseContext.documentTypes.join(', ') : 'N/A'}
+Discrepancy Summary: ${caseContext.discrepancySummary || 'N/A'}
+
+## Violations to Analyze
 
 ${JSON.stringify(violationSummaries, null, 2)}
 
 ## Instructions
 
-Write a 3-5 paragraph legal narrative suitable for inclusion in a formal compliance report. The narrative should:
+For EACH violation above, provide enhanced legal analysis under state law. Respond with valid JSON in this format:
 
-1. **Overview**: Summarize the nature and scope of violations found
-2. **Most Serious Concerns**: Highlight the most critical violations and their implications for the borrower
-3. **Regulatory Implications**: Explain the regulatory exposure and potential enforcement consequences
-4. **Recommended Actions**: Outline specific remedial steps the servicer should take
+\`\`\`json
+{
+  "enhancedViolations": [
+    {
+      "index": 0,
+      "detailedLegalBasis": "Detailed explanation citing specific state statutory provisions and why this finding constitutes a violation under state law",
+      "potentialPenalties": "Specific state penalty exposure including statutory damages, treble damages, attorney fees as applicable",
+      "recommendations": ["Specific remedial action 1", "Specific remedial action 2"],
+      "regulatoryImplications": "State-specific regulatory implications including potential enforcement actions by ${enforcementBodies}"
+    }
+  ]
+}
+\`\`\`
 
-Use professional legal tone. Reference specific statutes and regulations. This narrative will accompany the detailed violation findings in the compliance report.
-
-Respond with the narrative text in markdown format (no JSON wrapper needed).`;
+Cite specific state statutory provisions. Reference state enforcement bodies and state-specific remedies (e.g., treble damages, private right of action). Be precise and litigation-ready.
+Respond ONLY with valid JSON. No explanation outside the JSON.`;
   }
 
   /**
