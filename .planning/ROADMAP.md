@@ -117,10 +117,17 @@ Plans:
 **Depends on**: Phase 14
 **Research**: Likely (50-state lending law survey, state-specific servicing requirements, jurisdiction determination logic)
 **Research topics**: State mortgage servicing acts (CA, NY, MA, IL, TX, FL as priority), state-specific foreclosure requirements, licensing laws, state consumer protection statutes
-**Plans**: TBD
+**Plans**: 8
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01: State Compliance Schema & Jurisdiction Model
+- [ ] 15-02: Jurisdiction Detection Service (TDD)
+- [ ] 15-03: Priority State Statutes — CA, NY, TX
+- [ ] 15-04: Priority State Statutes — FL, IL, MA
+- [ ] 15-05: State Compliance Rule Mappings
+- [ ] 15-06: State Rule Engine Integration (TDD)
+- [ ] 15-07: State AI Analysis & Orchestrator Integration
+- [ ] 15-08: State Compliance API & Integration Tests
 
 #### Phase 16: Consolidated Findings & Reporting
 
@@ -160,7 +167,7 @@ Plans:
 | 12. Individual Document Analysis Engine | v3.0 | 3/3 | Complete | 2026-02-28 |
 | 13. Cross-Document Forensic Analysis | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
-| 15. State Lending Law Compliance Engine | v3.0 | 0/? | Not started | - |
+| 15. State Lending Law Compliance Engine | v3.0 | 0/8 | Planned | - |
 | 16. Consolidated Findings & Reporting | v3.0 | 0/? | Not started | - |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 0/? | Not started | - |
 
