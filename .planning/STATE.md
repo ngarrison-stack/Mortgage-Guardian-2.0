@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 13 of 17 (Cross-Document Forensic Analysis)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-03-09 — Completed 13-05-PLAN.md
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-03-09 — Completed 13-06-PLAN.md (Phase 13 COMPLETE)
 
-Progress: █████████░░░░░░░░░░░ 60% (v3.0 Milestone — 18 of ~30 plans)
+Progress: ██████████░░░░░░░░░░ 63% (v3.0 Milestone — 19 of ~30 plans)
 
 ## Performance Metrics
 
@@ -96,6 +96,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 13-04 | 80% threshold for paymentVerified | Balance between strictness and real-world posting delays |
 | 13-04 | Keyword-based escrow/fee classification | Transaction name/merchantName/category matched against keyword arrays |
 | 13-04 | Pending transactions excluded before matching | Pending amounts may change; only match settled transactions |
+| 13-06 | Forensic routes before /:caseId | Prevents Express param matching (consistent with 12-03 pattern) |
+| 13-06 | 200 + status:'error' for analysis failures | Client distinguishes "not analyzed" (404) from "analysis failed" (200 + error) |
 
 ### Deferred Issues
 
@@ -116,5 +118,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 13-05-PLAN.md — 5 of 6 plans in Phase 13
+Stopped at: Completed 13-06-PLAN.md — Phase 13 COMPLETE (6/6 plans)
 Resume file: None
