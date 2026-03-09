@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 15 of 17 (State Lending Law Compliance Engine)
-Plan: 7 of 8 in current phase
-Status: In progress
-Last activity: 2026-03-09 — Completed 15-07-PLAN.md
+Plan: 8 of 8 in current phase
+Status: Phase complete
+Last activity: 2026-03-09 — Completed 15-08-PLAN.md
 
-Progress: █████████████████░░░ 94% (v3.0 Milestone — 32 of ~33 plans)
+Progress: █████████████████░░░ 94% (v3.0 Milestone — 33 of ~35 plans)
 
 ## Performance Metrics
 
@@ -117,6 +117,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 15-07 | generateLegalNarrative extended with optional 3rd param | Dynamic state section when present; avoids separate method |
 | 15-07 | Lazy require for JurisdictionService | Fresh instance per call; avoids module-level init issues |
 | 15-07 | stateCompliance summary parallels federal complianceSummary | Consistent report structure for consumers |
+| 15-08 | State routes between federal statute and case routes | Consistent ordering pattern (12-03, 13-06, 14-06) |
+| 15-08 | getSupportedStatesSchema uses unknown(false) | Rejects query garbage without needing specific params |
 
 ### Deferred Issues
 
@@ -137,5 +139,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 15-07-PLAN.md — State AI Analysis & Orchestrator Integration
-Resume file: .planning/phases/15-state-lending-law-compliance/15-08-PLAN.md
+Stopped at: Completed 15-08-PLAN.md — Phase 15 COMPLETE (State Lending Law Compliance Engine)
+Resume file: None — ready for Phase 16 planning
