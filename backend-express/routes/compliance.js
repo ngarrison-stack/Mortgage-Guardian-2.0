@@ -3,6 +3,11 @@ const router = express.Router();
 const complianceService = require('../services/complianceService');
 const caseFileService = require('../services/caseFileService');
 const { FEDERAL_STATUTES, getStatuteById } = require('../config/federalStatuteTaxonomy');
+const {
+  STATE_STATUTES,
+  getSupportedStates,
+  getStateStatuteById
+} = require('../config/stateStatuteTaxonomy');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('compliance-routes');
 const { validate } = require('../middleware/validate');
@@ -10,7 +15,10 @@ const {
   evaluateComplianceSchema,
   getComplianceReportSchema,
   getStatuteDetailsSchema,
-  listStatutesSchema
+  listStatutesSchema,
+  getSupportedStatesSchema,
+  stateCodeParamsSchema,
+  getStateStatuteDetailsSchema
 } = require('../schemas/compliance');
 
 // ============================================
@@ -68,6 +76,99 @@ router.get('/compliance/statutes/:statuteId', validate(getStatuteDetailsSchema, 
 });
 
 // ============================================
+// STATE STATUTE REFERENCE ENDPOINTS
+// These are mounted at /v1/compliance/states/...
+// ============================================
+
+// GET /v1/compliance/states
+// List all supported states with statute counts
+router.get('/compliance/states', validate(getSupportedStatesSchema, 'query'), async (req, res, next) => {
+  try {
+    const stateCodes = getSupportedStates();
+
+    const states = stateCodes.map(code => {
+      const entry = STATE_STATUTES[code];
+      const statutes = Object.values(entry.statutes);
+      const sectionCount = statutes.reduce((sum, s) => sum + s.sections.length, 0);
+      return {
+        stateCode: entry.stateCode,
+        stateName: entry.stateName,
+        statuteCount: statutes.length,
+        sectionCount
+      };
+    });
+
+    res.status(200).json({ states });
+  } catch (error) {
+    logger.error('List supported states error', { error: error.message });
+    next(error);
+  }
+});
+
+// GET /v1/compliance/states/:stateCode/statutes
+// List statutes for a specific state
+router.get('/compliance/states/:stateCode/statutes', validate(stateCodeParamsSchema, 'params'), async (req, res, next) => {
+  try {
+    const { stateCode } = req.params;
+    const entry = STATE_STATUTES[stateCode.toUpperCase()];
+
+    if (!entry) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: `State '${stateCode}' is not supported`
+      });
+    }
+
+    const statutes = Object.values(entry.statutes).map(s => ({
+      id: s.id,
+      name: s.name,
+      citation: s.citation,
+      enforcementBody: s.enforcementBody,
+      sectionCount: s.sections.length
+    }));
+
+    res.status(200).json({
+      stateCode: entry.stateCode,
+      stateName: entry.stateName,
+      statutes
+    });
+  } catch (error) {
+    logger.error('List state statutes error', { error: error.message });
+    next(error);
+  }
+});
+
+// GET /v1/compliance/states/:stateCode/statutes/:statuteId
+// Get detailed state statute with sections, requirements, violation patterns, penalties
+router.get('/compliance/states/:stateCode/statutes/:statuteId', validate(getStateStatuteDetailsSchema, 'params'), async (req, res, next) => {
+  try {
+    const { stateCode, statuteId } = req.params;
+    const entry = STATE_STATUTES[stateCode.toUpperCase()];
+
+    if (!entry) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: `State '${stateCode}' is not supported`
+      });
+    }
+
+    const statute = getStateStatuteById(stateCode.toUpperCase(), statuteId);
+
+    if (!statute) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: `Statute '${statuteId}' not found in state '${stateCode}'`
+      });
+    }
+
+    res.status(200).json(statute);
+  } catch (error) {
+    logger.error('Get state statute details error', { error: error.message });
+    next(error);
+  }
+});
+
+// ============================================
 // CASE COMPLIANCE ENDPOINTS
 // These are mounted at /v1/cases/:caseId/compliance
 // but registered via the compliance router
@@ -79,14 +180,17 @@ router.post('/cases/:caseId/compliance', validate(evaluateComplianceSchema), asy
   try {
     const userId = req.user.id;
     const { caseId } = req.params;
-    const { skipAiAnalysis, statuteFilter, plaidAccessToken } = req.body;
+    const { skipAiAnalysis, statuteFilter, plaidAccessToken, state, skipStateAnalysis, stateStatuteFilter } = req.body;
 
-    logger.info('Running compliance evaluation', { caseId, userId, skipAiAnalysis });
+    logger.info('Running compliance evaluation', { caseId, userId, skipAiAnalysis, state });
 
     const options = {};
     if (skipAiAnalysis != null) options.skipAiAnalysis = skipAiAnalysis;
     if (statuteFilter) options.statuteFilter = statuteFilter;
     if (plaidAccessToken) options.plaidAccessToken = plaidAccessToken;
+    if (state) options.state = state;
+    if (skipStateAnalysis != null) options.skipStateAnalysis = skipStateAnalysis;
+    if (stateStatuteFilter) options.stateStatuteFilter = stateStatuteFilter;
 
     const result = await complianceService.evaluateCompliance(caseId, userId, options);
 
