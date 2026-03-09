@@ -1337,7 +1337,303 @@ const STATE_STATUTES = {
   IL: {
     stateCode: 'IL',
     stateName: 'Illinois',
-    statutes: {}
+    statutes: {
+
+      // -------------------------------------------------------------------
+      // Illinois Mortgage Foreclosure Law
+      // -------------------------------------------------------------------
+      il_foreclosure_law: {
+        id: 'il_foreclosure_law',
+        name: 'Illinois Mortgage Foreclosure Law',
+        citation: '735 ILCS 5/15-1101 through 15-1605',
+        enforcementBody: 'IL IDFPR / IL Courts',
+        sections: [
+          {
+            id: 'il_foreclosure_notice',
+            section: '§ 15-1502.5',
+            title: 'Grace Period and Pre-Foreclosure Notice',
+            regulatoryReference: '735 ILCS 5/15-1502.5',
+            requirements: [
+              'Servicer must provide 30-day grace period notice before filing foreclosure',
+              'Notice must include total amount required to cure the default',
+              'Notice must inform borrower of available housing counseling resources',
+              'Notice must be sent by certified mail and first-class mail to last known address'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['30 day grace period', 'pre-foreclosure notice', 'cure period', 'grace period notice'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['foreclosure notice', 'cure notice', 'housing counseling', 'certified mail'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Foreclosure action may be dismissed. Borrower entitled to reinstatement. Attorney fees and costs.'
+          },
+          {
+            id: 'il_foreclosure_reinstatement',
+            section: '§ 15-1602',
+            title: 'Right to Reinstate Mortgage',
+            regulatoryReference: '735 ILCS 5/15-1602',
+            requirements: [
+              'Borrower has right to reinstate by curing default up to 90 days after service of summons',
+              'Reinstatement requires payment of all amounts due plus reasonable costs and attorney fees',
+              'Servicer must provide accurate reinstatement amount upon written request',
+              'Servicer must accept reinstatement payment and cease foreclosure proceedings'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['reinstatement right', 'reinstatement period', '90 day reinstatement', 'cure default'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['reinstatement amount', 'cure amount', 'reinstatement calculation', 'payoff error'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Borrower may reinstate despite servicer refusal. Foreclosure sale may be set aside. Actual damages and attorney fees.'
+          },
+          {
+            id: 'il_foreclosure_judicial',
+            section: '§ 15-1506',
+            title: 'Judicial Foreclosure Requirements',
+            regulatoryReference: '735 ILCS 5/15-1506',
+            requirements: [
+              'All foreclosures must proceed through judicial process in Illinois',
+              'Complaint must include the original or a copy of the note and mortgage',
+              'Servicer must demonstrate standing by establishing chain of assignments',
+              'Court must enter judgment of foreclosure before any sale may occur'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['judicial foreclosure', 'foreclosure complaint', 'note and mortgage', 'chain of assignments'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['foreclosure standing', 'assignment chain', 'note holder', 'mortgage holder'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Foreclosure judgment is voidable. Dismissal of complaint for lack of standing. Attorney fees and costs.'
+          },
+          {
+            id: 'il_foreclosure_loss_mitigation',
+            section: '§ 15-1502.5(c)',
+            title: 'Loss Mitigation and Mediation Requirements',
+            regulatoryReference: '735 ILCS 5/15-1502.5(c)',
+            requirements: [
+              'Servicer must provide information about loss mitigation options in pre-foreclosure notice',
+              'Must inform borrower of right to request loss mitigation review',
+              'Servicer must evaluate borrower for all available workout options',
+              'Mediation may be ordered by the court in counties with mediation programs'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['loss mitigation', 'workout options', 'mediation program', 'foreclosure prevention'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['loss mitigation review', 'mediation deadline', 'workout evaluation'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Court may stay foreclosure proceedings. Dismissal if loss mitigation not offered. Attorney fees.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Illinois Residential Mortgage License Act
+      // -------------------------------------------------------------------
+      il_mortgage_license: {
+        id: 'il_mortgage_license',
+        name: 'Illinois Residential Mortgage License Act',
+        citation: '205 ILCS 635',
+        enforcementBody: 'IL IDFPR',
+        sections: [
+          {
+            id: 'il_rmla_licensing',
+            section: '§ 635/1-4',
+            title: 'Mortgage Servicer Licensing Requirements',
+            regulatoryReference: '205 ILCS 635/1-4',
+            requirements: [
+              'All mortgage servicers operating in Illinois must be licensed by IDFPR',
+              'License application must include surety bond and audited financial statements',
+              'Servicer must maintain minimum net worth as prescribed by IDFPR rules',
+              'License must be renewed annually and servicer must report material changes'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['unlicensed servicer', 'idfpr license', 'servicer registration', 'licensing requirement'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Administrative fines up to $25,000. License suspension or revocation. Cease and desist orders. Criminal penalties for willful violations.'
+          },
+          {
+            id: 'il_rmla_prohibited',
+            section: '§ 635/3-2',
+            title: 'Prohibited Servicing Practices',
+            regulatoryReference: '205 ILCS 635/3-2',
+            requirements: [
+              'Must not charge fees not authorized by the loan documents or applicable law',
+              'Must not pyramid late charges on top of previously assessed late fees',
+              'Must not misapply payments or fail to credit payments as of the date received',
+              'Must not force-place insurance without proper notice and opportunity to provide own coverage'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['unauthorized fee', 'pyramided late fee', 'force-placed insurance', 'improper charge'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['payment misapplication', 'payment crediting', 'late fee pyramid', 'insurance overcharge'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Administrative fines. License revocation. Borrower entitled to actual damages and statutory penalties. Attorney fees.'
+          },
+          {
+            id: 'il_rmla_disclosures',
+            section: '§ 635/3-5',
+            title: 'Disclosure and Reporting Requirements',
+            regulatoryReference: '205 ILCS 635/3-5',
+            requirements: [
+              'Must provide annual escrow account statements to borrowers',
+              'Must disclose all fees and charges assessed against the loan',
+              'Must provide periodic statements showing payment application and balances',
+              'Must notify borrower of servicing transfer at least 15 days before effective date'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['escrow statement', 'fee disclosure', 'periodic statement', 'transfer notice'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['undisclosed fee', 'escrow discrepancy', 'statement error', 'balance discrepancy'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Administrative penalties. Corrective action orders. Borrower damages for undisclosed fees.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Illinois Consumer Fraud and Deceptive Business Practices Act
+      // -------------------------------------------------------------------
+      il_consumer_fraud: {
+        id: 'il_consumer_fraud',
+        name: 'Illinois Consumer Fraud and Deceptive Business Practices Act',
+        citation: '815 ILCS 505',
+        enforcementBody: 'IL Attorney General / IL Courts',
+        sections: [
+          {
+            id: 'il_cfa_deceptive_mortgage',
+            section: '§ 505/2',
+            title: 'Deceptive Practices in Mortgage Servicing',
+            regulatoryReference: '815 ILCS 505/2',
+            requirements: [
+              'Servicer must not engage in unfair or deceptive acts in mortgage servicing',
+              'Must not make false or misleading statements regarding loan terms or status',
+              'Must not conceal material facts from borrowers about their loans',
+              'Must not employ deceptive methods to collect payments or fees'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['deceptive practice', 'misleading statement', 'concealed fact', 'unfair act'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['material disclosure', 'loan status', 'concealment', 'borrower notification'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages. Punitive damages for willful or wanton violations. Attorney fees and costs. AG civil penalties up to $50,000.'
+          },
+          {
+            id: 'il_cfa_unfair_collection',
+            section: '§ 505/2AA',
+            title: 'Unfair Mortgage Collection Practices',
+            regulatoryReference: '815 ILCS 505/2AA',
+            requirements: [
+              'Must not misrepresent the amount owed on a mortgage obligation',
+              'Must not threaten foreclosure action that is not actually intended',
+              'Must not assess charges or fees not authorized by the loan agreement',
+              'Must accurately report payment history to credit reporting agencies'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['amount misrepresentation', 'balance discrepancy', 'payment history error', 'credit reporting'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['unauthorized charge', 'improper fee', 'collection fee', 'unfair assessment'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages. Statutory damages. Punitive damages. Attorney fees and costs. Injunctive relief.'
+          },
+          {
+            id: 'il_cfa_consumer_protection',
+            section: '§ 505/10a',
+            title: 'Consumer Protection Remedies',
+            regulatoryReference: '815 ILCS 505/10a',
+            requirements: [
+              'Private right of action available for any person damaged by violation',
+              'Class actions permitted for pattern or practice violations',
+              'Borrower must provide 30-day written demand letter before filing suit',
+              'Attorney General may pursue enforcement for systemic violations'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'pattern_anomaly',
+                keywords: ['pattern violation', 'systemic practice', 'repeated violation', 'class action'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages or $100 per violation (whichever is greater). Attorney fees and costs. Injunctive relief. AG penalties up to $50,000.'
+          }
+        ]
+      }
+
+    }
   },
 
   // -----------------------------------------------------------------------
@@ -1346,7 +1642,303 @@ const STATE_STATUTES = {
   MA: {
     stateCode: 'MA',
     stateName: 'Massachusetts',
-    statutes: {}
+    statutes: {
+
+      // -------------------------------------------------------------------
+      // Predatory Home Loan Practices Act
+      // -------------------------------------------------------------------
+      ma_predatory_lending: {
+        id: 'ma_predatory_lending',
+        name: 'Predatory Home Loan Practices Act',
+        citation: 'Mass. Gen. Laws ch. 183C',
+        enforcementBody: 'MA DOB / MA Attorney General',
+        sections: [
+          {
+            id: 'ma_ch183c_prohibited_terms',
+            section: '§ 183C-3',
+            title: 'Prohibited Loan Terms',
+            regulatoryReference: 'Mass. Gen. Laws ch. 183C § 3',
+            requirements: [
+              'High-cost home mortgage loans must not include prepayment penalties exceeding 2% of amount prepaid',
+              'Must not include balloon payments due in less than 7 years',
+              'Must not finance credit insurance or debt cancellation products',
+              'Must not include negative amortization provisions in high-cost loans'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['prepayment penalty', 'balloon payment', 'credit insurance', 'negative amortization'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['prohibited term', 'high-cost loan', 'financed insurance', 'excessive prepayment'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Loan terms are unenforceable. Borrower entitled to actual damages. Attorney fees and costs. AG enforcement.'
+          },
+          {
+            id: 'ma_ch183c_disclosures',
+            section: '§ 183C-4',
+            title: 'Disclosure Requirements for High-Cost Loans',
+            regulatoryReference: 'Mass. Gen. Laws ch. 183C § 4',
+            requirements: [
+              'Must provide written notice that loan qualifies as a high-cost home mortgage loan',
+              'Must disclose the annual percentage rate and total cost of the loan',
+              'Borrower must receive disclosures at least 3 days before closing',
+              'Must advise borrower in writing to seek independent legal counsel'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['high-cost disclosure', 'apr disclosure', 'pre-closing notice', 'legal counsel advisory'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['3 day disclosure', 'closing disclosure timing', 'pre-closing period'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Loan may be rescinded. Actual damages. Statutory penalties. Attorney fees and costs.'
+          },
+          {
+            id: 'ma_ch183c_fee_limits',
+            section: '§ 183C-5',
+            title: 'Fee Limitations',
+            regulatoryReference: 'Mass. Gen. Laws ch. 183C § 5',
+            requirements: [
+              'Points and fees must not exceed 5% of the total loan amount for high-cost loans',
+              'Late payment charges limited to 4% of the overdue payment amount',
+              'Must not charge fees for payoff statement preparation',
+              'Must not charge fees for providing account information to borrower'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['excessive points', 'fee limit', 'late charge limit', 'payoff statement fee'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['points and fees', 'fee calculation', 'late fee percentage', 'fee threshold'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Refund of excess fees. Actual damages. Attorney fees. Administrative penalties by DOB.'
+          },
+          {
+            id: 'ma_ch183c_flipping',
+            section: '§ 183C-6',
+            title: 'Prohibition of Loan Flipping',
+            regulatoryReference: 'Mass. Gen. Laws ch. 183C § 6',
+            requirements: [
+              'Must not refinance a high-cost loan within 60 months unless refinancing provides net tangible benefit',
+              'Net tangible benefit must be documented and provided to borrower in writing',
+              'Must not encourage default on an existing loan to facilitate refinancing',
+              'Must verify borrower ability to repay before refinancing'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'pattern_anomaly',
+                keywords: ['loan flipping', 'serial refinancing', 'net tangible benefit', 'encouraged default'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Refinanced loan terms unenforceable. Actual damages. Treble damages for willful violations. Attorney fees.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Right to Cure Law
+      // -------------------------------------------------------------------
+      ma_right_to_cure: {
+        id: 'ma_right_to_cure',
+        name: 'Right to Cure Law',
+        citation: 'Mass. Gen. Laws ch. 244 § 35A',
+        enforcementBody: 'MA DOB / MA Courts',
+        sections: [
+          {
+            id: 'ma_rtc_150_day_notice',
+            section: '§ 244-35A(a)',
+            title: '150-Day Right to Cure Notice',
+            regulatoryReference: 'Mass. Gen. Laws ch. 244 § 35A(a)',
+            requirements: [
+              'Servicer must send 150-day right to cure notice before accelerating the mortgage',
+              'Notice must specify the nature of the default and amount required to cure',
+              'Notice must inform borrower of right to dispute the debt and request verification',
+              'Must include information about available housing counseling services'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['150 day notice', 'right to cure', 'pre-acceleration notice', 'cure period'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['cure notice', 'default notice', 'cure amount', 'housing counseling notice'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Foreclosure is void and unenforceable. Borrower entitled to damages. Attorney fees and costs.'
+          },
+          {
+            id: 'ma_rtc_notice_requirements',
+            section: '§ 244-35A(b)',
+            title: 'Cure Notice Content and Delivery Requirements',
+            regulatoryReference: 'Mass. Gen. Laws ch. 244 § 35A(b)',
+            requirements: [
+              'Notice must be sent by registered or certified mail and by first-class mail',
+              'Must include a description of the action required to cure the default',
+              'Must specify the date by which the borrower must cure the default',
+              'Must include a statement that the borrower has the right to bring a court action'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['registered mail', 'certified mail', 'cure instructions', 'court action notice'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['cure deadline', 'notice timing', 'delivery requirement', 'cure date'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Foreclosure sale may be set aside. Actual damages. Attorney fees and costs.'
+          },
+          {
+            id: 'ma_rtc_cure_protections',
+            section: '§ 244-35A(c)',
+            title: 'Borrower Cure Period Protections',
+            regulatoryReference: 'Mass. Gen. Laws ch. 244 § 35A(c)',
+            requirements: [
+              'Servicer must accept cure payment tendered within the 150-day period',
+              'Must not accelerate the loan while the cure period is active',
+              'Must not initiate foreclosure proceedings during the cure period',
+              'Cure payment must restore the loan to current status as of the date of the default'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['premature acceleration', 'cure period violation', 'early foreclosure', 'cure rejection'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['cure amount error', 'reinstatement calculation', 'cure payment', 'balance discrepancy'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Foreclosure is void. Borrower entitled to actual damages. Treble damages for willful violations. Attorney fees.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Consumer Protection Act (Chapter 93A)
+      // -------------------------------------------------------------------
+      ma_chapter_93a: {
+        id: 'ma_chapter_93a',
+        name: 'Consumer Protection Act (Chapter 93A)',
+        citation: 'Mass. Gen. Laws ch. 93A',
+        enforcementBody: 'MA Attorney General / MA Courts',
+        sections: [
+          {
+            id: 'ma_93a_unfair_practices',
+            section: '§ 93A-2',
+            title: 'Unfair or Deceptive Practices in Mortgage Servicing',
+            regulatoryReference: 'Mass. Gen. Laws ch. 93A § 2',
+            requirements: [
+              'Servicer must not engage in unfair or deceptive acts in mortgage servicing',
+              'Must not misrepresent the terms, status, or balance of a mortgage loan',
+              'Must not use deceptive methods to collect payments or foreclose',
+              'Must respond to consumer complaints within 30 days'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['unfair practice', 'deceptive act', 'misrepresentation', 'balance misstatement'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['complaint response', 'consumer complaint', '30 day response', 'borrower inquiry'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages or $25 per violation (whichever is greater). Treble damages up to $25,000 for willful or knowing violations. Attorney fees and costs.'
+          },
+          {
+            id: 'ma_93a_treble_damages',
+            section: '§ 93A-9',
+            title: 'Treble Damages and Enforcement',
+            regulatoryReference: 'Mass. Gen. Laws ch. 93A § 9',
+            requirements: [
+              'Consumer must send 30-day demand letter before filing suit under Chapter 93A',
+              'Servicer must make reasonable settlement offer within 30 days of demand letter',
+              'Failure to make reasonable offer may result in treble damages',
+              'Court may award up to three times actual damages for willful or knowing violations'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'pattern_anomaly',
+                keywords: ['demand letter', 'settlement offer', 'willful violation', 'knowing violation'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['treble damages', 'punitive damages', 'settlement refusal', 'enforcement action'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Treble damages (up to 3x actual damages). Minimum $25 per violation. Attorney fees and costs. Injunctive relief.'
+          },
+          {
+            id: 'ma_93a_ag_enforcement',
+            section: '§ 93A-4',
+            title: 'Attorney General Enforcement Authority',
+            regulatoryReference: 'Mass. Gen. Laws ch. 93A § 4',
+            requirements: [
+              'Attorney General may investigate unfair or deceptive practices by mortgage servicers',
+              'AG may seek civil penalties for pattern or practice violations',
+              'AG may obtain injunctive relief to prevent ongoing violations',
+              'Servicer must cooperate with AG investigation and produce requested records'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'pattern_anomaly',
+                keywords: ['ag investigation', 'pattern violation', 'systemic practice', 'regulatory enforcement'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Civil penalties up to $5,000 per violation. Injunctive relief. Restitution. Dissolution of business for repeated violations.'
+          }
+        ]
+      }
+
+    }
   }
 };
 
