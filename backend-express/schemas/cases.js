@@ -65,11 +65,35 @@ const addDocumentToCaseSchema = Joi.object({
  */
 const removeDocumentFromCaseSchema = Joi.object({});
 
+/**
+ * Schema for POST /v1/cases/:caseId/forensic-analysis (params)
+ * Validates route params for triggering or retrieving forensic analysis.
+ * userId comes from req.user.id (JWT auth), not from params or body.
+ */
+const forensicAnalysisParamsSchema = Joi.object({
+  caseId: Joi.string().trim().required()
+});
+
+/**
+ * Schema for POST /v1/cases/:caseId/forensic-analysis (body)
+ * Validates optional request body for triggering forensic analysis.
+ * All fields are optional — analysis runs with defaults if body is empty.
+ */
+const forensicAnalysisBodySchema = Joi.object({
+  plaidAccessToken: Joi.string().optional(),
+  transactionStartDate: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  transactionEndDate: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dateTolerance: Joi.number().integer().min(0).max(30).optional(),
+  amountTolerance: Joi.number().min(0).max(100).optional()
+});
+
 module.exports = {
   createCaseSchema,
   getCasesSchema,
   getCaseSchema,
   updateCaseSchema,
   addDocumentToCaseSchema,
-  removeDocumentFromCaseSchema
+  removeDocumentFromCaseSchema,
+  forensicAnalysisParamsSchema,
+  forensicAnalysisBodySchema
 };

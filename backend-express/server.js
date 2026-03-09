@@ -101,6 +101,8 @@ app.use((req, res) => {
       'GET /v1/cases/:caseId',
       'PUT /v1/cases/:caseId',
       'DELETE /v1/cases/:caseId',
+      'POST /v1/cases/:caseId/forensic-analysis',
+      'GET /v1/cases/:caseId/forensic-analysis',
       'POST /v1/cases/:caseId/documents',
       'DELETE /v1/cases/:caseId/documents/:documentId'
     ]
