@@ -17,6 +17,7 @@ const claudeRoutes = require('./routes/claude');
 const plaidRoutes = require('./routes/plaid');
 const documentRoutes = require('./routes/documents');
 const caseRoutes = require('./routes/cases');
+const complianceRoutes = require('./routes/compliance');
 const healthRoutes = require('./routes/health');
 
 const app = express();
@@ -72,6 +73,7 @@ app.use('/', healthRoutes);
 app.use('/v1/ai/claude', claudeRoutes);
 app.use('/v1/plaid', plaidRoutes);
 app.use('/v1/documents', documentRoutes);
+app.use('/v1', complianceRoutes);
 app.use('/v1/cases', caseRoutes);
 
 // 404 handler
@@ -103,6 +105,10 @@ app.use((req, res) => {
       'DELETE /v1/cases/:caseId',
       'POST /v1/cases/:caseId/forensic-analysis',
       'GET /v1/cases/:caseId/forensic-analysis',
+      'POST /v1/cases/:caseId/compliance',
+      'GET /v1/cases/:caseId/compliance',
+      'GET /v1/compliance/statutes',
+      'GET /v1/compliance/statutes/:statuteId',
       'POST /v1/cases/:caseId/documents',
       'DELETE /v1/cases/:caseId/documents/:documentId'
     ]
