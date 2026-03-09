@@ -436,24 +436,26 @@ describe('ComplianceRuleEngine', () => {
     });
 
     it('does not elevate when conditions are not met', () => {
-      // Small amount should not trigger elevation
+      // Small amount + non-critical field should not trigger elevation
+      // rule-respa-001 elevates on: amount > 100, repeated, critical_field
+      // Using a small amount and non-critical field avoids all conditions
       const disc = makeDiscrepancy({
         type: 'amount_mismatch',
         severity: 'medium',
-        description: 'Escrow balance discrepancy of $10 found',
+        description: 'Escrow surplus discrepancy of $10 found',
         documentA: {
           documentId: 'doc-001',
           documentType: 'servicing',
           documentSubtype: 'escrow_analysis',
-          field: 'escrowBalance',
-          value: 5000
+          field: 'surplusAmount',
+          value: 60
         },
         documentB: {
           documentId: 'doc-002',
           documentType: 'servicing',
           documentSubtype: 'monthly_statement',
-          field: 'escrowBalance',
-          value: 4990
+          field: 'surplusAmount',
+          value: 50
         }
       });
       const report = makeForensicReport({ discrepancies: [disc] });
