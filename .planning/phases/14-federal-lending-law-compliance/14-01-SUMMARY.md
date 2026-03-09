@@ -1,42 +1,97 @@
 ---
 phase: 14-federal-lending-law-compliance
 plan: 01
-status: complete
+subsystem: compliance
+tags: [joi, respa, tila, ecoa, fdcpa, scra, hmda, cfpb, schema-first]
+
+# Dependency graph
+requires:
+  - phase: 12-01
+    provides: Schema-first design pattern, Joi validation patterns, field definitions
+  - phase: 13-01
+    provides: Cross-document analysis schema pattern, discrepancy/anomaly type enums
+provides:
+  - Federal statute taxonomy with 7 statutes and 20 sections
+  - Compliance report Joi validation schema
+  - Violation pattern mapping to existing forensic finding types
+  - Helper functions for statute/section lookups
+affects: [14-02, 14-03, 14-04, 14-05, 14-06, 16-consolidated-reporting]
+
+# Tech tracking
+tech-stack:
+  added: []
+  patterns: [schema-first-compliance, statute-taxonomy-config, violation-pattern-mapping]
+
+key-files:
+  created:
+    - backend-express/config/federalStatuteTaxonomy.js
+    - backend-express/schemas/complianceReportSchema.js
+  modified: []
+
+key-decisions:
+  - "7 federal statutes with 20 sections covering all major mortgage lending laws"
+  - "Violation patterns mapped to existing discrepancy/anomaly type enums for seamless integration"
+  - "Helper functions for lookup by statute ID, section ID, and discrepancy type"
+
+patterns-established:
+  - "Statute taxonomy as declarative config data with helper functions"
+  - "Compliance report schema extending existing Joi validation patterns"
+
+issues-created: []
+
+# Metrics
+duration: 5min
+completed: 2026-03-09
 ---
 
-# 14-01 Summary: Federal Statute Taxonomy & Compliance Report Schema
+# Phase 14 Plan 01: Compliance Report Schema & Federal Violation Taxonomy Summary
 
-## Objective
-Define the compliance report output contract and federal statute violation taxonomy using schema-first design (consistent with 12-01, 13-01).
+**Federal statute taxonomy covering RESPA, TILA, ECOA, FDCPA, SCRA, HMDA, and CFPB/Reg X with Joi compliance report schema — schema-first foundation for the compliance engine**
 
-## Tasks Completed
+## Performance
 
-### Task 1: Federal Statute Taxonomy Configuration
-- **File:** `backend-express/config/federalStatuteTaxonomy.js`
-- **Commit:** `909dd6e`
-- **Result:** 7 federal statutes, 20 sections, all helper functions working
-- Statutes: RESPA, TILA, ECOA, FDCPA, SCRA, HMDA, CFPB/Reg X
-- Each section includes requirements, violation patterns (mapped to existing discrepancy/anomaly enums), and penalty descriptions
-- Helper functions: getStatuteById, getSectionById, getStatuteIds, getSectionIds, getViolationPatternsForDiscrepancyType
+- **Duration:** 5 min
+- **Started:** 2026-03-09T05:16:03Z
+- **Completed:** 2026-03-09T05:20:40Z
+- **Tasks:** 2/2
+- **Files created:** 2
 
-### Task 2: Compliance Report Joi Schema
-- **File:** `backend-express/schemas/complianceReportSchema.js`
-- **Commit:** `61e9566`
-- **Result:** Schema validates valid reports, rejects invalid data, all exports available
-- Top-level: caseId, analyzedAt, statutesEvaluated, violations[], complianceSummary, legalNarrative, _metadata
-- Exports: complianceReportSchema, validateComplianceReport, EVIDENCE_SOURCE_TYPES, SEVERITY_LEVELS, RISK_LEVELS
+## Accomplishments
+- Comprehensive federal statute taxonomy with 7 statutes and 20 sections, each with requirements, violation patterns, and penalty descriptions
+- Compliance report Joi schema defining the output contract for violations, evidence, and compliance summaries
+- Violation patterns mapped to existing discrepancy/anomaly type enums from phases 12 and 13
+- Helper functions for statute/section lookups by ID and discrepancy type matching
 
-## Verification Results
-- 7 federal statutes defined with 20 sections total
-- All helper functions return correct results
-- Schema validates minimal and full compliance reports
-- Schema rejects missing required fields (3 errors on minimal invalid input)
-- Schema rejects invalid enum values (e.g., "extreme" for risk level)
-- All exports available and correctly typed
+## Task Commits
 
-## Deviations
-None. Plan executed as specified.
+Each task was committed atomically:
 
-## Files Created
-1. `backend-express/config/federalStatuteTaxonomy.js` (700 lines)
-2. `backend-express/schemas/complianceReportSchema.js` (176 lines)
+1. **Task 1: Create federal statute taxonomy configuration** - `909dd6e` (feat)
+2. **Task 2: Create compliance report Joi schema** - `61e9566` (feat)
+
+**Plan metadata:** `362d62a` (docs: summary)
+
+## Files Created/Modified
+- `backend-express/config/federalStatuteTaxonomy.js` - 7 federal statute definitions with sections, requirements, violation patterns, penalties, and lookup helpers (~700 lines)
+- `backend-express/schemas/complianceReportSchema.js` - Joi schema for compliance reports with violation, evidence, and summary validation (~176 lines)
+
+## Decisions Made
+- 7 statutes selected: RESPA, TILA/Reg Z, ECOA/Reg B, FDCPA, SCRA, HMDA/Reg C, CFPB/Reg X — covers all major federal mortgage lending laws
+- Violation patterns map to existing DISCREPANCY_TYPES and ANOMALY_TYPES enums for seamless integration with forensic analysis output
+- Schema follows exact Joi patterns from analysisReportSchema.js and crossDocumentAnalysisSchema.js (schema-first consistency)
+
+## Deviations from Plan
+
+None - plan executed exactly as written.
+
+## Issues Encountered
+None
+
+## Next Phase Readiness
+- Schema foundation complete, ready for 14-02 (Federal Statute Rule Definitions & Document-Statute Mapping)
+- Taxonomy provides the statute/section IDs the rule engine will reference
+- Compliance report schema provides the output contract the engine will produce
+
+---
+*Phase: 14-federal-lending-law-compliance*
+*Completed: 2026-03-09*
