@@ -121,7 +121,7 @@ Plans:
 
 Plans:
 - [x] 15-01: State Compliance Schema & Jurisdiction Model
-- [ ] 15-02: Jurisdiction Detection Service (TDD)
+- [x] 15-02: Jurisdiction Detection Service (TDD)
 - [ ] 15-03: Priority State Statutes — CA, NY, TX
 - [ ] 15-04: Priority State Statutes — FL, IL, MA
 - [ ] 15-05: State Compliance Rule Mappings
@@ -167,7 +167,7 @@ Plans:
 | 12. Individual Document Analysis Engine | v3.0 | 3/3 | Complete | 2026-02-28 |
 | 13. Cross-Document Forensic Analysis | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
-| 15. State Lending Law Compliance Engine | v3.0 | 1/8 | In progress | - |
+| 15. State Lending Law Compliance Engine | v3.0 | 2/8 | In progress | - |
 | 16. Consolidated Findings & Reporting | v3.0 | 0/? | Not started | - |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 0/? | Not started | - |
 
