@@ -20,7 +20,7 @@ const {
 
 // GET /v1/compliance/statutes
 // List all federal statutes in the taxonomy
-router.get('/statutes', validate(listStatutesSchema, 'query'), async (req, res, next) => {
+router.get('/compliance/statutes', validate(listStatutesSchema, 'query'), async (req, res, next) => {
   try {
     const { category } = req.query;
 
@@ -48,7 +48,7 @@ router.get('/statutes', validate(listStatutesSchema, 'query'), async (req, res, 
 
 // GET /v1/compliance/statutes/:statuteId
 // Get detailed information about a specific federal statute
-router.get('/statutes/:statuteId', validate(getStatuteDetailsSchema, 'params'), async (req, res, next) => {
+router.get('/compliance/statutes/:statuteId', validate(getStatuteDetailsSchema, 'params'), async (req, res, next) => {
   try {
     const { statuteId } = req.params;
     const statute = getStatuteById(statuteId);
