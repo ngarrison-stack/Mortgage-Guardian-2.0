@@ -1044,7 +1044,291 @@ const STATE_STATUTES = {
   FL: {
     stateCode: 'FL',
     stateName: 'Florida',
-    statutes: {}
+    statutes: {
+
+      // -------------------------------------------------------------------
+      // Florida Fair Foreclosure Act
+      // -------------------------------------------------------------------
+      fl_fair_foreclosure: {
+        id: 'fl_fair_foreclosure',
+        name: 'Florida Fair Foreclosure Act',
+        citation: 'Fla. Stat. §§ 702.01-702.15',
+        enforcementBody: 'FL OFR / FL Courts',
+        sections: [
+          {
+            id: 'fl_foreclosure_complaint',
+            section: '§ 702.015',
+            title: 'Foreclosure Complaint Requirements',
+            regulatoryReference: 'Fla. Stat. § 702.015',
+            requirements: [
+              'Complaint must include certification of compliance with pre-suit notice requirements',
+              'Plaintiff must attach the original note or establish lost-note standing',
+              'Complaint must identify the holder of the note and the servicer',
+              'Plaintiff must verify the accuracy of the amounts alleged in the complaint'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['foreclosure complaint', 'original note', 'lost note', 'standing to foreclose'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['complaint verification', 'amount accuracy', 'foreclosure standing'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Defective foreclosure is voidable. Dismissal of complaint. Sanctions for filing without standing. Attorney fees and costs.'
+          },
+          {
+            id: 'fl_foreclosure_mediation',
+            section: '§ 702.12',
+            title: 'Foreclosure Mediation Program',
+            regulatoryReference: 'Fla. Stat. § 702.12',
+            requirements: [
+              'Servicer must participate in court-ordered mediation in good faith',
+              'Servicer representative must have authority to modify loan terms at mediation',
+              'Required documents must be provided to borrower at least 10 days before mediation',
+              'Servicer must consider all available loss mitigation options during mediation'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['mediation documents', 'mediation notice', 'loss mitigation mediation'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['mediation deadline', 'mediation scheduling', '10 day mediation'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Sanctions for bad faith. Court may dismiss foreclosure action. Attorney fees and costs awarded to borrower.'
+          },
+          {
+            id: 'fl_lis_pendens',
+            section: '§ 48.23',
+            title: 'Lis Pendens Requirements',
+            regulatoryReference: 'Fla. Stat. § 48.23',
+            requirements: [
+              'Lis pendens must be recorded in the county where the property is located',
+              'Must include a description of the property sufficient for identification',
+              'Must be served on all parties with an interest in the property',
+              'Lis pendens expires after one year unless extended by court order'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['lis pendens', 'property notice', 'foreclosure filing', 'public record'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Lis pendens may be discharged. Foreclosure sale may be set aside. Actual damages for improper recording.'
+          },
+          {
+            id: 'fl_foreclosure_service',
+            section: '§ 702.06',
+            title: 'Service of Process in Foreclosure',
+            regulatoryReference: 'Fla. Stat. § 702.06',
+            requirements: [
+              'All parties with an interest in the property must be properly served',
+              'Service by publication allowed only after diligent search and inquiry',
+              'Affidavit of diligent search must document all search efforts',
+              'Default may not be entered until proper service is completed'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['service of process', 'diligent search', 'foreclosure service', 'default entry'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['service affidavit', 'process server', 'service documentation'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Foreclosure judgment is voidable. Default may be set aside. Actual damages for defective service.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Florida Consumer Collection Practices Act
+      // -------------------------------------------------------------------
+      fl_consumer_collection: {
+        id: 'fl_consumer_collection',
+        name: 'Florida Consumer Collection Practices Act',
+        citation: 'Fla. Stat. §§ 559.55-559.785',
+        enforcementBody: 'FL OFR / FL Attorney General',
+        sections: [
+          {
+            id: 'fl_ccpa_prohibited_practices',
+            section: '§ 559.72',
+            title: 'Prohibited Debt Collection Practices',
+            regulatoryReference: 'Fla. Stat. § 559.72',
+            requirements: [
+              'Debt collector must not simulate legal process or government authority',
+              'Must not disclose debt information to unauthorized third parties',
+              'Must not use threats of criminal prosecution for civil debts',
+              'Must not misrepresent the character, amount, or legal status of the debt'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['simulated process', 'false representation', 'debt misrepresentation', 'unauthorized disclosure'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['debt validation', 'collection notice', 'amount verification'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Statutory damages $500 to $1,000 per violation. Actual damages. Attorney fees and court costs. Injunctive relief.'
+          },
+          {
+            id: 'fl_ccpa_harassment',
+            section: '§ 559.72(7)',
+            title: 'Prohibition of Harassment and Abuse',
+            regulatoryReference: 'Fla. Stat. § 559.72(7)',
+            requirements: [
+              'Must not use obscene or profane language in communications',
+              'Must not call at unreasonable hours (before 8 a.m. or after 9 p.m.)',
+              'Must not engage in repeated phone calls intended to harass',
+              'Must not threaten violence or harm to person, reputation, or property'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'pattern_anomaly',
+                keywords: ['harassment', 'repeated calls', 'unreasonable hours', 'abusive communication'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Statutory damages $500 to $1,000 per violation. Actual damages. Criminal penalties for willful violations. Attorney fees.'
+          },
+          {
+            id: 'fl_ccpa_misrepresentation',
+            section: '§ 559.72(9)',
+            title: 'Prohibition of Misrepresentation',
+            regulatoryReference: 'Fla. Stat. § 559.72(9)',
+            requirements: [
+              'Must not claim or threaten legal action that is not actually intended',
+              'Must not misrepresent affiliation with government agencies',
+              'Must accurately disclose the creditor and amount owed',
+              'Must not use deceptive forms or documents that simulate court process'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['misrepresentation', 'false claim', 'deceptive form', 'simulated process'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Statutory damages $500 to $1,000. Actual damages. Attorney fees and costs. AG enforcement action.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Florida Mortgage Lending Act
+      // -------------------------------------------------------------------
+      fl_mortgage_lending: {
+        id: 'fl_mortgage_lending',
+        name: 'Florida Mortgage Lending Act',
+        citation: 'Fla. Stat. §§ 494.001-494.0079',
+        enforcementBody: 'FL OFR',
+        sections: [
+          {
+            id: 'fl_mla_licensing',
+            section: '§ 494.003',
+            title: 'Mortgage Servicer Licensing Requirements',
+            regulatoryReference: 'Fla. Stat. § 494.003',
+            requirements: [
+              'Mortgage servicers must hold a valid Florida license to service loans secured by Florida property',
+              'License application must include surety bond and financial statements',
+              'Servicer must maintain minimum net worth requirements',
+              'License must be renewed annually with the Office of Financial Regulation'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['unlicensed servicer', 'florida license', 'ofr registration', 'servicer licensing'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Administrative fines up to $10,000 per violation. License suspension or revocation. Cease and desist orders.'
+          },
+          {
+            id: 'fl_mla_disclosures',
+            section: '§ 494.0038',
+            title: 'Mortgage Lending Disclosure Requirements',
+            regulatoryReference: 'Fla. Stat. § 494.0038',
+            requirements: [
+              'Must provide good-faith estimate of all charges and fees before closing',
+              'Disclosure must include annual percentage rate and total finance charges',
+              'Must disclose whether servicing rights may be transferred',
+              'Written disclosure of mortgage broker fees and compensation required'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['disclosure failure', 'good faith estimate', 'fee disclosure', 'servicing transfer disclosure'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['undisclosed fee', 'broker compensation', 'hidden charge', 'finance charge'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Administrative fines. License revocation. Borrower entitled to actual damages and attorney fees.'
+          },
+          {
+            id: 'fl_mla_prohibited_practices',
+            section: '§ 494.0042',
+            title: 'Prohibited Mortgage Lending Practices',
+            regulatoryReference: 'Fla. Stat. § 494.0042',
+            requirements: [
+              'Must not charge excessive fees beyond those disclosed at origination',
+              'Must not induce borrower to refinance for sole benefit of servicer',
+              'Must not misrepresent material terms of the loan',
+              'Must not engage in fraud, misrepresentation, or deceit in mortgage transactions'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['excessive fee', 'prohibited charge', 'undisclosed cost', 'loan churning'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['misrepresentation', 'loan fraud', 'deceptive practice', 'material misstatement'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Administrative fines up to $10,000 per violation. License suspension or revocation. Criminal penalties for fraud. Borrower damages.'
+          }
+        ]
+      }
+
+    }
   },
 
   // -----------------------------------------------------------------------
