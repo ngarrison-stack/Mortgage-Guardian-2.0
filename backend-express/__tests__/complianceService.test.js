@@ -22,13 +22,22 @@ jest.mock('../services/caseFileService', () => ({
 }));
 
 jest.mock('../services/complianceRuleEngine', () => ({
-  evaluateFindings: jest.fn()
+  evaluateFindings: jest.fn(),
+  evaluateStateFindings: jest.fn()
 }));
 
 jest.mock('../services/complianceAnalysisService', () => ({
   analyzeViolations: jest.fn(),
+  analyzeStateViolations: jest.fn(),
   generateLegalNarrative: jest.fn()
 }));
+
+const mockDetectJurisdiction = jest.fn();
+jest.mock('../services/jurisdictionService', () => {
+  return jest.fn().mockImplementation(() => ({
+    detectJurisdiction: mockDetectJurisdiction
+  }));
+});
 
 const caseFileService = require('../services/caseFileService');
 const complianceRuleEngine = require('../services/complianceRuleEngine');
@@ -97,6 +106,36 @@ function makeCriticalViolation(overrides = {}) {
     recommendations: ['Immediate servicer notification'],
     ...overrides
   });
+}
+
+function makeStateViolation(overrides = {}) {
+  return {
+    id: 'state-viol-001',
+    statuteId: 'ca_hbor',
+    sectionId: 'ca_hbor_dual_tracking',
+    statuteName: 'California Homeowner Bill of Rights (HBOR)',
+    sectionTitle: 'Dual Tracking Prohibition',
+    citation: 'Cal. Civ. Code § 2923.6',
+    severity: 'high',
+    description: 'Dual tracking violation detected under CA HBOR.',
+    evidence: [{ sourceType: 'discrepancy', sourceId: 'disc-001', description: 'Escrow mismatch' }],
+    legalBasis: 'CA HBOR prohibits dual tracking during loss mitigation.',
+    potentialPenalties: 'Actual damages, injunctive relief, attorney fees.',
+    recommendations: ['Halt foreclosure proceedings during loss mitigation review'],
+    jurisdiction: 'CA',
+    ...overrides
+  };
+}
+
+function makeJurisdiction(overrides = {}) {
+  return {
+    propertyState: 'CA',
+    servicerState: null,
+    applicableStates: ['CA'],
+    determinationMethod: 'property_location',
+    confidence: 'high',
+    ...overrides
+  };
 }
 
 function setupHappyPath() {
@@ -612,6 +651,303 @@ describe('ComplianceService.evaluateCompliance()', () => {
 
       expect(result.error).toBeUndefined();
       expect(result.caseId).toBe('case-001');
+    });
+  });
+
+  // =========================================================================
+  // 8. State compliance evaluation
+  // =========================================================================
+
+  describe('state compliance evaluation', () => {
+
+    function setupStateHappyPath() {
+      const forensicReport = makeForensicReport();
+      const violations = [makeViolation()];
+      const stateViolations = [makeStateViolation()];
+      const jurisdiction = makeJurisdiction();
+
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: forensicReport,
+        analysis_reports: [],
+        propertyState: 'CA'
+      });
+
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations,
+        statutesEvaluated: ['respa'],
+        evaluationMeta: { totalFindingsEvaluated: 1, rulesChecked: 32 }
+      });
+
+      mockDetectJurisdiction.mockReturnValue(jurisdiction);
+
+      complianceRuleEngine.evaluateStateFindings.mockReturnValue({
+        stateViolations,
+        stateStatutesEvaluated: ['ca_hbor'],
+        evaluationMeta: { totalFindingsEvaluated: 1, statesEvaluated: 1, rulesChecked: 4 }
+      });
+
+      const enhancedStateViolations = stateViolations.map(v => ({
+        ...v,
+        legalBasis: `Enhanced: ${v.legalBasis}`
+      }));
+
+      complianceAnalysisService.analyzeViolations.mockResolvedValue({
+        enhancedViolations: violations,
+        legalNarrative: '## Legal Narrative',
+        analysisMetadata: { claudeCallsMade: 1 }
+      });
+
+      complianceAnalysisService.analyzeStateViolations.mockResolvedValue({
+        enhancedViolations: enhancedStateViolations,
+        analysisMetadata: { claudeCallsMade: 1 }
+      });
+
+      caseFileService.updateCase.mockResolvedValue({});
+
+      return { forensicReport, violations, stateViolations, jurisdiction, enhancedStateViolations };
+    }
+
+    test('state analysis happy path includes jurisdiction and state violations', async () => {
+      setupStateHappyPath();
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001');
+
+      expect(result.error).toBeUndefined();
+      expect(result.jurisdiction).toBeDefined();
+      expect(result.jurisdiction.applicableStates).toEqual(['CA']);
+      expect(result.stateViolations).toBeDefined();
+      expect(result.stateViolations.length).toBe(1);
+      expect(result.stateStatutesEvaluated).toEqual(['ca_hbor']);
+      expect(result.stateCompliance).toBeDefined();
+      expect(result.stateCompliance.statesAnalyzed).toBe(1);
+      expect(result.stateCompliance.totalStateViolations).toBe(1);
+    });
+
+    test('skipStateAnalysis option skips jurisdiction detection entirely', async () => {
+      const violations = [makeViolation()];
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations,
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true,
+        skipStateAnalysis: true
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(mockDetectJurisdiction).not.toHaveBeenCalled();
+      expect(complianceRuleEngine.evaluateStateFindings).not.toHaveBeenCalled();
+      expect(result.jurisdiction).toBeUndefined();
+      expect(result.stateViolations).toBeUndefined();
+      expect(result._metadata.steps.jurisdictionDetection.status).toBe('skipped');
+    });
+
+    test('jurisdiction detection failure degrades gracefully', async () => {
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [makeViolation()],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockImplementation(() => {
+        throw new Error('Jurisdiction service unavailable');
+      });
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.jurisdiction).toBeUndefined();
+      expect(result.stateViolations).toBeUndefined();
+      expect(result._metadata.steps.jurisdictionDetection.status).toBe('failed');
+      expect(result._metadata.warnings).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Jurisdiction detection failed/)])
+      );
+    });
+
+    test('state rule engine failure degrades gracefully', async () => {
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [makeViolation()],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockReturnValue(makeJurisdiction());
+      complianceRuleEngine.evaluateStateFindings.mockImplementation(() => {
+        throw new Error('State rule engine crashed');
+      });
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.jurisdiction).toBeDefined();
+      expect(result.stateViolations).toBeUndefined();
+      expect(result._metadata.steps.stateRuleEngine.status).toBe('failed');
+      expect(result._metadata.warnings).toEqual(
+        expect.arrayContaining([expect.stringMatching(/State rule engine threw/)])
+      );
+    });
+
+    test('state AI failure degrades gracefully — keeps un-enhanced state violations', async () => {
+      const stateViolations = [makeStateViolation()];
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport(),
+        analysis_reports: []
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [makeViolation()],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockReturnValue(makeJurisdiction());
+      complianceRuleEngine.evaluateStateFindings.mockReturnValue({
+        stateViolations,
+        stateStatutesEvaluated: ['ca_hbor'],
+        evaluationMeta: {}
+      });
+      complianceAnalysisService.analyzeViolations.mockResolvedValue({
+        enhancedViolations: [makeViolation()],
+        legalNarrative: '',
+        analysisMetadata: { claudeCallsMade: 1 }
+      });
+      complianceAnalysisService.analyzeStateViolations.mockRejectedValue(
+        new Error('State AI API error')
+      );
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001');
+
+      expect(result.error).toBeUndefined();
+      // State violations should be the original un-enhanced output
+      expect(result.stateViolations).toEqual(stateViolations);
+      expect(result._metadata.steps.stateAiEnhancement.status).toBe('failed');
+      expect(result._metadata.warnings).toEqual(
+        expect.arrayContaining([expect.stringMatching(/State AI enhancement failed/)])
+      );
+    });
+
+    test('manual state override is passed to jurisdiction service', async () => {
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockReturnValue(makeJurisdiction({
+        determinationMethod: 'manual',
+        applicableStates: ['TX']
+      }));
+      complianceRuleEngine.evaluateStateFindings.mockReturnValue({
+        stateViolations: [],
+        stateStatutesEvaluated: [],
+        evaluationMeta: {}
+      });
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true,
+        state: 'TX'
+      });
+
+      expect(mockDetectJurisdiction).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ manualState: 'TX' })
+      );
+      expect(result.jurisdiction.determinationMethod).toBe('manual');
+    });
+
+    test('stateStatuteFilter limits state evaluation to specified statutes', async () => {
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockReturnValue(makeJurisdiction());
+
+      const caHborViolation = makeStateViolation({ statuteId: 'ca_hbor' });
+      const caCivViolation = makeStateViolation({
+        id: 'state-viol-002',
+        statuteId: 'ca_civ',
+        sectionId: 'ca_civ_escrow_accounts'
+      });
+
+      complianceRuleEngine.evaluateStateFindings.mockReturnValue({
+        stateViolations: [caHborViolation, caCivViolation],
+        stateStatutesEvaluated: ['ca_hbor', 'ca_civ'],
+        evaluationMeta: {}
+      });
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true,
+        stateStatuteFilter: ['ca_hbor']
+      });
+
+      expect(result.stateViolations.every(v => v.statuteId === 'ca_hbor')).toBe(true);
+      expect(result.stateStatutesEvaluated).toEqual(['ca_hbor']);
+    });
+
+    test('state compliance risk level calculated correctly', async () => {
+      setupStateHappyPath();
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001');
+
+      expect(result.stateCompliance.stateRiskLevel).toBe('high');
+    });
+
+    test('no state violations when jurisdiction has no applicable states', async () => {
+      caseFileService.getCase.mockResolvedValue({
+        forensic_analysis: makeForensicReport()
+      });
+      complianceRuleEngine.evaluateFindings.mockReturnValue({
+        violations: [makeViolation()],
+        statutesEvaluated: ['respa'],
+        evaluationMeta: {}
+      });
+      mockDetectJurisdiction.mockReturnValue(makeJurisdiction({
+        applicableStates: [],
+        confidence: 'none'
+      }));
+      caseFileService.updateCase.mockResolvedValue({});
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001', {
+        skipAiAnalysis: true
+      });
+
+      expect(result.error).toBeUndefined();
+      // State rule engine should not have been called
+      expect(complianceRuleEngine.evaluateStateFindings).not.toHaveBeenCalled();
+      expect(result.stateViolations).toBeUndefined();
+      expect(result.stateCompliance.totalStateViolations).toBe(0);
+    });
+
+    test('state AI enhanced violations replace original state violations', async () => {
+      const { enhancedStateViolations } = setupStateHappyPath();
+
+      const result = await complianceService.evaluateCompliance('case-001', 'user-001');
+
+      expect(result.stateViolations[0].legalBasis).toMatch(/^Enhanced:/);
+      expect(complianceAnalysisService.analyzeStateViolations).toHaveBeenCalled();
     });
   });
 });

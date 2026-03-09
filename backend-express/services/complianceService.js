@@ -1,12 +1,15 @@
 /**
  * Compliance Orchestrator Service
  *
- * Coordinates the full federal lending law compliance analysis flow:
- *   Step 1: GATHER FORENSIC DATA — retrieve forensic report and analysis reports
- *   Step 2: RULE ENGINE EVALUATION — evaluate findings against federal statute rules
- *   Step 3: CLAUDE AI ENHANCEMENT — optional AI-powered legal analysis
- *   Step 4: ASSEMBLE REPORT — build compliance report matching schema
- *   Step 5: PERSIST — best-effort save to database
+ * Coordinates the full federal and state lending law compliance analysis flow:
+ *   Step 1:  GATHER FORENSIC DATA — retrieve forensic report and analysis reports
+ *   Step 2:  FEDERAL RULE ENGINE EVALUATION — evaluate findings against federal statute rules
+ *   Step 2a: DETECT JURISDICTION — determine applicable state(s)
+ *   Step 2b: STATE RULE ENGINE — evaluate findings against state statute rules
+ *   Step 3:  CLAUDE AI ENHANCEMENT (federal) — optional AI-powered legal analysis
+ *   Step 3a: STATE AI ENHANCEMENT — optional AI-powered state legal analysis
+ *   Step 4:  ASSEMBLE REPORT — build compliance report matching schema
+ *   Step 5:  PERSIST — best-effort save to database
  *
  * Design principles:
  *   - Graceful degradation: individual step failures never crash the whole analysis
@@ -35,7 +38,10 @@ class ComplianceService {
    * @param {string} userId - User identifier (required)
    * @param {Object} [options={}] - Evaluation options
    * @param {boolean} [options.skipAiAnalysis=false] - Skip Claude AI enhancement
-   * @param {string[]} [options.statuteFilter] - Only evaluate specific statutes
+   * @param {string[]} [options.statuteFilter] - Only evaluate specific federal statutes
+   * @param {string} [options.state] - Manual state override for jurisdiction detection
+   * @param {boolean} [options.skipStateAnalysis=false] - Skip state compliance entirely
+   * @param {string[]} [options.stateStatuteFilter] - Only evaluate specific state statutes
    * @returns {Promise<Object>} Compliance report or error object
    */
   async evaluateCompliance(caseId, userId, options = {}) {
@@ -56,11 +62,12 @@ class ComplianceService {
     // -----------------------------------------------------------------------
     let forensicReport;
     let analysisReports = [];
+    let caseData;
     const gatherStart = Date.now();
 
     try {
       const caseFileService = require('./caseFileService');
-      const caseData = await caseFileService.getCase({ caseId, userId });
+      caseData = await caseFileService.getCase({ caseId, userId });
 
       if (!caseData || caseData.error) {
         stepMeta.gather = { status: 'failed', duration: Date.now() - gatherStart };
@@ -102,7 +109,7 @@ class ComplianceService {
     }
 
     // -----------------------------------------------------------------------
-    // Step 2: RULE ENGINE EVALUATION
+    // Step 2: RULE ENGINE EVALUATION (federal)
     // -----------------------------------------------------------------------
     let violations = [];
     let statutesEvaluated = [];
@@ -148,7 +155,99 @@ class ComplianceService {
     }
 
     // -----------------------------------------------------------------------
-    // Step 3: CLAUDE AI ENHANCEMENT (optional)
+    // Step 2a: DETECT JURISDICTION
+    // -----------------------------------------------------------------------
+    let jurisdiction = null;
+    let stateViolations = [];
+    let stateStatutesEvaluated = [];
+
+    if (options.skipStateAnalysis) {
+      stepMeta.jurisdictionDetection = {
+        status: 'skipped',
+        duration: 0,
+        reason: 'skipStateAnalysis option set'
+      };
+    } else {
+      const jurisdictionStart = Date.now();
+      try {
+        const JurisdictionService = require('./jurisdictionService');
+        const jurisdictionService = new JurisdictionService();
+        const jurisdictionOptions = {};
+        if (options.state) {
+          jurisdictionOptions.manualState = options.state;
+        }
+        jurisdiction = jurisdictionService.detectJurisdiction(caseData || {}, jurisdictionOptions);
+
+        stepMeta.jurisdictionDetection = {
+          status: 'completed',
+          duration: Date.now() - jurisdictionStart,
+          applicableStates: jurisdiction.applicableStates,
+          determinationMethod: jurisdiction.determinationMethod
+        };
+      } catch (err) {
+        warnings.push(`Jurisdiction detection failed: ${err.message}`);
+        logger.warn('Jurisdiction detection step failed, skipping state analysis', {
+          caseId,
+          error: err.message
+        });
+        stepMeta.jurisdictionDetection = {
+          status: 'failed',
+          duration: Date.now() - jurisdictionStart,
+          error: err.message
+        };
+      }
+
+      // ---------------------------------------------------------------------
+      // Step 2b: STATE RULE ENGINE
+      // ---------------------------------------------------------------------
+      if (jurisdiction && Array.isArray(jurisdiction.applicableStates) && jurisdiction.applicableStates.length > 0) {
+        const stateRuleStart = Date.now();
+        try {
+          const stateResult = complianceRuleEngine.evaluateStateFindings(
+            forensicReport, analysisReports, jurisdiction
+          );
+
+          if (stateResult.error) {
+            warnings.push(`State rule engine returned error: ${stateResult.error}`);
+            stepMeta.stateRuleEngine = {
+              status: 'warning',
+              duration: Date.now() - stateRuleStart,
+              error: stateResult.error
+            };
+          } else {
+            stateViolations = stateResult.stateViolations || [];
+            stateStatutesEvaluated = stateResult.stateStatutesEvaluated || [];
+
+            // Apply state statute filter if provided
+            if (Array.isArray(options.stateStatuteFilter) && options.stateStatuteFilter.length > 0) {
+              stateViolations = stateViolations.filter(v => options.stateStatuteFilter.includes(v.statuteId));
+              stateStatutesEvaluated = stateStatutesEvaluated.filter(s => options.stateStatuteFilter.includes(s));
+            }
+
+            stepMeta.stateRuleEngine = {
+              status: 'completed',
+              duration: Date.now() - stateRuleStart,
+              stateViolationsFound: stateViolations.length,
+              stateStatutesEvaluated: stateStatutesEvaluated.length
+            };
+          }
+        } catch (err) {
+          warnings.push(`State rule engine threw: ${err.message}`);
+          logger.warn('State rule engine step failed, continuing without state violations', {
+            caseId,
+            error: err.message
+          });
+          stepMeta.stateRuleEngine = {
+            status: 'failed',
+            duration: Date.now() - stateRuleStart,
+            error: err.message
+          };
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Step 3: CLAUDE AI ENHANCEMENT (federal, optional)
     // -----------------------------------------------------------------------
     let legalNarrative = '';
     const aiStart = Date.now();
@@ -202,6 +301,45 @@ class ComplianceService {
     }
 
     // -----------------------------------------------------------------------
+    // Step 3a: STATE AI ENHANCEMENT (optional)
+    // -----------------------------------------------------------------------
+    if (!options.skipAiAnalysis && !options.skipStateAnalysis && stateViolations.length > 0) {
+      const stateAiStart = Date.now();
+      try {
+        const caseContext = {
+          caseId,
+          documentTypes: this._extractDocumentTypes(forensicReport),
+          discrepancySummary: this._buildDiscrepancySummary(forensicReport)
+        };
+
+        const stateAiResult = await complianceAnalysisService.analyzeStateViolations(
+          stateViolations, caseContext
+        );
+
+        if (stateAiResult.enhancedViolations && stateAiResult.enhancedViolations.length > 0) {
+          stateViolations = stateAiResult.enhancedViolations;
+        }
+
+        stepMeta.stateAiEnhancement = {
+          status: 'completed',
+          duration: Date.now() - stateAiStart,
+          claudeCallsMade: stateAiResult.analysisMetadata ? stateAiResult.analysisMetadata.claudeCallsMade : 0
+        };
+      } catch (err) {
+        warnings.push(`State AI enhancement failed: ${err.message}`);
+        logger.warn('State AI enhancement step failed, keeping rule-engine state violations', {
+          caseId,
+          error: err.message
+        });
+        stepMeta.stateAiEnhancement = {
+          status: 'failed',
+          duration: Date.now() - stateAiStart,
+          error: err.message
+        };
+      }
+    }
+
+    // -----------------------------------------------------------------------
     // Step 4: ASSEMBLE REPORT
     // -----------------------------------------------------------------------
     const assembleStart = Date.now();
@@ -221,6 +359,25 @@ class ComplianceService {
       complianceSummary,
       legalNarrative: legalNarrative || undefined
     };
+
+    // Add state compliance fields if jurisdiction was detected
+    if (jurisdiction) {
+      report.jurisdiction = jurisdiction;
+    }
+    if (stateViolations.length > 0) {
+      report.stateViolations = stateViolations;
+    }
+    if (stateStatutesEvaluated.length > 0) {
+      report.stateStatutesEvaluated = stateStatutesEvaluated;
+    }
+    if (jurisdiction && !options.skipStateAnalysis) {
+      const statesAnalyzed = jurisdiction.applicableStates || [];
+      report.stateCompliance = {
+        statesAnalyzed: statesAnalyzed.length,
+        totalStateViolations: stateViolations.length,
+        stateRiskLevel: this._calculateStateRiskLevel(stateViolations)
+      };
+    }
 
     // Schema validation (warnings only, don't reject)
     const { error: validationError } = validateComplianceReport(report);
@@ -302,6 +459,23 @@ class ComplianceService {
       keyFindings,
       recommendations
     };
+  }
+
+  /**
+   * Calculate risk level for state violations.
+   * @param {Array} stateViolations
+   * @returns {string} Risk level
+   * @private
+   */
+  _calculateStateRiskLevel(stateViolations) {
+    if (!Array.isArray(stateViolations) || stateViolations.length === 0) return 'low';
+    const hasCritical = stateViolations.some(v => v.severity === 'critical');
+    const hasHigh = stateViolations.some(v => v.severity === 'high');
+    const hasMedium = stateViolations.some(v => v.severity === 'medium');
+    if (hasCritical) return 'critical';
+    if (hasHigh) return 'high';
+    if (hasMedium) return 'medium';
+    return 'low';
   }
 
   /**
