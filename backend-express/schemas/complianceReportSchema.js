@@ -31,6 +31,48 @@ const evidenceSchema = Joi.object({
 });
 
 // ---------------------------------------------------------------------------
+// Shared: US state codes (2-letter)
+// ---------------------------------------------------------------------------
+const US_STATE_CODES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+  'DC'
+];
+
+const JURISDICTION_DETERMINATION_METHODS = [
+  'property_location',
+  'servicer_location',
+  'case_metadata',
+  'manual',
+  'default'
+];
+
+// ---------------------------------------------------------------------------
+// Section: jurisdiction
+// Tracks which state laws apply to a compliance analysis.
+// ---------------------------------------------------------------------------
+const jurisdictionSchema = Joi.object({
+  /** 2-letter state code where the property is located */
+  propertyState: Joi.string().valid(...US_STATE_CODES).optional(),
+
+  /** 2-letter state code where the servicer is located */
+  servicerState: Joi.string().valid(...US_STATE_CODES).optional(),
+
+  /** Which states' laws apply to this case */
+  applicableStates: Joi.array().items(
+    Joi.string().valid(...US_STATE_CODES)
+  ).default([]),
+
+  /** How the applicable states were determined */
+  determinationMethod: Joi.string()
+    .valid(...JURISDICTION_DETERMINATION_METHODS)
+    .default('default')
+});
+
+// ---------------------------------------------------------------------------
 // Section: violation
 // A single statutory violation detected during compliance analysis.
 // ---------------------------------------------------------------------------
@@ -70,6 +112,70 @@ const violationSchema = Joi.object({
 
   /** Recommended actions to address this violation */
   recommendations: Joi.array().items(Joi.string()).default([])
+});
+
+// ---------------------------------------------------------------------------
+// Section: state violation
+// A statutory violation under state lending law — same as violationSchema but
+// with an additional jurisdiction field identifying which state's law applies.
+// ---------------------------------------------------------------------------
+const stateViolationSchema = Joi.object({
+  /** Unique violation identifier within the report (e.g. "sviol-001") */
+  id: Joi.string().required(),
+
+  /** Statute short identifier (e.g. "ca_hbor", "ny_rpapl") */
+  statuteId: Joi.string().required(),
+
+  /** Section identifier (e.g. "ca_hbor_s2923_6") */
+  sectionId: Joi.string().required(),
+
+  /** Full statute name */
+  statuteName: Joi.string().required(),
+
+  /** Section title */
+  sectionTitle: Joi.string().required(),
+
+  /** Statutory/regulatory citation */
+  citation: Joi.string().required(),
+
+  /** 2-letter state code for the jurisdiction */
+  jurisdiction: Joi.string().valid(...US_STATE_CODES).required(),
+
+  /** Violation severity */
+  severity: Joi.string().valid(...SEVERITY_LEVELS).required(),
+
+  /** Human-readable description of the violation */
+  description: Joi.string().max(2000).required(),
+
+  /** Supporting evidence from forensic findings */
+  evidence: Joi.array().items(evidenceSchema).min(1).required(),
+
+  /** Legal basis explaining why this constitutes a violation */
+  legalBasis: Joi.string().max(2000).required(),
+
+  /** Description of potential penalties */
+  potentialPenalties: Joi.string().optional(),
+
+  /** Recommended actions to address this violation */
+  recommendations: Joi.array().items(Joi.string()).default([])
+});
+
+// ---------------------------------------------------------------------------
+// Section: stateStatuteEvaluated
+// Tracks which state statutes were checked during analysis.
+// ---------------------------------------------------------------------------
+const stateStatuteEvaluatedSchema = Joi.object({
+  /** Statute short identifier */
+  statuteId: Joi.string().required(),
+
+  /** Full statute name */
+  statuteName: Joi.string().required(),
+
+  /** 2-letter state code */
+  state: Joi.string().valid(...US_STATE_CODES).required(),
+
+  /** Number of sections evaluated within this statute */
+  sectionCount: Joi.number().integer().min(0).required()
 });
 
 // ---------------------------------------------------------------------------
@@ -143,8 +249,17 @@ const complianceReportSchema = Joi.object({
   /** Statute ids that were evaluated in this analysis */
   statutesEvaluated: Joi.array().items(Joi.string()).min(1).required(),
 
-  /** Statutory violations detected */
+  /** Statutory violations detected (federal) */
   violations: Joi.array().items(violationSchema).default([]),
+
+  /** Jurisdiction information — optional, absent for federal-only reports */
+  jurisdiction: jurisdictionSchema.optional(),
+
+  /** State statutory violations detected — optional, absent for federal-only reports */
+  stateViolations: Joi.array().items(stateViolationSchema).default([]),
+
+  /** State statutes that were evaluated — optional, absent for federal-only reports */
+  stateStatutesEvaluated: Joi.array().items(stateStatuteEvaluatedSchema).default([]),
 
   /** High-level compliance summary */
   complianceSummary: complianceSummarySchema,
@@ -170,7 +285,12 @@ function validateComplianceReport(data) {
 module.exports = {
   complianceReportSchema,
   validateComplianceReport,
+  jurisdictionSchema,
+  stateViolationSchema,
+  stateStatuteEvaluatedSchema,
   EVIDENCE_SOURCE_TYPES,
   SEVERITY_LEVELS,
-  RISK_LEVELS
+  RISK_LEVELS,
+  US_STATE_CODES,
+  JURISDICTION_DETERMINATION_METHODS
 };
