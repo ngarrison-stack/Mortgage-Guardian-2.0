@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 15 of 17 (State Lending Law Compliance Engine)
-Plan: 0 of 8 in current phase
-Status: Planning complete, ready for execution
-Last activity: 2026-03-09 — Planned Phase 15 (8 plans)
+Plan: 1 of 8 in current phase
+Status: In progress
+Last activity: 2026-03-09 — Completed 15-01-PLAN.md
 
-Progress: █████████████████░░░ 81% (v3.0 Milestone — 25 of ~31 plans)
+Progress: █████████████████░░░ 83% (v3.0 Milestone — 26 of ~31 plans)
 
 ## Performance Metrics
 
@@ -107,6 +107,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 14-05 | Post-evaluation statute filtering | Rule engine runs fully then results filtered; more flexible |
 | 14-06 | Compliance routes before case routes in server.js | Prevents Express /:caseId param matching /compliance/* paths |
 | 14-06 | Statute endpoints at /v1/compliance/statutes | Separate from case-scoped /v1/cases/:caseId/compliance routes |
+| 15-01 | Optional jurisdiction fields in compliance schema | Federal-only reports validate unchanged; backward compatible |
+| 15-01 | State taxonomy mirrors federal data shape | Enables matchRules() reuse for state statute processing |
+| 15-01 | 6 priority states scaffolded (CA, NY, TX, FL, IL, MA) | Empty statute slots populated in 15-03/15-04 |
 
 ### Deferred Issues
 
@@ -127,5 +130,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Planned Phase 15 — 8 plans created, ready for 15-01 execution
-Resume file: .planning/phases/15-state-lending-law-compliance/15-01-PLAN.md
+Stopped at: Completed 15-01-PLAN.md — State Compliance Schema & Jurisdiction Model
+Resume file: .planning/phases/15-state-lending-law-compliance/15-02-PLAN.md
