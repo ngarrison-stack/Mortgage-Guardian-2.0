@@ -8,6 +8,7 @@
  */
 
 const { getStatuteIds } = require('../config/federalStatuteTaxonomy');
+const { getStateStatuteIds } = require('../config/stateStatuteTaxonomy');
 
 // ---------------------------------------------------------------------------
 // Test helpers — builds minimal valid forensic data structures
@@ -659,6 +660,297 @@ describe('ComplianceRuleEngine', () => {
       });
 
       // All statutes evaluated
+      expect(result.statutesEvaluated).toEqual(expect.arrayContaining(getStatuteIds()));
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// State Compliance Evaluation Tests (15-06)
+// ---------------------------------------------------------------------------
+
+function makeJurisdiction(overrides = {}) {
+  return {
+    applicableStates: ['CA'],
+    ...overrides
+  };
+}
+
+describe('ComplianceRuleEngine — evaluateStateFindings', () => {
+  let engine;
+
+  beforeAll(() => {
+    engine = require('../services/complianceRuleEngine');
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 1: Happy path — CA escrow violation
+  // -------------------------------------------------------------------------
+  describe('Case 1: CA escrow violation', () => {
+    it('produces CA escrow violation from escrow discrepancy', () => {
+      const disc = makeDiscrepancy({
+        id: 'disc-ca-001',
+        type: 'amount_mismatch',
+        severity: 'high',
+        description: 'Escrow balance discrepancy of $450 identified'
+      });
+      const report = makeForensicReport({ discrepancies: [disc] });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result).not.toHaveProperty('error');
+      expect(result.stateViolations.length).toBeGreaterThanOrEqual(1);
+
+      // At least one violation should be from CA escrow rule
+      const caEscrowViol = result.stateViolations.find(v =>
+        v.sectionId === 'ca_civ_escrow_accounts'
+      );
+      expect(caEscrowViol).toBeDefined();
+      expect(caEscrowViol.jurisdiction).toBe('CA');
+      expect(caEscrowViol.statuteId).toBeDefined();
+      expect(caEscrowViol.sectionTitle).toBeDefined();
+      expect(caEscrowViol.citation).toBeDefined();
+      expect(caEscrowViol.severity).toBeDefined();
+      expect(caEscrowViol.description).toBeDefined();
+      expect(caEscrowViol.evidence.length).toBeGreaterThanOrEqual(1);
+      expect(caEscrowViol.legalBasis).toBeDefined();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 2: Multi-state — NY + TX
+  // -------------------------------------------------------------------------
+  describe('Case 2: Multi-state NY + TX', () => {
+    it('produces violations from both NY and TX when findings match both', () => {
+      const disc = makeDiscrepancy({
+        id: 'disc-multi-state-001',
+        type: 'timeline_violation',
+        severity: 'high',
+        description: 'Foreclosure notice deadline exceeded, settlement conference not scheduled'
+      });
+      const report = makeForensicReport({
+        discrepancies: [disc],
+        timeline: {
+          events: [],
+          violations: [
+            makeTimelineViolation({
+              description: 'Foreclosure notice not served within required timeframe',
+              severity: 'high'
+            })
+          ]
+        }
+      });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['NY', 'TX'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result).not.toHaveProperty('error');
+      expect(result.stateViolations.length).toBeGreaterThanOrEqual(2);
+
+      const nyViols = result.stateViolations.filter(v => v.jurisdiction === 'NY');
+      const txViols = result.stateViolations.filter(v => v.jurisdiction === 'TX');
+      expect(nyViols.length).toBeGreaterThanOrEqual(1);
+      expect(txViols.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('includes statute IDs from both states in stateStatutesEvaluated', () => {
+      const report = makeForensicReport();
+      const jurisdiction = makeJurisdiction({ applicableStates: ['NY', 'TX'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      const nyStatuteIds = getStateStatuteIds('NY');
+      const txStatuteIds = getStateStatuteIds('TX');
+      expect(result.stateStatutesEvaluated).toEqual(
+        expect.arrayContaining([...nyStatuteIds, ...txStatuteIds])
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 3: No matching rules — CA
+  // -------------------------------------------------------------------------
+  describe('Case 3: No matching rules for CA', () => {
+    it('returns empty stateViolations but still lists CA statutes as evaluated', () => {
+      // Use a finding type/description that won't match any CA rules
+      const disc = makeDiscrepancy({
+        id: 'disc-nomatch-ca',
+        type: 'party_mismatch',
+        severity: 'info',
+        description: 'Borrower middle name differs between documents'
+      });
+      const report = makeForensicReport({ discrepancies: [disc] });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result.stateViolations).toEqual([]);
+
+      const caStatuteIds = getStateStatuteIds('CA');
+      expect(result.stateStatutesEvaluated).toEqual(expect.arrayContaining(caStatuteIds));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 4: Empty applicableStates
+  // -------------------------------------------------------------------------
+  describe('Case 4: Empty applicableStates', () => {
+    it('returns empty result when applicableStates is empty', () => {
+      const report = makeForensicReport();
+      const jurisdiction = makeJurisdiction({ applicableStates: [] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result).not.toHaveProperty('error');
+      expect(result.stateViolations).toEqual([]);
+      expect(result.stateStatutesEvaluated).toEqual([]);
+      expect(result.evaluationMeta.totalFindingsEvaluated).toBe(0);
+      expect(result.evaluationMeta.statesEvaluated).toBe(0);
+      expect(result.evaluationMeta.rulesChecked).toBe(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 5: Null/missing jurisdiction
+  // -------------------------------------------------------------------------
+  describe('Case 5: Null/missing jurisdiction', () => {
+    it('returns error when jurisdiction is null', () => {
+      const report = makeForensicReport();
+      const result = engine.evaluateStateFindings(report, [], null);
+
+      expect(result).toHaveProperty('error');
+      expect(result.stateViolations).toBeUndefined();
+    });
+
+    it('returns error when jurisdiction is undefined', () => {
+      const report = makeForensicReport();
+      const result = engine.evaluateStateFindings(report, [], undefined);
+
+      expect(result).toHaveProperty('error');
+    });
+
+    it('returns error when forensicReport is null', () => {
+      const jurisdiction = makeJurisdiction();
+      const result = engine.evaluateStateFindings(null, [], jurisdiction);
+
+      expect(result).toHaveProperty('error');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 6: Unsupported state
+  // -------------------------------------------------------------------------
+  describe('Case 6: Unsupported state', () => {
+    it('skips unsupported state codes gracefully', () => {
+      const report = makeForensicReport({
+        discrepancies: [makeDiscrepancy({ id: 'disc-zz' })]
+      });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['ZZ'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result).not.toHaveProperty('error');
+      expect(result.stateViolations).toEqual([]);
+      expect(result.stateStatutesEvaluated).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 7: Violation IDs use state-viol- prefix
+  // -------------------------------------------------------------------------
+  describe('Case 7: State violation IDs', () => {
+    it('assigns IDs with state-viol- prefix', () => {
+      const disc = makeDiscrepancy({
+        id: 'disc-id-001',
+        type: 'amount_mismatch',
+        severity: 'high',
+        description: 'Escrow balance discrepancy of $450 identified'
+      });
+      const report = makeForensicReport({ discrepancies: [disc] });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      expect(result.stateViolations.length).toBeGreaterThanOrEqual(1);
+      result.stateViolations.forEach(v => {
+        expect(v.id).toMatch(/^state-viol-\d{3}$/);
+      });
+
+      // IDs should be sequential and unique
+      const ids = result.stateViolations.map(v => v.id);
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(ids.length);
+      expect(ids[0]).toBe('state-viol-001');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 8: Deduplication — same sectionId + sourceId keeps higher severity
+  // -------------------------------------------------------------------------
+  describe('Case 8: Deduplication', () => {
+    it('deduplicates by sectionId + sourceId keeping higher severity', () => {
+      // Two discrepancies with the same sourceId that match the same CA section
+      const disc1 = makeDiscrepancy({
+        id: 'disc-dedup-001',
+        type: 'amount_mismatch',
+        severity: 'medium',
+        description: 'Escrow balance discrepancy of $20 found'
+      });
+      const disc2 = makeDiscrepancy({
+        id: 'disc-dedup-001', // same sourceId
+        type: 'calculation_error',
+        severity: 'high',
+        description: 'Escrow calculation error of $20 detected'
+      });
+      const report = makeForensicReport({ discrepancies: [disc1, disc2] });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      // For the same sectionId + sourceId, only one should remain
+      const escrowViols = result.stateViolations.filter(v =>
+        v.sectionId === 'ca_civ_escrow_accounts' &&
+        v.evidence.some(e => e.sourceId === 'disc-dedup-001')
+      );
+
+      const sectionSourcePairs = escrowViols.map(v =>
+        `${v.sectionId}|${v.evidence[0].sourceId}`
+      );
+      const uniquePairs = new Set(sectionSourcePairs);
+      expect(uniquePairs.size).toBe(sectionSourcePairs.length);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 9: Jurisdiction field on each violation
+  // -------------------------------------------------------------------------
+  describe('Case 9: Jurisdiction field', () => {
+    it('each violation includes jurisdiction field with state code', () => {
+      const disc = makeDiscrepancy({
+        id: 'disc-jur-001',
+        type: 'amount_mismatch',
+        severity: 'high',
+        description: 'Escrow balance discrepancy of $450 identified'
+      });
+      const report = makeForensicReport({ discrepancies: [disc] });
+      const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
+      const result = engine.evaluateStateFindings(report, [], jurisdiction);
+
+      result.stateViolations.forEach(v => {
+        expect(v).toHaveProperty('jurisdiction', 'CA');
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Case 10: Existing federal tests regression check
+  // -------------------------------------------------------------------------
+  describe('Case 10: Federal evaluation still works', () => {
+    it('evaluateFindings still works correctly after state evaluation added', () => {
+      const disc = makeDiscrepancy({
+        type: 'amount_mismatch',
+        severity: 'high',
+        description: 'Escrow balance discrepancy of $450 identified'
+      });
+      const report = makeForensicReport({ discrepancies: [disc] });
+      const result = engine.evaluateFindings(report, []);
+
+      expect(result).not.toHaveProperty('error');
+      expect(result.violations.length).toBeGreaterThanOrEqual(1);
+      expect(result.violations[0].id).toMatch(/^viol-\d{3}$/);
       expect(result.statutesEvaluated).toEqual(expect.arrayContaining(getStatuteIds()));
     });
   });
