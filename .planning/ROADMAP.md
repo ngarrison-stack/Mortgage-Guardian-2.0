@@ -101,10 +101,15 @@ Plans:
 **Depends on**: Phase 13
 **Research**: Likely (federal lending law requirements, violation patterns, citation databases, compliance rule encoding)
 **Research topics**: RESPA Section 6/8/10 requirements, TILA disclosure rules, FDCPA collection practices, SCRA interest rate caps, CFPB servicing rules (Reg X), statutory citation format
-**Plans**: TBD
+**Plans**: 6
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01: Compliance Report Schema & Federal Violation Taxonomy
+- [ ] 14-02: Federal Statute Rule Definitions & Document-Statute Mapping
+- [ ] 14-03: Compliance Rule Engine (TDD)
+- [ ] 14-04: Claude AI Compliance Analysis Service & Tests
+- [ ] 14-05: Compliance Orchestrator & Tests
+- [ ] 14-06: Compliance API Routes, Integration Tests & Verification
 
 #### Phase 15: State Lending Law Compliance Engine
 
