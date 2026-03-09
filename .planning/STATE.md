@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 14 of 17 (Federal Lending Law Compliance Engine)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-03-09 — Completed 14-05-PLAN.md
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-03-09 — Completed 14-06-PLAN.md
 
-Progress: █████████████░░░░░░░ 77% (v3.0 Milestone — 24 of ~31 plans)
+Progress: █████████████████░░░ 81% (v3.0 Milestone — 25 of ~31 plans)
 
 ## Performance Metrics
 
@@ -105,6 +105,8 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 14-05 | Follows forensicAnalysisService orchestrator pattern | Singleton, error objects, step metadata, best-effort persistence |
 | 14-05 | AI step auto-skipped on zero violations | No wasted Claude API calls when rule engine finds nothing |
 | 14-05 | Post-evaluation statute filtering | Rule engine runs fully then results filtered; more flexible |
+| 14-06 | Compliance routes before case routes in server.js | Prevents Express /:caseId param matching /compliance/* paths |
+| 14-06 | Statute endpoints at /v1/compliance/statutes | Separate from case-scoped /v1/cases/:caseId/compliance routes |
 
 ### Deferred Issues
 
@@ -125,5 +127,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 14-05-PLAN.md (5/6 plans in Phase 14)
+Stopped at: Completed 14-06-PLAN.md — Phase 14 complete (6/6 plans)
 Resume file: None
