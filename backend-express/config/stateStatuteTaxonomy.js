@@ -438,7 +438,318 @@ const STATE_STATUTES = {
   NY: {
     stateCode: 'NY',
     stateName: 'New York',
-    statutes: {}
+    statutes: {
+
+      // -------------------------------------------------------------------
+      // RPAPL — Real Property Actions and Proceedings Law
+      // -------------------------------------------------------------------
+      ny_rpapl: {
+        id: 'ny_rpapl',
+        name: 'New York Real Property Actions and Proceedings Law (RPAPL)',
+        citation: 'RPAPL §§ 1301-1311',
+        enforcementBody: 'NY DFS / NY Courts',
+        sections: [
+          {
+            id: 'ny_rpapl_settlement_conference',
+            section: '§ 1302-a',
+            title: 'Mandatory Settlement Conference',
+            regulatoryReference: 'RPAPL § 1302-a',
+            requirements: [
+              'Mandatory settlement conference required in residential foreclosure actions',
+              'Servicer must appear at settlement conference with authority to settle',
+              'Servicer must bring all relevant loan documents to conference',
+              'Good faith participation in settlement negotiations required'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['settlement conference', 'mandatory conference', 'foreclosure conference', 'good faith negotiation'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['conference notice', 'settlement documents', 'foreclosure settlement'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Dismissal of foreclosure action. Sanctions for bad faith participation. Tolling of interest and fees during non-compliance.'
+          },
+          {
+            id: 'ny_rpapl_notice_requirements',
+            section: '§ 1303-1304',
+            title: 'Pre-Foreclosure Notice Requirements',
+            regulatoryReference: 'RPAPL §§ 1303-1304',
+            requirements: [
+              'Must serve 90-day pre-foreclosure notice before commencing action',
+              'Notice must include list of at least 5 HUD-approved housing counseling agencies',
+              'Notice must be in prescribed statutory format and language',
+              'Must file proof of service of 90-day notice with the court',
+              'Notice must include statement of borrower rights'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['90 day notice', 'pre-foreclosure notice', 'rpapl 1304', 'housing counseling notice'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['90 day requirement', 'pre-foreclosure timing', 'notice timing'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Foreclosure action dismissed without prejudice. Servicer must restart process with proper notice. Attorney fees to borrower.'
+          },
+          {
+            id: 'ny_rpapl_standing',
+            section: '§ 1302',
+            title: 'Standing and Chain of Title Requirements',
+            regulatoryReference: 'RPAPL § 1302',
+            requirements: [
+              'Plaintiff must demonstrate physical possession of note or status as holder',
+              'Chain of assignments must be documented and complete',
+              'Standing must exist at time of filing foreclosure action',
+              'MERS assignments must be properly executed'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'inconsistency',
+                keywords: ['standing', 'chain of title', 'note holder', 'assignment', 'mers'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Dismissal of foreclosure action for lack of standing. Attorney fees and costs to borrower.'
+          },
+          {
+            id: 'ny_rpapl_surplus_money',
+            section: '§ 1361',
+            title: 'Surplus Money Proceedings',
+            regulatoryReference: 'RPAPL § 1361',
+            requirements: [
+              'Surplus money from foreclosure sale must be paid to former owner or junior lienholders',
+              'Referee must file surplus money report within specified timeframe',
+              'Former owner must be notified of right to claim surplus funds'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['surplus money', 'foreclosure surplus', 'excess proceeds', 'surplus funds'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Court order for distribution of surplus. Interest on undistributed surplus. Sanctions for non-compliance.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // NY Banking Law — Mortgage Servicing
+      // -------------------------------------------------------------------
+      ny_banking_law: {
+        id: 'ny_banking_law',
+        name: 'New York Banking Law — Mortgage Servicing',
+        citation: 'NY Banking Law §§ 6-l, 6-m, 595-b',
+        enforcementBody: 'NY DFS',
+        sections: [
+          {
+            id: 'ny_banking_servicer_obligations',
+            section: '§ 6-l',
+            title: 'Mortgage Servicer Obligations',
+            regulatoryReference: 'NY Banking Law § 6-l',
+            requirements: [
+              'Servicer must credit payments as of the date received',
+              'Must provide accurate periodic statements with payment breakdown',
+              'Must maintain toll-free telephone number for borrower inquiries',
+              'Must respond to borrower inquiries within 10 business days',
+              'Must notify borrower of any servicing transfer at least 15 days in advance'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['payment crediting', 'late crediting', 'inquiry response', 'response time'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'calculation_error',
+                keywords: ['payment application', 'payment misapplication', 'statement error', 'payment breakdown'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'DFS enforcement action. Civil money penalties up to $10,000 per violation. License suspension or revocation. Restitution to borrowers.'
+          },
+          {
+            id: 'ny_banking_loss_mitigation',
+            section: '§ 6-m',
+            title: 'Loss Mitigation Requirements',
+            regulatoryReference: 'NY Banking Law § 6-m',
+            requirements: [
+              'Servicer must evaluate borrowers for all available loss mitigation options',
+              'Must provide written determination within 30 days of receiving complete application',
+              'Denial must include specific reasons and notice of appeal rights',
+              'Cannot charge fees for loss mitigation review or processing'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['loss mitigation determination', 'modification denial', 'appeal rights notice'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['modification fee', 'loss mitigation fee', 'processing fee'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'DFS enforcement action. Civil money penalties. Refund of improperly charged fees. License sanctions.'
+          },
+          {
+            id: 'ny_banking_registration',
+            section: '§ 595-b',
+            title: 'Mortgage Servicer Registration',
+            regulatoryReference: 'NY Banking Law § 595-b',
+            requirements: [
+              'All mortgage servicers must register with NY DFS',
+              'Must maintain minimum net worth and surety bond requirements',
+              'Annual renewal of registration required',
+              'Must submit annual reports to DFS on servicing portfolio'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['unregistered servicer', 'servicer registration', 'dfs registration'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Civil penalty up to $5,000 per violation. Cease and desist orders. Injunctive relief. Criminal referral for willful violations.'
+          },
+          {
+            id: 'ny_banking_escrow',
+            section: '§ 6-l(5)',
+            title: 'Escrow Account Management',
+            regulatoryReference: 'NY Banking Law § 6-l(5)',
+            requirements: [
+              'Servicer must pay minimum 2% annual interest on escrow accounts',
+              'Annual escrow analysis statement required',
+              'Escrow surplus over $50 must be refunded within 30 days',
+              'Cannot require excessive escrow deposits beyond amounts needed for taxes and insurance'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'calculation_error',
+                anomalyType: 'calculation_error',
+                keywords: ['escrow interest', 'escrow analysis', 'escrow surplus', 'escrow overcharge'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['escrow excess', 'missing escrow interest', 'escrow refund'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'DFS enforcement action. Refund of excess escrow amounts plus interest. Civil money penalties.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // NY General Business Law § 349
+      // -------------------------------------------------------------------
+      ny_gbl_349: {
+        id: 'ny_gbl_349',
+        name: 'New York General Business Law — Deceptive Acts and Practices',
+        citation: 'NY Gen. Bus. Law § 349',
+        enforcementBody: 'NY AG / Private Right of Action',
+        sections: [
+          {
+            id: 'ny_gbl_deceptive_acts',
+            section: '§ 349(a)',
+            title: 'Prohibition of Deceptive Business Practices',
+            regulatoryReference: 'NY Gen. Bus. Law § 349(a)',
+            requirements: [
+              'Deceptive acts or practices in mortgage servicing are unlawful',
+              'Misleading statements about loan terms, fees, or borrower options are prohibited',
+              'Servicer must provide accurate and truthful information to borrowers',
+              'Unfair practices that cause injury to consumers are actionable'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['deceptive practice', 'misleading statement', 'unfair practice', 'consumer deception'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'unusual_value',
+                keywords: ['hidden fee', 'undisclosed charge', 'deceptive fee', 'misleading charge'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages or $50 statutory damages (whichever is greater). Treble damages up to $1,000 for willful or knowing violations. Injunctive relief. Attorney fees.'
+          },
+          {
+            id: 'ny_gbl_false_advertising',
+            section: '§ 349(h)',
+            title: 'Private Right of Action for Consumer Injury',
+            regulatoryReference: 'NY Gen. Bus. Law § 349(h)',
+            requirements: [
+              'Consumer need not prove reliance — only that practice was deceptive and consumer-oriented',
+              'Injury must be to the public interest, not just individual borrower',
+              'Pattern of deceptive conduct toward multiple borrowers strengthens claim'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'inconsistency',
+                keywords: ['pattern of practice', 'consumer injury', 'public interest', 'systematic deception'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Actual damages or $50 statutory minimum. Treble damages up to $1,000 for willful violations. Injunctive relief. Attorney fees and costs.'
+          },
+          {
+            id: 'ny_gbl_mortgage_representations',
+            section: '§ 349-a',
+            title: 'Mortgage-Specific Deceptive Practices',
+            regulatoryReference: 'NY Gen. Bus. Law § 349',
+            requirements: [
+              'Cannot misrepresent borrower\'s default status or amounts owed',
+              'Cannot make false statements about foreclosure timeline or options',
+              'Cannot misrepresent availability of loss mitigation programs',
+              'Cannot provide inaccurate payoff amounts'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['false default', 'incorrect balance', 'misrepresented amount', 'inaccurate payoff'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['loss mitigation options', 'foreclosure options', 'modification availability'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Actual damages or $50 statutory minimum. Treble damages up to $1,000. NY AG enforcement action. Injunctive relief. Attorney fees.'
+          }
+        ]
+      }
+
+    }
   },
 
   // -----------------------------------------------------------------------
@@ -447,7 +758,284 @@ const STATE_STATUTES = {
   TX: {
     stateCode: 'TX',
     stateName: 'Texas',
-    statutes: {}
+    statutes: {
+
+      // -------------------------------------------------------------------
+      // Texas Property Code — Foreclosure Procedures
+      // -------------------------------------------------------------------
+      tx_property_code: {
+        id: 'tx_property_code',
+        name: 'Texas Property Code — Foreclosure Procedures',
+        citation: 'Tex. Prop. Code §§ 51.001-51.016',
+        enforcementBody: 'TX OCCC / TX Courts',
+        sections: [
+          {
+            id: 'tx_prop_foreclosure_notice',
+            section: '§ 51.002',
+            title: 'Notice of Foreclosure Sale',
+            regulatoryReference: 'Tex. Prop. Code § 51.002',
+            requirements: [
+              'Written notice of default and intent to accelerate must be sent by certified mail',
+              'Borrower must be given at least 20 days to cure default before acceleration',
+              'Notice of sale must be posted at courthouse door, filed with county clerk, and served on borrower at least 21 days before sale',
+              'Sale must occur on first Tuesday of the month between 10 AM and 4 PM'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['foreclosure notice', 'cure period', '20 day cure', 'notice of sale', 'first tuesday'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['default notice', 'acceleration notice', 'sale posting', 'certified mail'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Foreclosure sale is voidable. Wrongful foreclosure damages. Quiet title action. Attorney fees and costs.'
+          },
+          {
+            id: 'tx_prop_acceleration',
+            section: '§ 51.002(d)',
+            title: 'Acceleration and Right to Cure',
+            regulatoryReference: 'Tex. Prop. Code § 51.002(d)',
+            requirements: [
+              'Separate notice of intent to accelerate required before notice of acceleration',
+              'Borrower must have opportunity to cure before acceleration takes effect',
+              'Notice must specify the default and the action required to cure',
+              'Acceleration is void without proper notice sequence'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['acceleration notice', 'intent to accelerate', 'cure notice', 'acceleration sequence'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['acceleration timing', 'cure period', 'premature acceleration'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Acceleration is void. Foreclosure sale set aside. Actual damages. Attorney fees.'
+          },
+          {
+            id: 'tx_prop_rescue_fraud',
+            section: '§ 51.016',
+            title: 'Foreclosure Rescue Transaction Protections',
+            regulatoryReference: 'Tex. Prop. Code § 51.016',
+            requirements: [
+              'Foreclosure rescue transactions must be in writing',
+              'Homeowner has right to cancel within specified period',
+              'Equity purchaser must provide fair consideration',
+              'Prohibited from taking unconscionable advantage of homeowner in foreclosure'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'unusual_value',
+                keywords: ['rescue fraud', 'equity stripping', 'foreclosure rescue', 'unconscionable'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Transaction is voidable. Actual damages. Exemplary damages. Attorney fees and court costs.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Texas Finance Code — Mortgage Servicer Licensing
+      // -------------------------------------------------------------------
+      tx_finance_code: {
+        id: 'tx_finance_code',
+        name: 'Texas Finance Code — Residential Mortgage Loan Servicers',
+        citation: 'Tex. Fin. Code §§ 156.001-157.031',
+        enforcementBody: 'TX SML / TX OCCC',
+        sections: [
+          {
+            id: 'tx_fin_licensing',
+            section: '§ 156.201',
+            title: 'Mortgage Servicer Licensing Requirements',
+            regulatoryReference: 'Tex. Fin. Code § 156.201',
+            requirements: [
+              'Mortgage servicers must obtain license from TX SML before servicing loans in Texas',
+              'Must maintain minimum net worth and surety bond requirements',
+              'Annual license renewal and reporting to SML required',
+              'Must designate qualified individual as responsible for servicing operations'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['unlicensed servicer', 'servicer license', 'sml registration'],
+                severity: 'critical'
+              }
+            ],
+            penalties: 'Administrative penalties up to $25,000 per violation per day. License revocation. Cease and desist orders. Criminal penalties for willful violations.'
+          },
+          {
+            id: 'tx_fin_escrow_requirements',
+            section: '§ 156.303',
+            title: 'Escrow and Trust Account Requirements',
+            regulatoryReference: 'Tex. Fin. Code § 156.303',
+            requirements: [
+              'Must maintain borrower escrow funds in federally insured depository',
+              'Cannot commingle escrow funds with operating funds',
+              'Must make timely disbursement of escrow funds for taxes and insurance',
+              'Must provide annual escrow analysis statement to borrower'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['escrow fund', 'commingling', 'escrow disbursement', 'trust account'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['late disbursement', 'escrow delay', 'tax payment late', 'insurance payment late'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Administrative penalties up to $25,000 per violation. License suspension or revocation. Restitution to borrowers.'
+          },
+          {
+            id: 'tx_fin_books_records',
+            section: '§ 157.012',
+            title: 'Books and Records Requirements',
+            regulatoryReference: 'Tex. Fin. Code § 157.012',
+            requirements: [
+              'Must maintain books and records for each mortgage loan serviced',
+              'Records must be available for examination by SML',
+              'Must retain records for at least 4 years after loan payoff',
+              'Must maintain proper accounting of all borrower payments'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'missing_correspondence',
+                anomalyType: 'missing_required',
+                keywords: ['missing records', 'recordkeeping', 'books and records', 'payment records'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Administrative penalties. License suspension. Consent order or cease and desist.'
+          },
+          {
+            id: 'tx_fin_payment_processing',
+            section: '§ 156.304',
+            title: 'Payment Processing Standards',
+            regulatoryReference: 'Tex. Fin. Code § 156.304',
+            requirements: [
+              'Must credit payments as of the date received',
+              'Must apply payments in order specified by loan documents',
+              'Cannot charge late fee if payment received within grace period',
+              'Must provide receipt or confirmation of payment upon request'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'timeline_violation',
+                anomalyType: 'regulatory_concern',
+                keywords: ['payment crediting', 'late crediting', 'payment processing delay'],
+                severity: 'high'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'calculation_error',
+                keywords: ['improper late fee', 'grace period', 'late charge', 'payment misapplication'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Administrative penalties up to $25,000 per violation. Refund of improper fees. License sanctions.'
+          }
+        ]
+      },
+
+      // -------------------------------------------------------------------
+      // Texas Debt Collection Act
+      // -------------------------------------------------------------------
+      tx_debt_collection: {
+        id: 'tx_debt_collection',
+        name: 'Texas Debt Collection Act',
+        citation: 'Tex. Fin. Code §§ 392.001-392.404',
+        enforcementBody: 'TX AG / Private Right of Action',
+        sections: [
+          {
+            id: 'tx_debt_threats',
+            section: '§ 392.301',
+            title: 'Threats or Coercion',
+            regulatoryReference: 'Tex. Fin. Code § 392.301',
+            requirements: [
+              'No threats of violence or criminal prosecution to collect debt',
+              'No threats to take action that cannot legally be taken',
+              'No threat to seize property without proper legal authority',
+              'No oppressive or abusive collection methods'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['threat', 'coercion', 'abusive collection', 'unlawful threat'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Injunctive relief. Actual damages. Statutory penalty determined by court. Attorney fees. AG enforcement action up to $20,000 per violation.'
+          },
+          {
+            id: 'tx_debt_harassment',
+            section: '§ 392.302',
+            title: 'Harassment and Abuse',
+            regulatoryReference: 'Tex. Fin. Code § 392.302',
+            requirements: [
+              'No use of profane or obscene language in collection communications',
+              'No unreasonable publication of consumer debt information',
+              'No communication at unreasonable hours (before 8 AM or after 9 PM)'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'term_contradiction',
+                anomalyType: 'regulatory_concern',
+                keywords: ['harassment', 'abusive language', 'unreasonable contact', 'collection abuse'],
+                severity: 'medium'
+              }
+            ],
+            penalties: 'Injunctive relief. Actual damages. Attorney fees. AG enforcement up to $20,000 per violation.'
+          },
+          {
+            id: 'tx_debt_false_representation',
+            section: '§ 392.304',
+            title: 'Fraudulent, Deceptive, or Misleading Representations',
+            regulatoryReference: 'Tex. Fin. Code § 392.304',
+            requirements: [
+              'Cannot misrepresent the character, extent, or amount of debt',
+              'Cannot falsely represent that debt collection is authorized by government',
+              'Cannot use false or deceptive means to collect or attempt to collect debt',
+              'Cannot misrepresent the status or urgency of legal proceedings'
+            ],
+            violationPatterns: [
+              {
+                discrepancyType: 'amount_mismatch',
+                anomalyType: 'unusual_value',
+                keywords: ['false representation', 'incorrect amount', 'misrepresented debt', 'deceptive collection'],
+                severity: 'critical'
+              },
+              {
+                discrepancyType: 'fee_irregularity',
+                anomalyType: 'calculation_error',
+                keywords: ['unauthorized fee', 'inflated amount', 'improper charge', 'deceptive charge'],
+                severity: 'high'
+              }
+            ],
+            penalties: 'Injunctive relief. Actual damages. Statutory penalties. Attorney fees and costs. AG enforcement up to $20,000 per violation.'
+          }
+        ]
+      }
+
+    }
   },
 
   // -----------------------------------------------------------------------
