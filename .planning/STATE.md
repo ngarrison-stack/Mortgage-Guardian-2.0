@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 14 of 17 (Federal Lending Law Compliance Engine)
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-03-09 — Completed 14-04-PLAN.md
+Last activity: 2026-03-09 — Completed 14-05-PLAN.md
 
-Progress: ████████████░░░░░░░░ 74% (v3.0 Milestone — 23 of ~31 plans)
+Progress: █████████████░░░░░░░ 77% (v3.0 Milestone — 24 of ~31 plans)
 
 ## Performance Metrics
 
@@ -102,6 +102,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 14-04 | Violations batched by statute (max 10 per call) | Prevents context overflow; groups related violations for better Claude analysis |
 | 14-04 | Graceful degradation on Claude API failure | Original violations returned unchanged; compliance engine never blocks on AI |
 | 14-04 | Lazy Anthropic client initialization | Consistent with ocrService pattern; tests run without API key |
+| 14-05 | Follows forensicAnalysisService orchestrator pattern | Singleton, error objects, step metadata, best-effort persistence |
+| 14-05 | AI step auto-skipped on zero violations | No wasted Claude API calls when rule engine finds nothing |
+| 14-05 | Post-evaluation statute filtering | Rule engine runs fully then results filtered; more flexible |
 
 ### Deferred Issues
 
@@ -122,5 +125,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 14-04-PLAN.md (4/6 plans in Phase 14)
+Stopped at: Completed 14-05-PLAN.md (5/6 plans in Phase 14)
 Resume file: None
