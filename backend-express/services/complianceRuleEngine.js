@@ -10,6 +10,8 @@
 
 const { getStatuteById, getSectionById, getStatuteIds } = require('../config/federalStatuteTaxonomy');
 const { matchRules } = require('../config/complianceRuleMappings');
+const { matchStateRules } = require('../config/stateComplianceRuleMappings');
+const { getStateStatuteById, getStateSectionById, getStateStatuteIds, isStateSupported } = require('../config/stateStatuteTaxonomy');
 
 // Severity ordering for comparison (lower = more severe)
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -440,6 +442,291 @@ class ComplianceRuleEngine {
     if (pv.unmatchedDocumentPayments) count += pv.unmatchedDocumentPayments.length;
     if (pv.feeAnalysis && pv.feeAnalysis.irregularities) count += pv.feeAnalysis.irregularities.length;
     return count;
+  }
+
+  // ===========================================================================
+  // State Compliance Evaluation
+  // ===========================================================================
+
+  /**
+   * Evaluate forensic findings against state-specific statute rules.
+   *
+   * @param {Object} forensicReport - Cross-document analysis output
+   * @param {Array} analysisReports - Array of individual document analyses
+   * @param {Object} jurisdiction - Jurisdiction config with applicableStates[]
+   * @returns {Object} { stateViolations, stateStatutesEvaluated, evaluationMeta } or { error }
+   */
+  evaluateStateFindings(forensicReport, analysisReports, jurisdiction) {
+    // --- Input validation ---
+    if (!jurisdiction || typeof jurisdiction !== 'object') {
+      return { error: 'jurisdiction is required and must be an object' };
+    }
+    if (!forensicReport || typeof forensicReport !== 'object') {
+      return { error: 'forensicReport is required and must be an object' };
+    }
+
+    const applicableStates = Array.isArray(jurisdiction.applicableStates) ? jurisdiction.applicableStates : [];
+    if (applicableStates.length === 0) {
+      return {
+        stateViolations: [],
+        stateStatutesEvaluated: [],
+        evaluationMeta: { totalFindingsEvaluated: 0, statesEvaluated: 0, rulesChecked: 0 }
+      };
+    }
+
+    const reports = Array.isArray(analysisReports) ? analysisReports : [];
+
+    // --- Extract findings (same logic as evaluateFindings) ---
+    const discrepancies = forensicReport.discrepancies || [];
+    const timelineViolations = (forensicReport.timeline && forensicReport.timeline.violations) || [];
+    const paymentVerification = forensicReport.paymentVerification || null;
+
+    const anomalies = [];
+    for (const report of reports) {
+      if (report && Array.isArray(report.anomalies)) {
+        anomalies.push(...report.anomalies);
+      }
+    }
+
+    let allViolations = [];
+    let allStatutesEvaluated = [];
+    let totalRulesChecked = 0;
+    let statesEvaluated = 0;
+
+    for (const stateCode of applicableStates) {
+      if (!isStateSupported(stateCode)) {
+        continue; // skip unsupported states gracefully
+      }
+
+      statesEvaluated++;
+
+      // Evaluate each finding category against state rules
+      allViolations.push(...this._evaluateStateDiscrepancies(stateCode, discrepancies));
+      allViolations.push(...this._evaluateStateAnomalies(stateCode, anomalies));
+      allViolations.push(...this._evaluateStateTimelineViolations(stateCode, timelineViolations));
+      allViolations.push(...this._evaluateStatePaymentIssues(stateCode, paymentVerification));
+
+      // Track evaluated statutes
+      const stateStatuteIds = getStateStatuteIds(stateCode);
+      allStatutesEvaluated.push(...stateStatuteIds);
+      totalRulesChecked += stateStatuteIds.length;
+    }
+
+    // --- Deduplicate by sectionId + evidence sourceId (keep higher severity) ---
+    allViolations = this._deduplicateViolations(allViolations);
+
+    // --- Assign state-specific sequential IDs ---
+    allViolations.forEach((v, i) => {
+      v.id = `state-viol-${String(i + 1).padStart(3, '0')}`;
+    });
+
+    const totalFindingsEvaluated = discrepancies.length + anomalies.length
+      + timelineViolations.length
+      + (paymentVerification ? this._countPaymentFindings(paymentVerification) : 0);
+
+    return {
+      stateViolations: allViolations,
+      stateStatutesEvaluated: allStatutesEvaluated,
+      evaluationMeta: {
+        totalFindingsEvaluated,
+        statesEvaluated,
+        rulesChecked: totalRulesChecked
+      }
+    };
+  }
+
+  /**
+   * Evaluate discrepancies against state-specific rules.
+   */
+  _evaluateStateDiscrepancies(stateCode, discrepancies) {
+    const violations = [];
+    for (const disc of discrepancies) {
+      const finding = {
+        discrepancyType: disc.type,
+        severity: disc.severity,
+        description: disc.description || '',
+        fields: this._extractFields(disc),
+        amount: this._extractAmount(disc),
+        date: this._extractDate(disc),
+        isCriticalField: this._isCriticalField(disc)
+      };
+
+      const matchedRules = matchStateRules(stateCode, finding);
+      for (const rule of matchedRules) {
+        const evidence = {
+          sourceType: 'discrepancy',
+          sourceId: disc.id,
+          description: disc.description || ''
+        };
+        violations.push(this._buildStateViolation(stateCode, finding, rule, evidence));
+      }
+    }
+    return violations;
+  }
+
+  /**
+   * Evaluate anomalies against state-specific rules.
+   */
+  _evaluateStateAnomalies(stateCode, anomalies) {
+    const violations = [];
+    for (const anom of anomalies) {
+      const finding = {
+        anomalyType: anom.type,
+        severity: anom.severity,
+        description: anom.description || '',
+        fields: anom.field ? [anom.field] : [],
+        amount: this._extractAmountFromText(anom.description),
+        isCriticalField: this._isCriticalField({ fields: anom.field ? [anom.field] : [] })
+      };
+
+      const matchedRules = matchStateRules(stateCode, finding);
+      for (const rule of matchedRules) {
+        const evidence = {
+          sourceType: 'anomaly',
+          sourceId: anom.field ? `anom-${anom.field}` : 'anom-unknown',
+          description: anom.description || ''
+        };
+        violations.push(this._buildStateViolation(stateCode, finding, rule, evidence));
+      }
+    }
+    return violations;
+  }
+
+  /**
+   * Evaluate timeline violations against state-specific rules.
+   */
+  _evaluateStateTimelineViolations(stateCode, timelineViolations) {
+    const violations = [];
+    for (let i = 0; i < timelineViolations.length; i++) {
+      const tv = timelineViolations[i];
+      const finding = {
+        discrepancyType: 'timeline_violation',
+        isTimelineViolation: true,
+        severity: tv.severity,
+        description: tv.description || '',
+        fields: [],
+        amount: this._extractAmountFromText(tv.description),
+        isCriticalField: false
+      };
+
+      const matchedRules = matchStateRules(stateCode, finding);
+      for (const rule of matchedRules) {
+        const evidence = {
+          sourceType: 'timeline_violation',
+          sourceId: `tv-${String(i + 1).padStart(3, '0')}`,
+          description: tv.description || ''
+        };
+        violations.push(this._buildStateViolation(stateCode, finding, rule, evidence));
+      }
+    }
+    return violations;
+  }
+
+  /**
+   * Evaluate payment verification issues against state-specific rules.
+   */
+  _evaluateStatePaymentIssues(stateCode, paymentVerification) {
+    if (!paymentVerification) return [];
+
+    const violations = [];
+
+    const unmatchedPayments = paymentVerification.unmatchedDocumentPayments || [];
+    for (let i = 0; i < unmatchedPayments.length; i++) {
+      const payment = unmatchedPayments[i];
+      const finding = {
+        discrepancyType: 'amount_mismatch',
+        isPaymentIssue: true,
+        severity: 'high',
+        description: payment.description || `Unmatched payment of $${payment.amount}`,
+        fields: ['payment'],
+        amount: payment.amount,
+        isCriticalField: false
+      };
+
+      const matchedRules = matchStateRules(stateCode, finding);
+      for (const rule of matchedRules) {
+        const evidence = {
+          sourceType: 'payment_issue',
+          sourceId: `pay-${String(i + 1).padStart(3, '0')}`,
+          description: payment.description || `Payment of $${payment.amount} on ${payment.date} not verified`
+        };
+        violations.push(this._buildStateViolation(stateCode, finding, rule, evidence));
+      }
+    }
+
+    const feeAnalysis = paymentVerification.feeAnalysis;
+    if (feeAnalysis && Array.isArray(feeAnalysis.irregularities)) {
+      for (let i = 0; i < feeAnalysis.irregularities.length; i++) {
+        const irreg = feeAnalysis.irregularities[i];
+        const finding = {
+          discrepancyType: 'fee_irregularity',
+          isPaymentIssue: true,
+          severity: irreg.severity || 'medium',
+          description: irreg.description || 'Fee irregularity detected',
+          fields: ['fee'],
+          amount: irreg.amount,
+          isCriticalField: false
+        };
+
+        const matchedRules = matchStateRules(stateCode, finding);
+        for (const rule of matchedRules) {
+          const evidence = {
+            sourceType: 'payment_issue',
+            sourceId: `fee-${String(i + 1).padStart(3, '0')}`,
+            description: irreg.description || 'Fee irregularity'
+          };
+          violations.push(this._buildStateViolation(stateCode, finding, rule, evidence));
+        }
+      }
+    }
+
+    return violations;
+  }
+
+  /**
+   * Build a state violation object from a finding, matched state rule, and evidence.
+   *
+   * @param {string} stateCode - 2-letter state code
+   * @param {Object} finding - Normalized finding
+   * @param {Object} rule - Matched state compliance rule
+   * @param {Object} evidence - Evidence linking
+   * @returns {Object} State violation object (without id — assigned later)
+   */
+  _buildStateViolation(stateCode, finding, rule, evidence) {
+    const sectionId = rule.sectionId;
+    const section = getStateSectionById(stateCode, sectionId);
+
+    // Derive statuteId from sectionId: take first two underscore-separated segments
+    // e.g. 'ca_hbor_dual_tracking' → 'ca_hbor', 'ca_civ_escrow_accounts' → 'ca_civ'
+    const parts = sectionId.split('_');
+    const statuteId = parts.length >= 2 ? `${parts[0]}_${parts[1]}` : sectionId;
+    const statute = getStateStatuteById(stateCode, statuteId);
+
+    // Determine severity (with possible elevation)
+    let severity = rule.violationSeverity;
+    if (this._shouldElevateSeverity(finding, rule)) {
+      severity = rule.severityElevation.elevatedSeverity;
+    }
+
+    // Fill description template
+    const description = this._fillTemplate(rule.descriptionTemplate, finding);
+    const legalBasis = rule.legalBasisTemplate;
+
+    return {
+      id: null, // assigned after deduplication
+      statuteId,
+      sectionId,
+      statuteName: statute ? statute.name : 'Unknown Statute',
+      sectionTitle: section ? section.title : 'Unknown Section',
+      citation: this._buildCitation(statute, section),
+      severity,
+      description,
+      evidence: [evidence],
+      legalBasis,
+      potentialPenalties: section ? section.penalties : undefined,
+      recommendations: [],
+      jurisdiction: stateCode
+    };
   }
 }
 
