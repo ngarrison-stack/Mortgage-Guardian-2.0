@@ -6,6 +6,9 @@
  *   GET /v1/cases/:caseId/compliance
  *   GET /v1/compliance/statutes
  *   GET /v1/compliance/statutes/:statuteId
+ *   GET /v1/compliance/states
+ *   GET /v1/compliance/states/:stateCode/statutes
+ *   GET /v1/compliance/states/:stateCode/statutes/:statuteId
  *
  * Mock strategy (consistent with 10-05, 13-06 patterns):
  *   - mockSupabaseClient for auth (Supabase JWT validation)
@@ -429,5 +432,254 @@ describe('GET /v1/compliance/statutes/:statuteId', () => {
     expect(section.requirements).toBeDefined();
     expect(section.violationPatterns).toBeDefined();
     expect(section.penalties).toBeDefined();
+  });
+});
+
+// ============================================================
+// GET /v1/compliance/states
+// ============================================================
+describe('GET /v1/compliance/states', () => {
+  it('returns 401 without auth token', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 200 with list of supported states', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.states).toBeDefined();
+    expect(Array.isArray(res.body.states)).toBe(true);
+  });
+
+  it('each state has stateCode, stateName, statuteCount', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    const state = res.body.states[0];
+    expect(state.stateCode).toBeDefined();
+    expect(state.stateName).toBeDefined();
+    expect(typeof state.statuteCount).toBe('number');
+    expect(typeof state.sectionCount).toBe('number');
+  });
+
+  it('response includes all 6 priority states', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.states.length).toBe(6);
+
+    const codes = res.body.states.map(s => s.stateCode);
+    expect(codes).toContain('CA');
+    expect(codes).toContain('NY');
+    expect(codes).toContain('TX');
+    expect(codes).toContain('FL');
+    expect(codes).toContain('IL');
+    expect(codes).toContain('MA');
+  });
+});
+
+// ============================================================
+// GET /v1/compliance/states/:stateCode/statutes
+// ============================================================
+describe('GET /v1/compliance/states/:stateCode/statutes', () => {
+  it('returns 401 without auth token', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 200 with statutes for valid state (CA)', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.stateCode).toBe('CA');
+    expect(res.body.stateName).toBe('California');
+    expect(Array.isArray(res.body.statutes)).toBe(true);
+    expect(res.body.statutes.length).toBeGreaterThan(0);
+  });
+
+  it('returns 404 for unsupported state code', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/ZZ/statutes')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('NotFound');
+  });
+
+  it('each statute has id, name, citation, enforcementBody, sectionCount', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    const statute = res.body.statutes[0];
+    expect(statute.id).toBeDefined();
+    expect(statute.name).toBeDefined();
+    expect(statute.citation).toBeDefined();
+    expect(statute.enforcementBody).toBeDefined();
+    expect(typeof statute.sectionCount).toBe('number');
+  });
+});
+
+// ============================================================
+// GET /v1/compliance/states/:stateCode/statutes/:statuteId
+// ============================================================
+describe('GET /v1/compliance/states/:stateCode/statutes/:statuteId', () => {
+  it('returns 401 without auth token', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes/ca_hbor');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 200 with detailed statute for valid state + statute', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes/ca_hbor')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe('ca_hbor');
+    expect(res.body.name).toMatch(/HBOR/);
+    expect(res.body.sections).toBeDefined();
+    expect(Array.isArray(res.body.sections)).toBe(true);
+    expect(res.body.sections.length).toBeGreaterThan(0);
+  });
+
+  it('returns 404 for invalid state code', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/ZZ/statutes/ca_hbor')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('NotFound');
+    expect(res.body.message).toMatch(/ZZ/);
+  });
+
+  it('returns 404 for invalid statute ID within valid state', async () => {
+    const res = await request(app)
+      .get('/v1/compliance/states/CA/statutes/nonexistent_statute')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('NotFound');
+    expect(res.body.message).toMatch(/nonexistent_statute/);
+  });
+});
+
+// ============================================================
+// POST /v1/cases/:caseId/compliance — state options
+// ============================================================
+describe('POST /v1/cases/:caseId/compliance (state options)', () => {
+  it('passes state override option through to service', async () => {
+    mockComplianceService.evaluateCompliance.mockResolvedValue(makeComplianceReport());
+
+    await request(app)
+      .post('/v1/cases/case-001/compliance')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ state: 'CA' });
+
+    expect(mockComplianceService.evaluateCompliance).toHaveBeenCalledWith(
+      'case-001',
+      'mock-user-id-12345',
+      expect.objectContaining({ state: 'CA' })
+    );
+  });
+
+  it('passes skipStateAnalysis option through to service', async () => {
+    const report = makeComplianceReport({ stateViolations: [] });
+    mockComplianceService.evaluateCompliance.mockResolvedValue(report);
+
+    await request(app)
+      .post('/v1/cases/case-001/compliance')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ skipStateAnalysis: true });
+
+    expect(mockComplianceService.evaluateCompliance).toHaveBeenCalledWith(
+      'case-001',
+      'mock-user-id-12345',
+      expect.objectContaining({ skipStateAnalysis: true })
+    );
+  });
+
+  it('passes stateStatuteFilter option through to service', async () => {
+    mockComplianceService.evaluateCompliance.mockResolvedValue(makeComplianceReport());
+
+    await request(app)
+      .post('/v1/cases/case-001/compliance')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ stateStatuteFilter: ['ca_hbor', 'ca_rmla'] });
+
+    expect(mockComplianceService.evaluateCompliance).toHaveBeenCalledWith(
+      'case-001',
+      'mock-user-id-12345',
+      expect.objectContaining({ stateStatuteFilter: ['ca_hbor', 'ca_rmla'] })
+    );
+  });
+});
+
+// ============================================================
+// GET /v1/cases/:caseId/compliance — state data in report
+// ============================================================
+describe('GET /v1/cases/:caseId/compliance (state data)', () => {
+  it('report includes jurisdiction field when state analysis was run', async () => {
+    const report = makeComplianceReport({
+      jurisdiction: { state: 'CA', stateName: 'California', detectedFrom: 'property_address' }
+    });
+    mockCaseFileService.getCase.mockResolvedValue({
+      id: 'case-001',
+      compliance_report: report
+    });
+
+    const res = await request(app)
+      .get('/v1/cases/case-001/compliance')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.complianceReport.jurisdiction).toBeDefined();
+    expect(res.body.complianceReport.jurisdiction.state).toBe('CA');
+  });
+
+  it('report includes stateViolations array', async () => {
+    const report = makeComplianceReport({
+      stateViolations: [
+        {
+          id: 'sv-001',
+          statuteId: 'ca_hbor',
+          sectionId: 'ca_hbor_dual_tracking',
+          severity: 'high',
+          description: 'Dual tracking violation'
+        }
+      ],
+      stateCompliance: {
+        totalViolations: 1,
+        overallStateComplianceRisk: 'high'
+      }
+    });
+    mockCaseFileService.getCase.mockResolvedValue({
+      id: 'case-001',
+      compliance_report: report
+    });
+
+    const res = await request(app)
+      .get('/v1/cases/case-001/compliance')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.complianceReport.stateViolations).toBeDefined();
+    expect(res.body.complianceReport.stateViolations).toHaveLength(1);
+    expect(res.body.complianceReport.stateViolations[0].statuteId).toBe('ca_hbor');
   });
 });
