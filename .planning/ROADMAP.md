@@ -134,10 +134,15 @@ Plans:
 **Goal**: Build unified audit report generation — aggregate findings from individual analysis, cross-document analysis, and compliance checks into a consolidated report with confidence scoring, violation summaries, evidence linking, and RESPA-compliant dispute letter generation
 **Depends on**: Phase 15
 **Research**: Unlikely (internal aggregation patterns, report formatting)
-**Plans**: TBD
+**Plans**: 6
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 16-01: Consolidated Report Schema & Scoring Configuration
+- [ ] 16-02: Report Data Aggregation Service (TDD)
+- [ ] 16-03: Confidence Scoring & Evidence Linking (TDD)
+- [ ] 16-04: RESPA Dispute Letter Generator
+- [ ] 16-05: Report Assembly Orchestrator
+- [ ] 16-06: Reporting API Routes, Integration Tests & Verification
 
 #### Phase 17: Integration Testing & Pipeline Hardening
 
