@@ -344,7 +344,8 @@ describe('ReportAggregationService', () => {
       expect(result.totalFindings).toBe(9);
       expect(result.bySeverity.critical).toBe(2);
       expect(result.bySeverity.high).toBe(3);
-      expect(result.bySeverity.medium).toBe(2);
+      // 2 from doc+forensic discrepancies + 2 payment issues counted as medium
+      expect(result.bySeverity.medium).toBe(4);
       expect(result.byCategory.documentAnomalies).toBe(2);
       expect(result.byCategory.crossDocDiscrepancies).toBe(2);
       expect(result.byCategory.timelineViolations).toBe(1);
@@ -443,7 +444,7 @@ describe('ReportAggregationService', () => {
 
       expect(result.error).toBeFalsy();
       expect(result.forensicReport).toBeNull();
-      expect(result.errors).toContain(expect.stringContaining('forensic'));
+      expect(result.errors).toContainEqual(expect.stringContaining('forensic'));
       expect(result.complianceReport).toBeDefined();
     });
 
@@ -460,7 +461,7 @@ describe('ReportAggregationService', () => {
 
       expect(result.error).toBeFalsy();
       expect(result.complianceReport).toBeNull();
-      expect(result.errors).toContain(expect.stringContaining('compliance'));
+      expect(result.errors).toContainEqual(expect.stringContaining('compliance'));
       expect(result.forensicReport).toBeDefined();
     });
 
@@ -539,7 +540,7 @@ describe('ReportAggregationService', () => {
       const result = await service.gatherCaseFindings('case-001', 'user-001');
 
       expect(result.forensicReport).toBeDefined();
-      expect(result.errors).toContain(expect.stringContaining('partial'));
+      expect(result.errors).toContainEqual(expect.stringContaining('partial'));
     });
   });
 });
