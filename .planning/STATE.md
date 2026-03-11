@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 15 of 17 (State Lending Law Compliance Engine)
-Plan: 8 of 8 in current phase
-Status: Phase complete
-Last activity: 2026-03-09 — Completed 15-08-PLAN.md
+Phase: 16 of 17 (Consolidated Findings & Reporting)
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-03-11 — Completed 16-01-PLAN.md
 
-Progress: █████████████████░░░ 94% (v3.0 Milestone — 33 of ~35 plans)
+Progress: █████████████████░░░ 95% (v3.0 Milestone — 34 of ~36 plans)
 
 ## Performance Metrics
 
@@ -119,6 +119,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 15-07 | stateCompliance summary parallels federal complianceSummary | Consistent report structure for consumers |
 | 15-08 | State routes between federal statute and case routes | Consistent ordering pattern (12-03, 13-06, 14-06) |
 | 15-08 | getSupportedStatesSchema uses unknown(false) | Rejects query garbage without needing specific params |
+| 16-01 | Joi sync validate() warnings option removed | Joi's synchronous validate() does not support warnings: true; returns empty array |
+| 16-01 | LAYER_SCORING_FACTORS as separate export | Structured config for per-layer sub-weights rather than inline |
+| 16-01 | Additional enum exports (FINDING_TYPES, OVERALL_RISK_LEVELS) | Downstream consumers need enum access without re-importing schema internals |
 
 ### Deferred Issues
 
@@ -138,6 +141,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Completed 15-08-PLAN.md — Phase 15 COMPLETE (State Lending Law Compliance Engine)
-Resume file: None — ready for Phase 16 planning
+Last session: 2026-03-11
+Stopped at: Completed 16-01-PLAN.md — Consolidated Report Schema & Scoring Configuration
+Resume file: None — ready for 16-02-PLAN.md
