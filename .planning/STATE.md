@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 16 of 17 (Consolidated Findings & Reporting)
-Plan: 2 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In progress
-Last activity: 2026-03-11 — Completed 16-02-PLAN.md
+Last activity: 2026-03-11 — Completed 16-03-PLAN.md
 
-Progress: █████████████████░░░ 95% (v3.0 Milestone — 35 of ~36 plans)
+Progress: █████████████████░░░ 95% (v3.0 Milestone — 36 of ~37 plans)
 
 ## Performance Metrics
 
@@ -120,6 +120,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 15-08 | State routes between federal statute and case routes | Consistent ordering pattern (12-03, 13-06, 14-06) |
 | 15-08 | getSupportedStatesSchema uses unknown(false) | Rejects query garbage without needing specific params |
 | 16-01 | Joi sync validate() warnings option removed | Joi's synchronous validate() does not support warnings: true; returns empty array |
+| 16-03 | Per-layer scores start at 100, subtract severity-weighted penalties | Intuitive scoring model where clean = 100 and penalties degrade score |
+| 16-03 | Missing layers get null scores with weight redistribution | Available layer weights normalized to sum to 1.0; missing ≠ bad |
+| 16-03 | Forensic floor-drag penalty caps score at 45 | Prevents clean sub-factors from masking catastrophic failure in one area |
 | 16-01 | LAYER_SCORING_FACTORS as separate export | Structured config for per-layer sub-weights rather than inline |
 | 16-01 | Additional enum exports (FINDING_TYPES, OVERALL_RISK_LEVELS) | Downstream consumers need enum access without re-importing schema internals |
 
@@ -142,5 +145,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 16-02-PLAN.md — Report Data Aggregation Service (TDD)
-Resume file: None — ready for 16-03-PLAN.md
+Stopped at: Completed 16-03-PLAN.md — Confidence Scoring & Evidence Linking (TDD)
+Resume file: None — ready for 16-04-PLAN.md

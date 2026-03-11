@@ -139,7 +139,7 @@ Plans:
 Plans:
 - [x] 16-01: Consolidated Report Schema & Scoring Configuration
 - [x] 16-02: Report Data Aggregation Service (TDD)
-- [ ] 16-03: Confidence Scoring & Evidence Linking (TDD)
+- [x] 16-03: Confidence Scoring & Evidence Linking (TDD)
 - [ ] 16-04: RESPA Dispute Letter Generator
 - [ ] 16-05: Report Assembly Orchestrator
 - [ ] 16-06: Reporting API Routes, Integration Tests & Verification
@@ -173,7 +173,7 @@ Plans:
 | 13. Cross-Document Forensic Analysis | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
-| 16. Consolidated Findings & Reporting | v3.0 | 2/6 | In progress | - |
+| 16. Consolidated Findings & Reporting | v3.0 | 3/6 | In progress | - |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 0/? | Not started | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 8 phases planned (v3.0)
