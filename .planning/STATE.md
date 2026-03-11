@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 16 of 17 (Consolidated Findings & Reporting)
-Plan: 3 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In progress
-Last activity: 2026-03-11 — Completed 16-03-PLAN.md
+Last activity: 2026-03-11 — Completed 16-04-PLAN.md
 
-Progress: █████████████████░░░ 95% (v3.0 Milestone — 36 of ~37 plans)
+Progress: █████████████████░░░ 95% (v3.0 Milestone — 37 of ~38 plans)
 
 ## Performance Metrics
 
@@ -125,6 +125,9 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 | 16-03 | Forensic floor-drag penalty caps score at 45 | Prevents clean sub-factors from masking catastrophic failure in one area |
 | 16-01 | LAYER_SCORING_FACTORS as separate export | Structured config for per-layer sub-weights rather than inline |
 | 16-01 | Additional enum exports (FINDING_TYPES, OVERALL_RISK_LEVELS) | Downstream consumers need enum access without re-importing schema internals |
+| 16-04 | Follow complianceAnalysisService singleton pattern with lazy Anthropic client | Tests run without API key; consistent with established codebase patterns |
+| 16-04 | Return error objects instead of throwing on failure | Callers handle errors without try/catch; matches graceful degradation pattern |
+| 16-04 | Extract violations/findings from consolidated report for Claude prompts | Full audit context for generating accurate, evidence-backed letters |
 
 ### Deferred Issues
 
@@ -145,5 +148,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 16-03-PLAN.md — Confidence Scoring & Evidence Linking (TDD)
-Resume file: None — ready for 16-04-PLAN.md
+Stopped at: Completed 16-04-PLAN.md — RESPA Dispute Letter Generator
+Resume file: None — ready for 16-05-PLAN.md
