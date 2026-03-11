@@ -460,24 +460,19 @@ const consolidatedReportSchema = Joi.object({
  * @returns {{ valid: boolean, errors: string[], warnings: string[] }}
  */
 function validateConsolidatedReport(report) {
-  const { error, value, warning } = consolidatedReportSchema.validate(report, {
-    abortEarly: false,
-    warnings: true
+  const { error, value } = consolidatedReportSchema.validate(report, {
+    abortEarly: false
   });
 
   const errors = error
     ? error.details.map(d => d.message)
     : [];
 
-  const warnings = warning
-    ? warning.details.map(d => d.message)
-    : [];
-
   return {
     valid: !error,
     value,
     errors,
-    warnings
+    warnings: []
   };
 }
 
