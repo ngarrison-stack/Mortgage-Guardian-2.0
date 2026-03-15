@@ -142,7 +142,7 @@ Plans:
 - [x] 16-03: Confidence Scoring & Evidence Linking (TDD)
 - [x] 16-04: RESPA Dispute Letter Generator
 - [x] 16-05: Report Assembly Orchestrator
-- [ ] 16-06: Reporting API Routes, Integration Tests & Verification
+- [x] 16-06: Reporting API Routes, Integration Tests & Verification
 
 #### Phase 17: Integration Testing & Pipeline Hardening
 
@@ -152,8 +152,8 @@ Plans:
 **Plans**: 4
 
 Plans:
-- [ ] 17-01: End-to-End Pipeline Integration Tests
-- [ ] 17-02: Service Boundary Failure Injection Tests
+- [x] 17-01: End-to-End Pipeline Integration Tests
+- [x] 17-02: Service Boundary Failure Injection Tests
 - [ ] 17-03: Performance Guardrails & Resource Tracking
 - [ ] 17-04: Pipeline Hardening & v3.0 Milestone Completion
 
@@ -176,7 +176,7 @@ Plans:
 | 13. Cross-Document Forensic Analysis | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
-| 16. Consolidated Findings & Reporting | v3.0 | 5/6 | In progress | - |
-| 17. Integration Testing & Pipeline Hardening | v3.0 | 0/4 | Not started | - |
+| 16. Consolidated Findings & Reporting | v3.0 | 6/6 | Complete | 2026-03-14 |
+| 17. Integration Testing & Pipeline Hardening | v3.0 | 2/4 | In progress | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 8 phases planned (v3.0)
