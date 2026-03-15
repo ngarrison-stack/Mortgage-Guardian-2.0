@@ -149,10 +149,13 @@ Plans:
 **Goal**: End-to-end pipeline testing across the full document lifecycle (intake → storage → analysis → cross-reference → compliance → report), performance optimization for large document sets, and edge case handling
 **Depends on**: Phase 16
 **Research**: Unlikely (testing established pipeline)
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-01: End-to-End Pipeline Integration Tests
+- [ ] 17-02: Service Boundary Failure Injection Tests
+- [ ] 17-03: Performance Guardrails & Resource Tracking
+- [ ] 17-04: Pipeline Hardening & v3.0 Milestone Completion
 
 ## Progress
 
@@ -174,6 +177,6 @@ Plans:
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
 | 16. Consolidated Findings & Reporting | v3.0 | 5/6 | In progress | - |
-| 17. Integration Testing & Pipeline Hardening | v3.0 | 0/? | Not started | - |
+| 17. Integration Testing & Pipeline Hardening | v3.0 | 0/4 | Not started | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 8 phases planned (v3.0)
