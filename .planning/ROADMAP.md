@@ -62,10 +62,16 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 **Goal**: Debug and fix Express API endpoint failures, optimize slow responses, fix connection drops, timeouts, and resource exhaustion issues
 **Depends on**: v3.0 milestone complete
 **Research**: Unlikely (internal patterns, existing Express/Node stack)
-**Plans**: TBD
+**Plans**: 7
 
 Plans:
-- [ ] 18-01: TBD (run /gsd:plan-phase 18 to break down)
+- [ ] 18-01: Server Lifecycle & Process Stability (graceful shutdown, uncaught exception handlers)
+- [ ] 18-02: CORS & Webhook Security (CORS credentials fix, webhook signature enforcement)
+- [ ] 18-03: Webhook Handler Bug Fixes (transaction .success field bug, handler return values)
+- [ ] 18-04: Document Route Security & Correctness (user ID isolation fix, HTTP status codes)
+- [ ] 18-05: Memory Leak Prevention (pipeline state cleanup, mock Map cleanup)
+- [ ] 18-06: Startup Validation & Config (env var validation, Vercel handler fix)
+- [ ] 18-07: Request Tracing (request ID middleware, logger propagation)
 
 #### Phase 19: Frontend UI & State Repairs
 
