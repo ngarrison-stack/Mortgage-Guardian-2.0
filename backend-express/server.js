@@ -9,6 +9,24 @@ require('dotenv').config();
 const { createLogger, morganStream } = require('./utils/logger');
 const logger = createLogger('server');
 
+// Process-level error handlers — must be registered early, before any async work
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception — process will exit', {
+    error: err.message,
+    stack: err.stack,
+    name: err.name
+  });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.warn('Unhandled promise rejection', {
+    reason: reason instanceof Error
+      ? { message: reason.message, stack: reason.stack, name: reason.name }
+      : String(reason)
+  });
+});
+
 // Import middleware
 const { requireAuth } = require('./middleware/auth');
 
