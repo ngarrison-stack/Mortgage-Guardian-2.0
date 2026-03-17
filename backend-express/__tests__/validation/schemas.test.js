@@ -43,7 +43,6 @@ describe('Document schemas', () => {
   describe('uploadDocumentSchema', () => {
     const validComplete = {
       documentId: 'doc-001',
-      userId: 'user-123',
       fileName: 'mortgage-statement.pdf',
       content: 'base64-encoded-content-here',
       documentType: 'mortgage_statement',
@@ -53,7 +52,6 @@ describe('Document schemas', () => {
 
     const validMinimal = {
       documentId: 'doc-002',
-      userId: 'user-456',
       fileName: 'doc.pdf',
       content: 'some-content'
     };
@@ -76,12 +74,12 @@ describe('Document schemas', () => {
     test('rejects missing required fields', () => {
       const { error } = uploadDocumentSchema.validate({}, { abortEarly: false });
       expect(error).toBeDefined();
-      expect(error.details.length).toBeGreaterThanOrEqual(4); // documentId, userId, fileName, content
+      expect(error.details.length).toBeGreaterThanOrEqual(3); // documentId, fileName, content
     });
 
     test('rejects missing documentId', () => {
       const { error } = uploadDocumentSchema.validate({
-        userId: 'user-1', fileName: 'f.pdf', content: 'c'
+        fileName: 'f.pdf', content: 'c'
       });
       expect(error).toBeDefined();
       expect(error.details[0].path).toContain('documentId');
@@ -99,13 +97,11 @@ describe('Document schemas', () => {
     test('trims whitespace from string fields', () => {
       const { error, value } = uploadDocumentSchema.validate({
         documentId: '  doc-trimmed  ',
-        userId: '  user-trimmed  ',
         fileName: '  file.pdf  ',
         content: 'content-not-trimmed'
       });
       expect(error).toBeUndefined();
       expect(value.documentId).toBe('doc-trimmed');
-      expect(value.userId).toBe('user-trimmed');
       expect(value.fileName).toBe('file.pdf');
     });
   });
@@ -116,7 +112,6 @@ describe('Document schemas', () => {
   describe('getDocumentsSchema', () => {
     test('accepts valid query with all params', () => {
       const { error, value } = getDocumentsSchema.validate({
-        userId: 'user-123',
         limit: 100,
         offset: 50
       });
@@ -126,9 +121,7 @@ describe('Document schemas', () => {
     });
 
     test('applies defaults for limit and offset', () => {
-      const { error, value } = getDocumentsSchema.validate({
-        userId: 'user-123'
-      });
+      const { error, value } = getDocumentsSchema.validate({});
       expect(error).toBeUndefined();
       expect(value.limit).toBe(50);
       expect(value.offset).toBe(0);
@@ -136,7 +129,6 @@ describe('Document schemas', () => {
 
     test('rejects limit > 500', () => {
       const { error } = getDocumentsSchema.validate({
-        userId: 'user-123',
         limit: 501
       });
       expect(error).toBeDefined();
@@ -145,22 +137,14 @@ describe('Document schemas', () => {
 
     test('rejects offset < 0', () => {
       const { error } = getDocumentsSchema.validate({
-        userId: 'user-123',
         offset: -1
       });
       expect(error).toBeDefined();
       expect(error.details[0].path).toContain('offset');
     });
 
-    test('rejects missing userId', () => {
-      const { error } = getDocumentsSchema.validate({});
-      expect(error).toBeDefined();
-      expect(error.details[0].path).toContain('userId');
-    });
-
     test('coerces string numbers for limit and offset', () => {
       const { error, value } = getDocumentsSchema.validate({
-        userId: 'user-123',
         limit: '25',
         offset: '10'
       });
@@ -174,26 +158,9 @@ describe('Document schemas', () => {
   // getDocumentSchema
   // ------------------------------------------------
   describe('getDocumentSchema', () => {
-    test('accepts valid userId', () => {
-      const { error, value } = getDocumentSchema.validate({
-        userId: 'user-789'
-      });
-      expect(error).toBeUndefined();
-      expect(value.userId).toBe('user-789');
-    });
-
-    test('rejects missing userId', () => {
+    test('accepts empty object (userId now comes from auth context)', () => {
       const { error } = getDocumentSchema.validate({});
-      expect(error).toBeDefined();
-      expect(error.details[0].path).toContain('userId');
-    });
-
-    test('trims userId whitespace', () => {
-      const { error, value } = getDocumentSchema.validate({
-        userId: '  user-trimmed  '
-      });
       expect(error).toBeUndefined();
-      expect(value.userId).toBe('user-trimmed');
     });
   });
 
@@ -201,18 +168,9 @@ describe('Document schemas', () => {
   // deleteDocumentSchema
   // ------------------------------------------------
   describe('deleteDocumentSchema', () => {
-    test('accepts valid userId', () => {
-      const { error, value } = deleteDocumentSchema.validate({
-        userId: 'user-delete-123'
-      });
-      expect(error).toBeUndefined();
-      expect(value.userId).toBe('user-delete-123');
-    });
-
-    test('rejects missing userId', () => {
+    test('accepts empty object (userId now comes from auth context)', () => {
       const { error } = deleteDocumentSchema.validate({});
-      expect(error).toBeDefined();
-      expect(error.details[0].path).toContain('userId');
+      expect(error).toBeUndefined();
     });
   });
 });

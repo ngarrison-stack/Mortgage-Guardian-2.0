@@ -24,13 +24,13 @@ router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) =>
   try {
     const {
       documentId,
-      userId,
       fileName,
       documentType,
       content,
       analysisResults,
       metadata
     } = req.body;
+    const userId = req.user.id;
 
     // Decode base64 content and validate file
     const fileBuffer = Buffer.from(content, 'base64');
@@ -74,7 +74,8 @@ router.post('/upload', validate(uploadDocumentSchema), async (req, res, next) =>
 // List all documents in the pipeline for a user, optionally filtered by status
 // NOTE: Must be defined before /:documentId to avoid "pipeline" matching as a param
 router.get('/pipeline', validate(getPipelineSchema, 'query'), async (req, res) => {
-  const { userId, status } = req.query;
+  const userId = req.user.id;
+  const { status } = req.query;
   const documents = documentPipeline.getUserPipeline(userId, { status });
 
   res.json({
@@ -88,7 +89,8 @@ router.get('/pipeline', validate(getPipelineSchema, 'query'), async (req, res) =
 // Get all documents for a user
 router.get('/', validate(getDocumentsSchema, 'query'), async (req, res, next) => {
   try {
-    const { userId, limit, offset } = req.query;
+    const userId = req.user.id;
+    const { limit, offset } = req.query;
 
     const documents = await documentService.getDocumentsByUser({
       userId,
@@ -158,7 +160,7 @@ router.get('/:documentId/analysis', validate(analysisParamsSchema, 'params'), as
 router.get('/:documentId', validate(getDocumentSchema, 'query'), async (req, res, next) => {
   try {
     const { documentId } = req.params;
-    const { userId } = req.query;
+    const userId = req.user.id;
 
     const document = await documentService.getDocument({
       documentId,
@@ -185,7 +187,7 @@ router.get('/:documentId', validate(getDocumentSchema, 'query'), async (req, res
 router.delete('/:documentId', validate(deleteDocumentSchema, 'query'), async (req, res, next) => {
   try {
     const { documentId } = req.params;
-    const { userId } = req.query;
+    const userId = req.user.id;
 
     await documentService.deleteDocument({
       documentId,
@@ -211,7 +213,8 @@ router.delete('/:documentId', validate(deleteDocumentSchema, 'query'), async (re
 // Triggers the full processing pipeline: OCR → classify → analyze → review
 router.post('/process', validate(processDocumentSchema), async (req, res, next) => {
   try {
-    const { documentId, userId, documentText, fileBuffer, documentType } = req.body;
+    const { documentId, documentText, fileBuffer, documentType } = req.body;
+    const userId = req.user.id;
 
     logger.info('Starting document pipeline', { documentId, userId, documentType });
 
@@ -252,7 +255,8 @@ router.get('/:documentId/status', async (req, res) => {
 router.post('/:documentId/retry', validate(retryDocumentSchema), async (req, res, next) => {
   try {
     const { documentId } = req.params;
-    const { userId, documentText } = req.body;
+    const userId = req.user.id;
+    const { documentText } = req.body;
 
     logger.info('Retrying document pipeline', { documentId, userId });
 
@@ -280,7 +284,7 @@ router.post('/:documentId/retry', validate(retryDocumentSchema), async (req, res
 router.post('/:documentId/complete', validate(completeDocumentSchema), async (req, res, next) => {
   try {
     const { documentId } = req.params;
-    const { userId } = req.body;
+    const userId = req.user.id;
 
     const result = documentPipeline.completeDocument(documentId, userId);
     res.json(result);

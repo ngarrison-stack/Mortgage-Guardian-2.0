@@ -109,38 +109,39 @@ describe('GET /v1/documents', () => {
 
     const res = await request(app)
       .get('/v1/documents')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
     expect(res.body.documents).toHaveLength(2);
     expect(res.body.total).toBe(2);
-    expect(res.body.userId).toBe('user-1');
+    expect(res.body.userId).toBe('mock-user-id-12345');
   });
 
-  it('passes userId, limit, offset to service', async () => {
+  it('passes userId from auth context, limit, offset to service', async () => {
     mockDocumentService.getDocumentsByUser.mockResolvedValue([]);
 
     await request(app)
       .get('/v1/documents')
       .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1', limit: '10', offset: '5' });
+      .query({ limit: '10', offset: '5' });
 
     expect(mockDocumentService.getDocumentsByUser).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: 'user-1',
+        userId: 'mock-user-id-12345',
         limit: 10,
         offset: 5
       })
     );
   });
 
-  it('validates userId is required', async () => {
+  it('returns 200 even without query params (userId from auth)', async () => {
+    mockDocumentService.getDocumentsByUser.mockResolvedValue([]);
+
     const res = await request(app)
       .get('/v1/documents')
       .set('Authorization', 'Bearer valid-token');
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
   });
 
   it('returns 500 on service error', async () => {
@@ -148,8 +149,7 @@ describe('GET /v1/documents', () => {
 
     const res = await request(app)
       .get('/v1/documents')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(500);
   });
@@ -159,7 +159,7 @@ describe('GET /v1/documents', () => {
 // GET /v1/documents/:documentId
 // ============================================================
 describe('GET /v1/documents/:documentId', () => {
-  it('returns 200 with document data', async () => {
+  it('returns 200 with document data (userId from auth)', async () => {
     const doc = {
       document_id: 'doc-1',
       file_name: 'stmt.pdf',
@@ -169,8 +169,7 @@ describe('GET /v1/documents/:documentId', () => {
 
     const res = await request(app)
       .get('/v1/documents/doc-1')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
     expect(res.body.document_id).toBe('doc-1');
@@ -182,19 +181,23 @@ describe('GET /v1/documents/:documentId', () => {
 
     const res = await request(app)
       .get('/v1/documents/nonexistent')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBe('Not Found');
   });
 
-  it('validates userId query param required', async () => {
-    const res = await request(app)
+  it('uses auth context userId, not query param', async () => {
+    mockDocumentService.getDocument.mockResolvedValue({ document_id: 'doc-1' });
+
+    await request(app)
       .get('/v1/documents/doc-1')
       .set('Authorization', 'Bearer valid-token');
 
-    expect(res.status).toBe(400);
+    expect(mockDocumentService.getDocument).toHaveBeenCalledWith({
+      documentId: 'doc-1',
+      userId: 'mock-user-id-12345'
+    });
   });
 
   it('returns 500 on service error', async () => {
@@ -202,8 +205,7 @@ describe('GET /v1/documents/:documentId', () => {
 
     const res = await request(app)
       .get('/v1/documents/doc-1')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(500);
   });
@@ -213,29 +215,20 @@ describe('GET /v1/documents/:documentId', () => {
 // DELETE /v1/documents/:documentId
 // ============================================================
 describe('DELETE /v1/documents/:documentId', () => {
-  it('returns 200 with success message', async () => {
+  it('returns 200 with success message (userId from auth)', async () => {
     mockDocumentService.deleteDocument.mockResolvedValue({ success: true });
 
     const res = await request(app)
       .delete('/v1/documents/doc-1')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Document deleted successfully');
     expect(mockDocumentService.deleteDocument).toHaveBeenCalledWith({
       documentId: 'doc-1',
-      userId: 'user-1'
+      userId: 'mock-user-id-12345'
     });
-  });
-
-  it('validates userId query param required', async () => {
-    const res = await request(app)
-      .delete('/v1/documents/doc-1')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(400);
   });
 
   it('returns 500 on service error', async () => {
@@ -243,8 +236,7 @@ describe('DELETE /v1/documents/:documentId', () => {
 
     const res = await request(app)
       .delete('/v1/documents/doc-1')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: 'user-1' });
+      .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(500);
   });

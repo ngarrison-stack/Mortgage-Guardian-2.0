@@ -201,7 +201,6 @@ beforeEach(() => {
 function buildUploadBody(overrides = {}) {
   return {
     documentId: 'doc-test-001',
-    userId: 'test-user-id',
     fileName: 'test-document.pdf',
     documentType: 'mortgage_statement',
     content: VALID_PDF_BASE64,
@@ -496,7 +495,6 @@ describe('Document upload security integration', () => {
     test('missing content field is rejected by Joi', async () => {
       const body = {
         documentId: 'doc-test-002',
-        userId: 'test-user-id',
         fileName: 'test.pdf',
         documentType: 'mortgage_statement'
         // no content field

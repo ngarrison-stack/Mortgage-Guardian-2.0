@@ -189,77 +189,65 @@ beforeEach(() => {
 // ============================================================
 describe('Cross-User Document Isolation', () => {
 
-  test('user cannot access another user\'s document via GET /v1/documents/:id', async () => {
-    // Create a document owned by User-A
+  test('document route uses JWT user ID, ignores query param userId', async () => {
+    // Create a document owned by User-B (NOT the JWT user)
     mockDocumentStore.set('doc-secret', {
       document_id: 'doc-secret',
-      user_id: USER_A_ID,
+      user_id: USER_B_ID,
       file_name: 'secret-mortgage.pdf'
     });
 
-    // User-B tries to access User-A's document
-    // Note: document routes use userId from query params
+    // JWT auth returns User-A. Even if someone crafts a query with User-B's ID,
+    // the route now uses req.user.id from JWT — IDOR vulnerability is closed.
     const res = await request(app)
       .get('/v1/documents/doc-secret')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: USER_B_ID });
+      .set('Authorization', 'Bearer valid-token');
 
-    // Should get 404 — document belongs to User-A, not User-B
+    // Should get 404 — document belongs to User-B, JWT user is User-A
     expect(res.status).toBe(404);
     expect(res.body.error).toBe('Not Found');
 
-    // Verify the service was called with User-B's ID (correct scoping)
+    // Verify the service was called with JWT user's ID (User-A), not a spoofed ID
     expect(mockDocumentService.getDocument).toHaveBeenCalledWith({
       documentId: 'doc-secret',
-      userId: USER_B_ID
+      userId: USER_A_ID
     });
   });
 
-  test('user only sees own documents in GET /v1/documents', async () => {
+  test('user only sees own documents in GET /v1/documents (userId from JWT)', async () => {
     // Create documents for both users
     mockDocumentStore.set('doc-a1', { document_id: 'doc-a1', user_id: USER_A_ID, file_name: 'a1.pdf' });
     mockDocumentStore.set('doc-a2', { document_id: 'doc-a2', user_id: USER_A_ID, file_name: 'a2.pdf' });
     mockDocumentStore.set('doc-b1', { document_id: 'doc-b1', user_id: USER_B_ID, file_name: 'b1.pdf' });
 
-    // User-A lists documents
-    const resA = await request(app)
+    // JWT auth returns User-A — only User-A's documents should be returned
+    const res = await request(app)
       .get('/v1/documents')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: USER_A_ID });
+      .set('Authorization', 'Bearer valid-token');
 
-    expect(resA.status).toBe(200);
-    expect(resA.body.documents).toHaveLength(2);
-    // All returned documents should belong to User-A
-    for (const doc of resA.body.documents) {
+    expect(res.status).toBe(200);
+    expect(res.body.documents).toHaveLength(2);
+    // All returned documents should belong to User-A (JWT user)
+    for (const doc of res.body.documents) {
       expect(doc.user_id).toBe(USER_A_ID);
     }
-
-    // User-B lists documents
-    const resB = await request(app)
-      .get('/v1/documents')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: USER_B_ID });
-
-    expect(resB.status).toBe(200);
-    expect(resB.body.documents).toHaveLength(1);
-    expect(resB.body.documents[0].user_id).toBe(USER_B_ID);
   });
 
-  test('user cannot delete another user\'s document', async () => {
-    // Create a document owned by User-A
+  test('user cannot delete another user\'s document (userId from JWT)', async () => {
+    // Create a document owned by User-B (NOT the JWT user)
     mockDocumentStore.set('doc-protected', {
       document_id: 'doc-protected',
-      user_id: USER_A_ID,
+      user_id: USER_B_ID,
       file_name: 'protected.pdf'
     });
 
-    // User-B tries to delete User-A's document
+    // JWT auth returns User-A. Attempting to delete User-B's document
+    // will fail because the route uses req.user.id (User-A) for scoping.
     const res = await request(app)
       .delete('/v1/documents/doc-protected')
-      .set('Authorization', 'Bearer valid-token')
-      .query({ userId: USER_B_ID });
+      .set('Authorization', 'Bearer valid-token');
 
-    // Should fail — document belongs to User-A
+    // Should fail — service throws because User-A doesn't own this document
     expect(res.status).toBe(500);
 
     // Verify document still exists
