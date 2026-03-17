@@ -65,7 +65,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 **Plans**: 7
 
 Plans:
-- [ ] 18-01: Server Lifecycle & Process Stability (graceful shutdown, uncaught exception handlers)
+- [x] 18-01: Server Lifecycle & Process Stability (graceful shutdown, uncaught exception handlers)
 - [ ] 18-02: CORS & Webhook Security (CORS credentials fix, webhook signature enforcement)
 - [ ] 18-03: Webhook Handler Bug Fixes (transaction .success field bug, handler return values)
 - [ ] 18-04: Document Route Security & Correctness (user ID isolation fix, HTTP status codes)
@@ -125,7 +125,7 @@ Plans:
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
 | 16. Consolidated Findings & Reporting | v3.0 | 6/6 | Complete | 2026-03-14 |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
-| 18. Backend API Stability | v4.0 | 0/? | Not started | - |
+| 18. Backend API Stability | v4.0 | 1/7 | In progress | - |
 | 19. Frontend UI & State Repairs | v4.0 | 0/? | Not started | - |
 | 20. Pipeline Accuracy | v4.0 | 0/? | Not started | - |
 | 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
