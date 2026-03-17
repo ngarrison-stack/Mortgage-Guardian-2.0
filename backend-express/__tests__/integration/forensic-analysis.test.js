@@ -464,7 +464,7 @@ describe('POST /v1/cases/:caseId/forensic-analysis', () => {
     expect(res.body.forensicAnalysis.summary).toBeDefined();
   });
 
-  test('should return 200 with status:error for non-existent case', async () => {
+  test('should return 422 with error for non-existent case', async () => {
     // getCase returns null for unknown case — aggregation throws "Case not found"
     jest.spyOn(caseFileService, 'getCase').mockResolvedValue(null);
 
@@ -473,9 +473,9 @@ describe('POST /v1/cases/:caseId/forensic-analysis', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({});
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('error');
-    expect(res.body.error).toBeDefined();
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('AnalysisError');
+    expect(res.body.message).toBeDefined();
   });
 
   test('should return 200 with warning for case with insufficient analyzed documents', async () => {

@@ -107,10 +107,9 @@ router.post('/:caseId/forensic-analysis', validate(forensicAnalysisBodySchema), 
 
     if (result.error) {
       forensicLogger.warn('Forensic analysis returned error', { caseId, error: result.errorMessage });
-      return res.status(200).json({
-        caseId,
-        status: 'error',
-        error: result.errorMessage
+      return res.status(422).json({
+        error: 'AnalysisError',
+        message: result.errorMessage || 'Forensic analysis failed'
       });
     }
 

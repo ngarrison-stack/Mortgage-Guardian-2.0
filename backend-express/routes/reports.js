@@ -36,9 +36,9 @@ router.post('/cases/:caseId/report', validate(generateReportSchema), async (req,
 
     if (result.error) {
       logger.warn('Report generation returned error', { caseId, error: result.errorMessage });
-      return res.status(200).json({
-        status: 'error',
-        message: result.errorMessage
+      return res.status(422).json({
+        error: 'ReportError',
+        message: result.errorMessage || 'Report generation failed'
       });
     }
 
@@ -128,9 +128,9 @@ router.post('/cases/:caseId/report/letter', validate(generateLetterSchema), asyn
 
     if (letter.error) {
       logger.warn('Letter generation returned error', { caseId, error: letter.errorMessage });
-      return res.status(200).json({
-        status: 'error',
-        message: letter.errorMessage
+      return res.status(422).json({
+        error: 'LetterError',
+        message: letter.errorMessage || 'Dispute letter generation failed'
       });
     }
 

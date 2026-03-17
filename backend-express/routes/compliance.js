@@ -196,10 +196,9 @@ router.post('/cases/:caseId/compliance', validate(evaluateComplianceSchema), asy
 
     if (result.error) {
       logger.warn('Compliance evaluation returned error', { caseId, error: result.errorMessage });
-      return res.status(200).json({
-        caseId,
-        status: 'error',
-        message: result.errorMessage
+      return res.status(422).json({
+        error: 'ComplianceError',
+        message: result.errorMessage || 'Compliance evaluation failed'
       });
     }
 

@@ -174,7 +174,7 @@ describe('POST /v1/cases/:caseId/compliance', () => {
     expect(res.body.complianceReport.violations).toHaveLength(1);
   });
 
-  it('returns 200 with status error when analysis fails', async () => {
+  it('returns 422 with error when analysis fails', async () => {
     mockComplianceService.evaluateCompliance.mockResolvedValue({
       error: true,
       errorMessage: 'Case has no forensic analysis. Run forensic analysis first.'
@@ -185,8 +185,8 @@ describe('POST /v1/cases/:caseId/compliance', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({});
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('error');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('ComplianceError');
     expect(res.body.message).toMatch(/forensic analysis/);
   });
 

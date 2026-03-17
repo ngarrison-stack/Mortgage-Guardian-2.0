@@ -239,7 +239,7 @@ describe('POST /v1/cases/:caseId/report', () => {
     expect(res.body.report.disputeLetter.letterType).toBe('qualified_written_request');
   });
 
-  it('returns 200 with status error when service returns error', async () => {
+  it('returns 422 with error when service returns error', async () => {
     mockConsolidatedReportService.generateReport.mockResolvedValue({
       error: true,
       errorMessage: 'Case has no analyzed documents. Run document analysis first.'
@@ -250,8 +250,8 @@ describe('POST /v1/cases/:caseId/report', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({});
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('error');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('ReportError');
     expect(res.body.message).toMatch(/analyzed documents/);
   });
 
@@ -400,7 +400,7 @@ describe('POST /v1/cases/:caseId/report/letter', () => {
     expect(res.body.letter.content).toBeDefined();
   });
 
-  it('returns 200 with status error when letter generation fails', async () => {
+  it('returns 422 with error when letter generation fails', async () => {
     const report = makeConsolidatedReport();
     mockCaseFileService.getCase.mockResolvedValue({
       id: 'case-001',
@@ -417,8 +417,8 @@ describe('POST /v1/cases/:caseId/report/letter', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({ letterType: 'notice_of_error' });
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('error');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('LetterError');
     expect(res.body.message).toMatch(/Anthropic/);
   });
 

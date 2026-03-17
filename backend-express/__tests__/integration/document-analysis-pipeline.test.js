@@ -416,10 +416,9 @@ describe('GET /v1/documents/:documentId/analysis', () => {
       .get('/v1/documents/doc-failed-analysis/analysis')
       .set('Authorization', 'Bearer valid-token');
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('error');
-    expect(res.body.error).toBe('Claude API timeout during analysis');
-    expect(res.body.documentId).toBe('doc-failed-analysis');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('AnalysisError');
+    expect(res.body.message).toBe('Claude API timeout during analysis');
   });
 
   test('returns 401 without auth token', async () => {

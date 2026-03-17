@@ -136,10 +136,9 @@ router.get('/:documentId/analysis', validate(analysisParamsSchema, 'params'), as
 
     // If analysis had an error, return it with appropriate status
     if (analysisResults.error) {
-      return res.status(200).json({
-        documentId,
-        status: 'error',
-        error: analysisResults.errorMessage || 'Analysis failed',
+      return res.status(422).json({
+        error: 'AnalysisError',
+        message: analysisResults.errorMessage || 'Document analysis failed',
         rawResponse: analysisResults.rawResponse || null
       });
     }
