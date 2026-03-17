@@ -7,7 +7,7 @@ Mortgage Guardian 2.0 roadmap tracking milestones from MVP hardening through for
 ## Milestones
 
 - ✅ [v2.0 Production Hardening](milestones/v2.0-ROADMAP.md) (Phases 1-9, 32 plans) — SHIPPED 2026-02-26
-- 🚧 **v3.0 Forensic Analysis Engine** — Phases 10-17 (in progress)
+- ✅ [v3.0 Forensic Analysis Engine](milestones/v3.0-ROADMAP.md) (Phases 10-17, 42 plans) — SHIPPED 2026-03-15
 
 ## Completed Milestones
 
@@ -32,7 +32,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 
 </details>
 
-### 🚧 v3.0 Forensic Analysis Engine (In Progress)
+### ✅ v3.0 Forensic Analysis Engine — SHIPPED 2026-03-15
 
 **Milestone Goal:** Transform Mortgage Guardian from a production-hardened MVP into a litigation-grade forensic document analysis platform that processes mortgage files the way a large law firm would — intake, organize, analyze individually, cross-reference, and check against all applicable federal and state lending laws.
 
@@ -155,7 +155,7 @@ Plans:
 - [x] 17-01: End-to-End Pipeline Integration Tests
 - [x] 17-02: Service Boundary Failure Injection Tests
 - [x] 17-03: Performance Guardrails & Resource Tracking
-- [ ] 17-04: Pipeline Hardening & v3.0 Milestone Completion
+- [x] 17-04: Pipeline Hardening & v3.0 Milestone Completion
 
 ## Progress
 
@@ -177,6 +177,6 @@ Plans:
 | 14. Federal Lending Law Compliance Engine | v3.0 | 6/6 | Complete | 2026-03-09 |
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
 | 16. Consolidated Findings & Reporting | v3.0 | 6/6 | Complete | 2026-03-14 |
-| 17. Integration Testing & Pipeline Hardening | v3.0 | 3/4 | In progress | - |
+| 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
 
-**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 8 phases planned (v3.0)
+**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE
