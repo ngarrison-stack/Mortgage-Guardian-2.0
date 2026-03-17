@@ -142,7 +142,7 @@ app.use((err, req, res, next) => {
 
 // For local development and non-serverless deployments
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     logger.info('Server started', {
       port: PORT,
       env: process.env.NODE_ENV || 'development',
@@ -154,11 +154,29 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     });
   });
 
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    logger.info('SIGTERM received, shutting down');
-    process.exit(0);
-  });
+  // Graceful shutdown — stop accepting connections, drain in-flight requests, then exit
+  let shuttingDown = false;
+  function gracefulShutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    logger.info(`${signal} received, starting graceful shutdown`);
+
+    // Force exit after 10 seconds if cleanup hangs
+    const forceExitTimeout = setTimeout(() => {
+      logger.error('Graceful shutdown timed out after 10s, forcing exit');
+      process.exit(1);
+    }, 10000);
+    forceExitTimeout.unref();
+
+    server.close(() => {
+      logger.info('Server closed, exiting');
+      process.exit(0);
+    });
+  }
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 // Export for Vercel serverless
