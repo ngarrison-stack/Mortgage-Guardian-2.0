@@ -348,25 +348,37 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     logger.info('Webhook received', { type: webhook_type, code: webhook_code, itemId: item_id });
 
     // Handle different webhook types
-    switch (webhook_type) {
-      case 'TRANSACTIONS':
-        await handleTransactionWebhook(webhookData);
-        break;
+    let result = { handled: false };
 
-      case 'ITEM':
-        await handleItemWebhook(webhookData);
-        break;
+    try {
+      switch (webhook_type) {
+        case 'TRANSACTIONS':
+          result = await handleTransactionWebhook(webhookData);
+          break;
 
-      case 'AUTH':
-        await handleAuthWebhook(webhookData);
-        break;
+        case 'ITEM':
+          result = await handleItemWebhook(webhookData);
+          break;
 
-      default:
-        logger.info('Unhandled webhook type', { type: webhook_type });
+        case 'AUTH':
+          result = await handleAuthWebhook(webhookData);
+          break;
+
+        default:
+          logger.info('Unhandled webhook type', { type: webhook_type });
+          result = { handled: false, reason: 'unhandled_webhook_type' };
+      }
+    } catch (handlerError) {
+      logger.error('Webhook handler error', { type: webhook_type, error: handlerError.message });
+      result = { handled: false, error: handlerError.message };
     }
 
-    // Always respond with 200 to acknowledge receipt
-    res.json({ acknowledged: true });
+    if (!result.handled) {
+      logger.warn('Webhook handler did not complete successfully', { type: webhook_type, result });
+    }
+
+    // Always respond with 200 to acknowledge receipt (Plaid retries on non-2xx)
+    res.json({ acknowledged: true, ...result });
 
   } catch (error) {
     logger.error('Webhook processing error', { error: error.message });
@@ -393,7 +405,7 @@ async function handleTransactionWebhook(data) {
         const itemResult = await plaidDataService.getItem(item_id);
         if (!itemResult.success) {
           logger.error('Failed to find item', { itemId: item_id, error: itemResult.error });
-          return;
+          return { handled: false, error: `Item not found: ${item_id}` };
         }
 
         const { access_token, user_id } = itemResult.data;
@@ -411,7 +423,7 @@ async function handleTransactionWebhook(data) {
 
         if (!transactionsResponse || !transactionsResponse.transactions) {
           logger.error('Failed to fetch transactions', { itemId: item_id, response: transactionsResponse });
-          return;
+          return { handled: false, error: 'Failed to fetch transactions from Plaid' };
         }
 
         // 3. Store transactions in database
@@ -423,7 +435,7 @@ async function handleTransactionWebhook(data) {
 
         if (!storeResult.success) {
           logger.error('Failed to store transactions', { error: storeResult.error });
-          return;
+          return { handled: false, error: 'Failed to store transactions' };
         }
 
         logger.info('Transactions persisted', { count: transactionsResponse.transactions.length, itemId: item_id });
@@ -447,10 +459,11 @@ async function handleTransactionWebhook(data) {
         });
 
         logger.info('Transactions processed', { count: new_transactions, itemId: item_id });
+        return { handled: true, transactionCount: transactionsResponse.transactions.length };
       } catch (error) {
         logger.error('Error processing transaction webhook', { itemId: item_id, error: error.message });
+        return { handled: false, error: error.message };
       }
-      break;
 
     case 'TRANSACTIONS_REMOVED':
       logger.info('Transactions removed webhook', { itemId: item_id, count: removed_transactions.length });
@@ -463,16 +476,19 @@ async function handleTransactionWebhook(data) {
 
         if (!removeResult.success) {
           logger.error('Failed to remove transactions', { error: removeResult.error });
-        } else {
-          logger.info('Transactions removed successfully', { count: removed_transactions.length });
+          return { handled: false, error: 'Failed to remove transactions' };
         }
+
+        logger.info('Transactions removed successfully', { count: removed_transactions.length });
+        return { handled: true, action: `removed ${removed_transactions.length} transactions` };
       } catch (error) {
         logger.error('Error removing transactions', { error: error.message });
+        return { handled: false, error: error.message };
       }
-      break;
 
     default:
       logger.info('Unhandled transaction webhook code', { code: webhook_code });
+      return { handled: false, reason: `unhandled_code: ${webhook_code}` };
   }
 }
 
@@ -488,7 +504,7 @@ async function handleItemWebhook(data) {
         const itemResult = await plaidDataService.getItem(item_id);
         if (!itemResult.success) {
           logger.error('Failed to find item for error handling', { itemId: item_id });
-          return;
+          return { handled: false, error: `Item not found: ${item_id}` };
         }
 
         const { user_id } = itemResult.data;
@@ -532,10 +548,11 @@ async function handleItemWebhook(data) {
 
           logger.error('Item encountered error', { itemId: item_id, errorCode: error.error_code });
         }
+        return { handled: true, action: `item error handled: ${error?.error_code || 'unknown'}` };
       } catch (err) {
         logger.error('Error handling item error webhook', { error: err.message });
+        return { handled: false, error: err.message };
       }
-      break;
 
     case 'PENDING_EXPIRATION':
       logger.warn('Item consent expiring soon', { itemId: item_id });
@@ -545,7 +562,7 @@ async function handleItemWebhook(data) {
         const itemResult = await plaidDataService.getItem(item_id);
         if (!itemResult.success) {
           logger.error('Failed to find item for expiration warning', { itemId: item_id });
-          return;
+          return { handled: false, error: `Item not found: ${item_id}` };
         }
 
         const { user_id } = itemResult.data;
@@ -567,10 +584,11 @@ async function handleItemWebhook(data) {
         });
 
         logger.info('User notified about pending expiration', { itemId: item_id });
+        return { handled: true, action: 'pending expiration notification sent' };
       } catch (err) {
         logger.error('Error handling pending expiration webhook', { error: err.message });
+        return { handled: false, error: err.message };
       }
-      break;
 
     case 'USER_PERMISSION_REVOKED':
       logger.info('User revoked permission', { itemId: item_id });
@@ -580,7 +598,7 @@ async function handleItemWebhook(data) {
         const itemResult = await plaidDataService.getItem(item_id);
         if (!itemResult.success) {
           logger.error('Failed to find item for permission revocation', { itemId: item_id });
-          return;
+          return { handled: false, error: `Item not found: ${item_id}` };
         }
 
         const { user_id } = itemResult.data;
@@ -602,10 +620,11 @@ async function handleItemWebhook(data) {
         });
 
         logger.info('Item marked as inactive due to permission revocation', { itemId: item_id });
+        return { handled: true, action: 'permission revocation processed' };
       } catch (err) {
         logger.error('Error handling permission revocation webhook', { error: err.message });
+        return { handled: false, error: err.message };
       }
-      break;
 
     case 'WEBHOOK_UPDATE_ACKNOWLEDGED':
       logger.info('Webhook update acknowledged', { itemId: item_id });
@@ -617,13 +636,15 @@ async function handleItemWebhook(data) {
           status: 'active',
           requiresAction: false
         });
+        return { handled: true, action: 'webhook update acknowledged' };
       } catch (err) {
         logger.error('Error acknowledging webhook update', { error: err.message });
+        return { handled: false, error: err.message };
       }
-      break;
 
     default:
       logger.info('Unhandled item webhook code', { code: webhook_code });
+      return { handled: false, reason: `unhandled_code: ${webhook_code}` };
   }
 }
 
@@ -633,14 +654,15 @@ async function handleAuthWebhook(data) {
   switch (webhook_code) {
     case 'AUTOMATICALLY_VERIFIED':
       logger.info('Auth automatically verified', { itemId: item_id });
-      break;
+      return { handled: true, action: 'auth automatically verified' };
 
     case 'VERIFICATION_EXPIRED':
       logger.warn('Auth verification expired', { itemId: item_id });
-      break;
+      return { handled: true, action: 'auth verification expired' };
 
     default:
       logger.info('Unhandled auth webhook code', { code: webhook_code });
+      return { handled: false, reason: `unhandled_code: ${webhook_code}` };
   }
 }
 
