@@ -470,8 +470,11 @@ class PlaidService {
       const webhookVerificationKey = process.env.PLAID_WEBHOOK_VERIFICATION_KEY;
 
       if (!webhookVerificationKey) {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('PLAID_WEBHOOK_VERIFICATION_KEY is required in production — webhook signature cannot be verified');
+        }
         logger.warn('PLAID_WEBHOOK_VERIFICATION_KEY not configured - skipping signature verification');
-        return true; // Allow in development, but should be required in production
+        return true;
       }
 
       const signature = headers['plaid-verification'];
