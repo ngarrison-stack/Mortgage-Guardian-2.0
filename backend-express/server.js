@@ -53,8 +53,18 @@ app.use(helmet());
 app.use(compression());
 
 // CORS - Allow iOS app to connect
+// When credentials: true, origin cannot be '*' (CORS spec violation — browsers reject silently).
+// Using origin: true echoes back the request's Origin header, which is spec-compliant.
+const corsOrigin = process.env.ALLOWED_ORIGINS === '*'
+  ? true
+  : process.env.ALLOWED_ORIGINS?.split(',');
+
+if (process.env.ALLOWED_ORIGINS === '*' && process.env.NODE_ENV === 'production') {
+  logger.warn('CORS configured with wildcard origin — restrict ALLOWED_ORIGINS in production');
+}
+
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS === '*' ? '*' : process.env.ALLOWED_ORIGINS?.split(','),
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-App-Version'],
   credentials: true
