@@ -409,8 +409,8 @@ async function handleTransactionWebhook(data) {
           endDate: now.toISOString().split('T')[0]
         });
 
-        if (!transactionsResponse.success) {
-          logger.error('Failed to fetch transactions', { itemId: item_id, error: transactionsResponse.error });
+        if (!transactionsResponse || !transactionsResponse.transactions) {
+          logger.error('Failed to fetch transactions', { itemId: item_id, response: transactionsResponse });
           return;
         }
 
@@ -425,6 +425,8 @@ async function handleTransactionWebhook(data) {
           logger.error('Failed to store transactions', { error: storeResult.error });
           return;
         }
+
+        logger.info('Transactions persisted', { count: transactionsResponse.transactions.length, itemId: item_id });
 
         // 4. Store/update accounts information
         if (transactionsResponse.accounts && transactionsResponse.accounts.length > 0) {
