@@ -53,9 +53,11 @@ function getOcrService() {
 // Fixtures
 // -------------------------------------------------------------------
 
-const MEANINGFUL_TEXT = 'This is a mortgage statement with detailed payment information. ' +
+const MEANINGFUL_TEXT = 'This is a mortgage statement with detailed payment information for the account holder. ' +
   'Principal balance: $250,000.00. Interest rate: 6.5%. Monthly payment: $1,580.17. ' +
-  'Escrow balance: $4,200.00. Payment due date: March 1, 2026.';
+  'Escrow balance: $4,200.00. Payment due date: March 1, 2026. ' +
+  'Loan origination date: January 15, 2020. Servicer: National Mortgage Corp. ' +
+  'Property address: 123 Main Street, Springfield, IL 62704.';
 
 const SHORT_TEXT = 'PDF metadata only';
 
@@ -91,7 +93,11 @@ describe('OcrService', () => {
       expect(result.text).toBe(MEANINGFUL_TEXT);
       expect(result.method).toBe('pdf-parse');
       expect(result.pageCount).toBe(3);
-      expect(result.confidence).toBe(0.95);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeLessThanOrEqual(0.90);
+      expect(result.qualityMetrics).toBeDefined();
+      expect(result.qualityMetrics.qualityScore).toBeGreaterThanOrEqual(0);
+      expect(result.qualityMetrics.qualityScore).toBeLessThanOrEqual(1);
     });
 
     it('does NOT call Claude Vision when pdf-parse returns meaningful text', async () => {
@@ -128,7 +134,9 @@ describe('OcrService', () => {
       expect(result.text).toBe('Extracted text from scanned document via Vision API');
       expect(result.method).toBe('claude-vision');
       expect(result.pageCount).toBeNull();
-      expect(result.confidence).toBe(0.85);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeLessThanOrEqual(0.80);
+      expect(result.qualityMetrics).toBeDefined();
     });
 
     it('falls back to Claude Vision when pdf-parse returns empty text', async () => {
@@ -367,6 +375,120 @@ describe('OcrService', () => {
       await expect(
         ocrService.extractText(PDF_BUFFER, '')
       ).rejects.toThrow('File name is required');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // _assessTextQuality
+  // -----------------------------------------------------------------
+  describe('_assessTextQuality', () => {
+    it('returns high quality score for proper sentences', () => {
+      const ocrService = getOcrService();
+
+      const result = ocrService._assessTextQuality(MEANINGFUL_TEXT);
+
+      expect(result.qualityScore).toBeGreaterThanOrEqual(0.8);
+      expect(result.wordCount).toBeGreaterThan(20);
+      expect(result.avgWordLength).toBeGreaterThanOrEqual(3);
+      expect(result.avgWordLength).toBeLessThanOrEqual(15);
+      expect(result.alphaRatio).toBeGreaterThanOrEqual(0.5);
+      expect(result.lineCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('returns low quality score for gibberish text', () => {
+      const ocrService = getOcrService();
+
+      const gibberish = '# $ @ ! % ^ & * ( ) + = - ~ ` |';
+      const result = ocrService._assessTextQuality(gibberish);
+
+      // Single-char symbols: low alpha ratio, bad avg word length
+      expect(result.qualityScore).toBeLessThanOrEqual(0.4);
+      expect(result.alphaRatio).toBeLessThan(0.5);
+    });
+
+    it('reduces quality score for short text with fewer than 20 words', () => {
+      const ocrService = getOcrService();
+
+      const shortText = 'Only a few words here in this text.';
+      const result = ocrService._assessTextQuality(shortText);
+
+      expect(result.wordCount).toBeLessThan(20);
+      expect(result.qualityScore).toBeLessThan(1.0);
+    });
+
+    it('clamps quality score to [0.0, 1.0] range', () => {
+      const ocrService = getOcrService();
+
+      // Even the worst text should not go below 0
+      const terrible = '!! @@ ## $$ %%';
+      const result = ocrService._assessTextQuality(terrible);
+
+      expect(result.qualityScore).toBeGreaterThanOrEqual(0.0);
+      expect(result.qualityScore).toBeLessThanOrEqual(1.0);
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // Dynamic confidence scoring
+  // -----------------------------------------------------------------
+  describe('Dynamic confidence scoring', () => {
+    it('pdf-parse confidence is dynamic based on quality (not hardcoded 0.95)', async () => {
+      const ocrService = getOcrService();
+
+      mockPdfParse.mockResolvedValue({
+        text: MEANINGFUL_TEXT,
+        numpages: 2
+      });
+
+      const result = await ocrService.extractText(PDF_BUFFER, 'statement.pdf');
+
+      // Dynamic: 0.90 * qualityScore, so never exactly 0.95
+      expect(result.confidence).not.toBe(0.95);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeLessThanOrEqual(0.90);
+    });
+
+    it('Vision confidence is dynamic based on quality (not hardcoded 0.85)', async () => {
+      const ocrService = getOcrService();
+
+      mockMessagesCreate.mockResolvedValue(VISION_RESPONSE);
+
+      const result = await ocrService.extractText(IMAGE_BUFFER, 'photo.jpg');
+
+      // Dynamic: 0.80 * qualityScore, so never exactly 0.85
+      expect(result.confidence).not.toBe(0.85);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeLessThanOrEqual(0.80);
+    });
+
+    it('includes qualityMetrics in pdf-parse extraction results', async () => {
+      const ocrService = getOcrService();
+
+      mockPdfParse.mockResolvedValue({
+        text: MEANINGFUL_TEXT,
+        numpages: 1
+      });
+
+      const result = await ocrService.extractText(PDF_BUFFER, 'doc.pdf');
+
+      expect(result.qualityMetrics).toBeDefined();
+      expect(result.qualityMetrics).toHaveProperty('wordCount');
+      expect(result.qualityMetrics).toHaveProperty('avgWordLength');
+      expect(result.qualityMetrics).toHaveProperty('alphaRatio');
+      expect(result.qualityMetrics).toHaveProperty('lineCount');
+      expect(result.qualityMetrics).toHaveProperty('qualityScore');
+    });
+
+    it('includes qualityMetrics in Vision extraction results', async () => {
+      const ocrService = getOcrService();
+
+      mockMessagesCreate.mockResolvedValue(VISION_RESPONSE);
+
+      const result = await ocrService.extractText(IMAGE_BUFFER, 'photo.jpg');
+
+      expect(result.qualityMetrics).toBeDefined();
+      expect(result.qualityMetrics).toHaveProperty('wordCount');
+      expect(result.qualityMetrics).toHaveProperty('qualityScore');
     });
   });
 
