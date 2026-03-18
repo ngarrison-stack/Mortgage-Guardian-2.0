@@ -19,7 +19,7 @@ const logger = createLogger('ocr');
 // Minimum characters of extracted text to consider a PDF "text-based"
 // rather than scanned. Avoids treating scanned PDFs with embedded
 // metadata-only text as text PDFs.
-const MEANINGFUL_TEXT_THRESHOLD = 50;
+const MEANINGFUL_TEXT_THRESHOLD = 200;
 
 // Supported image extensions and their MIME types
 const IMAGE_TYPES = {
@@ -106,14 +106,43 @@ class OcrService {
   }
 
   /**
+   * Assess the quality of extracted text using heuristic metrics.
+   *
+   * Evaluates word count, average word length, alphabetic ratio, and line count
+   * to detect gibberish, OCR artifacts, or binary data masquerading as text.
+   *
+   * @param {string} text - Extracted text to evaluate
+   * @returns {{wordCount: number, avgWordLength: number, alphaRatio: number, lineCount: number, qualityScore: number}}
+   */
+  _assessTextQuality(text) {
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    const wordCount = words.length;
+    const avgWordLength = wordCount > 0
+      ? words.reduce((sum, w) => sum + w.length, 0) / wordCount
+      : 0;
+    const alphaCount = (text.match(/[a-zA-Z]/g) || []).length;
+    const alphaRatio = text.length > 0 ? alphaCount / text.length : 0;
+    const lineCount = text.split('\n').filter(l => l.trim().length > 0).length;
+
+    let qualityScore = 1.0;
+    if (wordCount < 20) qualityScore -= 0.2;
+    if (avgWordLength < 3 || avgWordLength > 15) qualityScore -= 0.2;
+    if (alphaRatio < 0.5) qualityScore -= 0.2;
+    if (lineCount < 3) qualityScore -= 0.1;
+    qualityScore = Math.max(0.0, Math.min(1.0, qualityScore));
+
+    return { wordCount, avgWordLength, alphaRatio, lineCount, qualityScore };
+  }
+
+  /**
    * Extract text from a PDF buffer.
    *
-   * Attempts pdf-parse first. If the extracted text is meaningful (>50 chars
-   * after trimming), returns it directly. Otherwise falls back to Claude Vision
-   * for scanned/image-based PDFs.
+   * Attempts pdf-parse first. If the extracted text is meaningful (>=200 chars
+   * after trimming) and passes quality assessment, returns it directly.
+   * Otherwise falls back to Claude Vision for scanned/image-based PDFs.
    *
    * @param {Buffer} fileBuffer - PDF file content
-   * @returns {Promise<{text: string, method: string, pageCount: number|null, confidence: number}>}
+   * @returns {Promise<{text: string, method: string, pageCount: number|null, confidence: number, qualityMetrics: object}>}
    */
   async _extractFromPdf(fileBuffer) {
     try {
@@ -121,8 +150,24 @@ class OcrService {
       const extractedText = (pdfData.text || '').trim();
 
       if (extractedText.length >= MEANINGFUL_TEXT_THRESHOLD) {
+        const qualityMetrics = this._assessTextQuality(extractedText);
+
+        if (qualityMetrics.qualityScore < 0.4) {
+          logger.warn('PDF text quality too low, falling back to Claude Vision', {
+            charCount: extractedText.length,
+            wordCount: qualityMetrics.wordCount,
+            qualityScore: qualityMetrics.qualityScore
+          });
+          return await this._extractFromImage(fileBuffer, 'application/pdf');
+        }
+
+        const confidence = 0.90 * qualityMetrics.qualityScore;
+
         logger.info('PDF text extraction via pdf-parse succeeded', {
-          textLength: extractedText.length,
+          method: 'pdf-parse',
+          charCount: extractedText.length,
+          wordCount: qualityMetrics.wordCount,
+          qualityScore: qualityMetrics.qualityScore,
           pageCount: pdfData.numpages
         });
 
@@ -130,7 +175,8 @@ class OcrService {
           text: extractedText,
           method: 'pdf-parse',
           pageCount: pdfData.numpages || null,
-          confidence: 0.95
+          confidence,
+          qualityMetrics
         };
       }
 
@@ -191,9 +237,14 @@ class OcrService {
       });
 
       const extractedText = response.content[0].text || '';
+      const qualityMetrics = this._assessTextQuality(extractedText);
+      const confidence = 0.80 * qualityMetrics.qualityScore;
 
       logger.info('Claude Vision extraction complete', {
-        textLength: extractedText.length,
+        method: 'claude-vision',
+        charCount: extractedText.length,
+        wordCount: qualityMetrics.wordCount,
+        qualityScore: qualityMetrics.qualityScore,
         model: response.model,
         tokensUsed: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
       });
@@ -202,7 +253,8 @@ class OcrService {
         text: extractedText,
         method: 'claude-vision',
         pageCount: null,
-        confidence: 0.85
+        confidence,
+        qualityMetrics
       };
 
     } catch (error) {
