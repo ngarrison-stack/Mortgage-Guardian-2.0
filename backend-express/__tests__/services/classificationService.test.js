@@ -107,17 +107,19 @@ describe('ClassificationService', () => {
 
       const calledPrompt = mockMessagesCreate.mock.calls[0][0].messages[0].content;
       expect(calledPrompt).toContain('mortgage_statement');
-      expect(calledPrompt).toContain('user initially classified');
-      expect(calledPrompt).toContain('classify independently');
+      expect(calledPrompt).toContain('uploader suggested');
+      expect(calledPrompt).toContain('starting point but override');
+      expect(calledPrompt).not.toContain('Classify independently');
     });
 
-    it('does not include existing type hint when not provided', async () => {
+    it('includes classify independently when no hint provided', async () => {
       mockMessagesCreate.mockResolvedValue(mockApiResponse);
 
       await classificationService.classifyDocument(sampleDocumentText);
 
       const calledPrompt = mockMessagesCreate.mock.calls[0][0].messages[0].content;
-      expect(calledPrompt).not.toContain('user initially classified');
+      expect(calledPrompt).toContain('Classify independently');
+      expect(calledPrompt).not.toContain('uploader suggested');
     });
 
     // Test 3: Unknown document
@@ -215,13 +217,16 @@ describe('ClassificationService', () => {
       const prompt = classificationService._buildClassificationPrompt(sampleText, 'escrow_statement');
 
       expect(prompt).toContain('escrow_statement');
-      expect(prompt).toContain('user initially classified');
+      expect(prompt).toContain('uploader suggested');
+      expect(prompt).toContain('starting point but override');
+      expect(prompt).not.toContain('Classify independently');
     });
 
-    it('does not include hint section when existingType is not provided', () => {
+    it('includes classify independently when no hint provided', () => {
       const prompt = classificationService._buildClassificationPrompt(sampleText);
 
-      expect(prompt).not.toContain('user initially classified');
+      expect(prompt).toContain('Classify independently');
+      expect(prompt).not.toContain('uploader suggested');
     });
 
     it('includes unknown/unclassified fallback instruction', () => {
@@ -367,6 +372,137 @@ describe('ClassificationService', () => {
 
         expect(result.classificationType).toBe(type);
       });
+    });
+  });
+
+  // ============================================================
+  // Confidence level gating
+  // ============================================================
+  describe('confidence level assignment', () => {
+    it('assigns high confidenceLevel when confidence >= 0.7', () => {
+      const response = {
+        classificationType: 'servicing',
+        classificationSubtype: 'monthly_statement',
+        confidence: 0.85,
+        extractedMetadata: {},
+        reasoning: 'High confidence.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('high');
+    });
+
+    it('assigns high confidenceLevel at exactly 0.7 threshold', () => {
+      const response = {
+        classificationType: 'servicing',
+        classificationSubtype: 'monthly_statement',
+        confidence: 0.7,
+        extractedMetadata: {},
+        reasoning: 'At threshold.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('high');
+    });
+
+    it('assigns medium confidenceLevel when confidence between 0.4 and 0.7', () => {
+      const response = {
+        classificationType: 'servicing',
+        classificationSubtype: 'monthly_statement',
+        confidence: 0.55,
+        extractedMetadata: {},
+        reasoning: 'Medium confidence.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('medium');
+    });
+
+    it('assigns medium confidenceLevel at exactly 0.4 threshold', () => {
+      const response = {
+        classificationType: 'servicing',
+        classificationSubtype: 'monthly_statement',
+        confidence: 0.4,
+        extractedMetadata: {},
+        reasoning: 'At low threshold.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('medium');
+    });
+
+    it('assigns low confidenceLevel when confidence < 0.4', () => {
+      const response = {
+        classificationType: 'unknown',
+        classificationSubtype: 'unclassified',
+        confidence: 0.2,
+        extractedMetadata: {},
+        reasoning: 'Low confidence.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('low');
+    });
+
+    it('assigns low confidenceLevel at confidence 0', () => {
+      const response = {
+        classificationType: 'unknown',
+        classificationSubtype: 'unclassified',
+        confidence: 0,
+        extractedMetadata: {},
+        reasoning: 'Zero confidence.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBe('low');
+    });
+
+    it('does not set confidenceLevel when confidence is not a number', () => {
+      const response = {
+        classificationType: 'servicing',
+        classificationSubtype: 'monthly_statement',
+        extractedMetadata: {},
+        reasoning: 'No confidence provided.'
+      };
+
+      const result = classificationService._parseClassificationResponse(
+        JSON.stringify(response)
+      );
+
+      expect(result.confidenceLevel).toBeUndefined();
+    });
+
+    it('returns confidenceLevel from classifyDocument', async () => {
+      mockMessagesCreate.mockResolvedValue({
+        content: [{ text: JSON.stringify({
+          classificationType: 'servicing',
+          classificationSubtype: 'monthly_statement',
+          confidence: 0.95,
+          extractedMetadata: {},
+          reasoning: 'Test.'
+        }) }]
+      });
+
+      const result = await classificationService.classifyDocument('test text');
+      expect(result.confidenceLevel).toBe('high');
     });
   });
 

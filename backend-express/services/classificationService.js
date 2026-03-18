@@ -170,7 +170,9 @@ class ClassificationService {
 
     let existingTypeInstruction = '';
     if (existingType) {
-      existingTypeInstruction = `\n\nNote: The user initially classified this document as "${existingType}". Consider this as context but classify independently based on the document content.`;
+      existingTypeInstruction = `\n\nThe uploader suggested this is a '${existingType}' document. Consider this as a starting point but override if the content clearly indicates a different type. If you agree with the suggestion, your confidence should reflect the document content, not the suggestion.`;
+    } else {
+      existingTypeInstruction = '\n\nNo prior classification exists. Classify independently based on the document content.';
     }
 
     return `You are a forensic mortgage document classifier working in a litigation support role. Your task is to classify the following document into the correct category and subtype from the taxonomy below, extract key metadata, and provide a confidence score.
