@@ -2,6 +2,10 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('classification');
 
+// Confidence thresholds for classification gating
+const CONFIDENCE_HIGH_THRESHOLD = 0.7;
+const CONFIDENCE_LOW_THRESHOLD = 0.4;
+
 // Initialize Anthropic client
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -248,6 +252,17 @@ ${documentText}`;
       parsed.confidence = Math.max(0, Math.min(1, parsed.confidence));
     }
 
+    // Assign confidence level based on thresholds
+    if (typeof parsed.confidence === 'number') {
+      if (parsed.confidence >= CONFIDENCE_HIGH_THRESHOLD) {
+        parsed.confidenceLevel = 'high';
+      } else if (parsed.confidence >= CONFIDENCE_LOW_THRESHOLD) {
+        parsed.confidenceLevel = 'medium';
+      } else {
+        parsed.confidenceLevel = 'low';
+      }
+    }
+
     return parsed;
   }
 
@@ -277,3 +292,5 @@ ${documentText}`;
 
 module.exports = new ClassificationService();
 module.exports.DOCUMENT_TAXONOMY = DOCUMENT_TAXONOMY;
+module.exports.CONFIDENCE_HIGH_THRESHOLD = CONFIDENCE_HIGH_THRESHOLD;
+module.exports.CONFIDENCE_LOW_THRESHOLD = CONFIDENCE_LOW_THRESHOLD;

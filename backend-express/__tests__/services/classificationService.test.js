@@ -67,7 +67,7 @@ describe('ClassificationService', () => {
 
       const result = await classificationService.classifyDocument(sampleDocumentText);
 
-      expect(result).toEqual(mockClassificationResponse);
+      expect(result).toEqual(expect.objectContaining(mockClassificationResponse));
       expect(result.classificationType).toBe('servicing');
       expect(result.classificationSubtype).toBe('monthly_statement');
       expect(result.confidence).toBe(0.95);

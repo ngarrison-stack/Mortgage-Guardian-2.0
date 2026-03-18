@@ -645,11 +645,28 @@ class DocumentPipelineService {
       pipeline.documentType = result.classificationSubtype || result.classificationType;
     }
 
+    // Handle confidence levels — flag low-confidence without blocking
+    if (result.confidenceLevel === 'low') {
+      logger.warn('Low classification confidence, document may be misclassified', {
+        documentId: pipeline.documentId,
+        confidence: result.confidence,
+        classificationType: result.classificationType
+      });
+      pipeline.classificationWarning = 'Low confidence classification — findings should be reviewed';
+    } else if (result.confidenceLevel === 'medium') {
+      logger.info('Medium classification confidence, proceeding with classification', {
+        documentId: pipeline.documentId,
+        confidence: result.confidence,
+        classificationType: result.classificationType
+      });
+    }
+
     pipeline.steps.classifying = {
       completedAt: new Date().toISOString(),
       classificationType: result.classificationType,
       classificationSubtype: result.classificationSubtype,
-      confidence: result.confidence
+      confidence: result.confidence,
+      confidenceLevel: result.confidenceLevel
     };
     pipeline.updatedAt = new Date().toISOString();
     this.pipelineState.set(pipeline.documentId, pipeline);
@@ -660,7 +677,8 @@ class DocumentPipelineService {
       documentId: pipeline.documentId,
       classificationType: result.classificationType,
       classificationSubtype: result.classificationSubtype,
-      confidence: result.confidence
+      confidence: result.confidence,
+      confidenceLevel: result.confidenceLevel
     });
   }
 
