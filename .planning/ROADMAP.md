@@ -70,8 +70,8 @@ Plans:
 - [x] 18-03: Webhook Handler Bug Fixes (transaction .success field bug, handler return values)
 - [x] 18-04: Document Route Security & Correctness (user ID isolation fix, HTTP status codes)
 - [x] 18-05: Memory Leak Prevention (pipeline state cleanup, mock Map cleanup)
-- [ ] 18-06: Startup Validation & Config (env var validation, Vercel handler fix)
-- [ ] 18-07: Request Tracing (request ID middleware, logger propagation)
+- [x] 18-06: Startup Validation & Config (env var validation, Vercel handler fix)
+- [x] 18-07: Request Tracing (request ID middleware, logger propagation)
 
 #### Phase 19: Frontend UI & State Repairs
 
@@ -125,7 +125,7 @@ Plans:
 | 15. State Lending Law Compliance Engine | v3.0 | 8/8 | Complete | 2026-03-09 |
 | 16. Consolidated Findings & Reporting | v3.0 | 6/6 | Complete | 2026-03-14 |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
-| 18. Backend API Stability | v4.0 | 6/7 | In progress | - |
+| 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 0/? | Not started | - |
 | 20. Pipeline Accuracy | v4.0 | 0/? | Not started | - |
 | 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
