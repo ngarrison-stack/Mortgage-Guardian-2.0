@@ -75,13 +75,15 @@ Plans:
 
 #### Phase 19: Frontend UI & State Repairs
 
-**Goal**: Repair broken Next.js dashboard components, fix layout/visual bugs, resolve stale data and incorrect updates in Zustand/TanStack Query, fix page loading and routing errors
+**Goal**: Fix broken Next.js build, environment security vulnerabilities, layout/visual bugs, and replace boilerplate scaffolding with proper Mortgage Guardian branding
 **Depends on**: Phase 18
 **Research**: Unlikely (internal patterns, existing Next.js/React stack)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
+- [ ] 19-01: Fix Build Failure & Dependencies (lodash.curry/PostCSS crash)
+- [ ] 19-02: Environment Security & Configuration (secrets removal, API rewrites)
+- [ ] 19-03: Layout, Metadata & Page Fixes (branding, CSS, boilerplate replacement)
 
 #### Phase 20: Pipeline Accuracy
 
@@ -126,7 +128,7 @@ Plans:
 | 16. Consolidated Findings & Reporting | v3.0 | 6/6 | Complete | 2026-03-14 |
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
-| 19. Frontend UI & State Repairs | v4.0 | 0/? | Not started | - |
+| 19. Frontend UI & State Repairs | v4.0 | 0/3 | Not started | - |
 | 20. Pipeline Accuracy | v4.0 | 0/? | Not started | - |
 | 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
 
