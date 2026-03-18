@@ -91,10 +91,14 @@ Plans:
 **Depends on**: Phase 19
 **Research**: Likely (OCR accuracy benchmarking, compliance rule false positive analysis, classification threshold tuning)
 **Research topics**: OCR accuracy metrics and tuning approaches, compliance rule precision/recall analysis, document classification confidence thresholds
-**Plans**: TBD
+**Plans**: 5
 
 Plans:
-- [ ] 20-01: TBD (run /gsd:plan-phase 20 to break down)
+- [ ] 20-01: OCR Text Extraction Fixes (threshold + dynamic confidence scoring)
+- [ ] 20-02: Classification Confidence Gating (threshold filter + hint handling)
+- [ ] 20-03: Compliance Rule Matching Precision (word boundaries + field patterns)
+- [ ] 20-04: Scoring & Deduplication Fixes (dedup preservation + penalty calibration)
+- [ ] 20-05: Risk Threshold Calibration (thresholds + classification→scoring pipeline)
 
 #### Phase 21: Report Generation & Integration Fixes
 
@@ -129,7 +133,7 @@ Plans:
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
-| 20. Pipeline Accuracy | v4.0 | 0/? | Not started | - |
+| 20. Pipeline Accuracy | v4.0 | 0/5 | Not started | - |
 | 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | v4.0 in progress
