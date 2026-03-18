@@ -265,6 +265,7 @@ class ComplianceRuleEngine {
 
     return {
       id: null, // assigned after deduplication
+      ruleId: rule.ruleId,
       statuteId,
       sectionId,
       statuteName: statute ? statute.name : 'Unknown Statute',
@@ -322,18 +323,29 @@ class ComplianceRuleEngine {
   // ---------------------------------------------------------------------------
 
   /**
-   * Deduplicate violations by sectionId + primary evidence sourceId.
-   * Keeps the higher severity violation.
+   * Deduplicate violations by sectionId + sourceId + ruleId.
+   *
+   * Key format: `sectionId|sourceId|ruleId`
+   *   - Same section, same source, same rule → true duplicate, merge (keep higher severity)
+   *   - Same section, same source, different rule → distinct violations, keep both
+   *
+   * Merged violations get a `deduplicationNote` explaining the consolidation.
    */
   _deduplicateViolations(violations) {
     const map = new Map();
+    const mergeCounts = new Map(); // track how many raw matches per key
+
     for (const v of violations) {
       const sourceId = v.evidence[0] ? v.evidence[0].sourceId : '';
-      const key = `${v.sectionId}|${sourceId}`;
+      const ruleId = v.ruleId || 'unknown';
+      const key = `${v.sectionId}|${sourceId}|${ruleId}`;
       const existing = map.get(key);
+
       if (!existing) {
         map.set(key, v);
+        mergeCounts.set(key, 1);
       } else {
+        mergeCounts.set(key, mergeCounts.get(key) + 1);
         // Keep higher severity (lower number in SEVERITY_ORDER)
         const existingSev = SEVERITY_ORDER[existing.severity] ?? 4;
         const newSev = SEVERITY_ORDER[v.severity] ?? 4;
@@ -342,6 +354,16 @@ class ComplianceRuleEngine {
         }
       }
     }
+
+    // Add deduplication notes for merged violations
+    for (const [key, v] of map) {
+      const count = mergeCounts.get(key);
+      if (count > 1) {
+        const ruleId = v.ruleId || 'unknown';
+        v.deduplicationNote = `Consolidated ${count} matches for ${ruleId} (kept highest severity: ${v.severity})`;
+      }
+    }
+
     return Array.from(map.values());
   }
 
@@ -714,6 +736,7 @@ class ComplianceRuleEngine {
 
     return {
       id: null, // assigned after deduplication
+      ruleId: rule.ruleId,
       statuteId,
       sectionId,
       statuteName: statute ? statute.name : 'Unknown Statute',

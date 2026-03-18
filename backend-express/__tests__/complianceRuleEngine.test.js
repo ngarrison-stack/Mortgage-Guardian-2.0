@@ -510,8 +510,8 @@ describe('ComplianceRuleEngine', () => {
   // Deduplication
   // -------------------------------------------------------------------------
   describe('Deduplication', () => {
-    it('deduplicates violations by sectionId + sourceId, keeping higher severity', () => {
-      // Two discrepancies that both match the same section with same evidence source
+    it('deduplicates violations by sectionId + sourceId + ruleId, keeping higher severity', () => {
+      // Two discrepancies that both match the same section+rule with same evidence source
       const disc1 = makeDiscrepancy({
         id: 'disc-dup-001',
         type: 'amount_mismatch',
@@ -527,18 +527,115 @@ describe('ComplianceRuleEngine', () => {
       const report = makeForensicReport({ discrepancies: [disc1, disc2] });
       const result = engine.evaluateFindings(report, []);
 
-      // For the same sectionId + sourceId combo, only the higher severity should remain
+      // For the same sectionId + sourceId + ruleId combo, only the higher severity should remain
       const respaViols = result.violations.filter(v =>
         v.sectionId === 'respa_s10' &&
+        v.ruleId === 'rule-respa-001' &&
         v.evidence.some(e => e.sourceId === 'disc-dup-001')
       );
 
-      // Should be deduplicated — at most one per unique sectionId+sourceId pair
-      const sectionSourcePairs = respaViols.map(v =>
-        `${v.sectionId}|${v.evidence.find(e => e.sourceId === 'disc-dup-001').sourceId}`
+      // Should be deduplicated — at most one per unique sectionId+sourceId+ruleId triple
+      const sectionSourceRulePairs = respaViols.map(v =>
+        `${v.sectionId}|${v.evidence.find(e => e.sourceId === 'disc-dup-001').sourceId}|${v.ruleId}`
       );
-      const uniquePairs = new Set(sectionSourcePairs);
-      expect(uniquePairs.size).toBe(sectionSourcePairs.length);
+      const uniquePairs = new Set(sectionSourceRulePairs);
+      expect(uniquePairs.size).toBe(sectionSourceRulePairs.length);
+    });
+
+    it('preserves distinct violations with same sectionId but different ruleIds', () => {
+      // Create a violation-like scenario where two different rules fire on the same section
+      // We test the _deduplicateViolations method directly
+      const violations = [
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'high',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow cushion violation'
+        },
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-002',
+          severity: 'medium',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow surplus violation'
+        }
+      ];
+      const result = engine._deduplicateViolations(violations);
+      // Both should be preserved — different ruleIds
+      expect(result).toHaveLength(2);
+      const ruleIds = result.map(v => v.ruleId);
+      expect(ruleIds).toContain('rule-respa-001');
+      expect(ruleIds).toContain('rule-respa-002');
+    });
+
+    it('merges true duplicates (same sectionId, sourceId, ruleId) keeping higher severity', () => {
+      const violations = [
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'medium',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow violation v1'
+        },
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'critical',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow violation v2'
+        }
+      ];
+      const result = engine._deduplicateViolations(violations);
+      expect(result).toHaveLength(1);
+      expect(result[0].severity).toBe('critical');
+    });
+
+    it('adds deduplicationNote on merged violations', () => {
+      const violations = [
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'low',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow violation v1'
+        },
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'high',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow violation v2'
+        },
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'medium',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Escrow violation v3'
+        }
+      ];
+      const result = engine._deduplicateViolations(violations);
+      expect(result).toHaveLength(1);
+      expect(result[0].deduplicationNote).toBeDefined();
+      expect(result[0].deduplicationNote).toContain('Consolidated 3 matches');
+      expect(result[0].deduplicationNote).toContain('rule-respa-001');
+      expect(result[0].deduplicationNote).toContain('high');
+    });
+
+    it('does not add deduplicationNote when no merging occurred', () => {
+      const violations = [
+        {
+          sectionId: 'respa_s10',
+          ruleId: 'rule-respa-001',
+          severity: 'high',
+          evidence: [{ sourceId: 'disc-001' }],
+          description: 'Unique violation'
+        }
+      ];
+      const result = engine._deduplicateViolations(violations);
+      expect(result).toHaveLength(1);
+      expect(result[0].deduplicationNote).toBeUndefined();
     });
   });
 
@@ -880,11 +977,11 @@ describe('ComplianceRuleEngine — evaluateStateFindings', () => {
   });
 
   // -------------------------------------------------------------------------
-  // Case 8: Deduplication — same sectionId + sourceId keeps higher severity
+  // Case 8: Deduplication — same sectionId + sourceId + ruleId keeps higher severity
   // -------------------------------------------------------------------------
   describe('Case 8: Deduplication', () => {
-    it('deduplicates by sectionId + sourceId keeping higher severity', () => {
-      // Two discrepancies with the same sourceId that match the same CA section
+    it('deduplicates by sectionId + sourceId + ruleId keeping higher severity', () => {
+      // Two discrepancies with the same sourceId that match the same CA section and rule
       const disc1 = makeDiscrepancy({
         id: 'disc-dedup-001',
         type: 'amount_mismatch',
@@ -901,17 +998,17 @@ describe('ComplianceRuleEngine — evaluateStateFindings', () => {
       const jurisdiction = makeJurisdiction({ applicableStates: ['CA'] });
       const result = engine.evaluateStateFindings(report, [], jurisdiction);
 
-      // For the same sectionId + sourceId, only one should remain
+      // For the same sectionId + sourceId + ruleId, only one should remain
       const escrowViols = result.stateViolations.filter(v =>
         v.sectionId === 'ca_civ_escrow_accounts' &&
         v.evidence.some(e => e.sourceId === 'disc-dedup-001')
       );
 
-      const sectionSourcePairs = escrowViols.map(v =>
-        `${v.sectionId}|${v.evidence[0].sourceId}`
+      const sectionSourceRulePairs = escrowViols.map(v =>
+        `${v.sectionId}|${v.evidence[0].sourceId}|${v.ruleId}`
       );
-      const uniquePairs = new Set(sectionSourcePairs);
-      expect(uniquePairs.size).toBe(sectionSourcePairs.length);
+      const uniquePairs = new Set(sectionSourceRulePairs);
+      expect(uniquePairs.size).toBe(sectionSourceRulePairs.length);
     });
   });
 
