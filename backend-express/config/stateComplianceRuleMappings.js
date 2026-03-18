@@ -14,6 +14,8 @@
 // ---------------------------------------------------------------------------
 // Severity ordering (identical to federal complianceRuleMappings.js)
 // ---------------------------------------------------------------------------
+const { _matchKeyword, _matchFieldPattern } = require('./complianceRuleMappings');
+
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
 // ---------------------------------------------------------------------------
@@ -898,14 +900,6 @@ function matchStateRules(stateCode, finding) {
     return (findingLevel !== undefined ? findingLevel : 4) <= (minLevel !== undefined ? minLevel : 4);
   };
 
-  const fieldMatchesPattern = (fieldName, pattern) => {
-    if (!pattern.includes('*')) {
-      return fieldName === pattern;
-    }
-    const prefix = pattern.replace('*', '');
-    return fieldName.toLowerCase().startsWith(prefix.toLowerCase());
-  };
-
   const matched = rules.filter(rule => {
     const criteria = rule.matchCriteria;
 
@@ -940,18 +934,17 @@ function matchStateRules(stateCode, finding) {
       hasMatch = true;
     }
 
-    // Check keywords in description
+    // Check keywords in description (word-boundary matching)
     if (finding.description && criteria.keywords.length > 0) {
-      const descLower = finding.description.toLowerCase();
-      if (criteria.keywords.some(kw => descLower.includes(kw.toLowerCase()))) {
+      if (criteria.keywords.some(kw => _matchKeyword(finding.description, kw))) {
         hasMatch = true;
       }
     }
 
-    // Check field patterns
+    // Check field patterns (proper wildcard regex)
     if (finding.fields && Array.isArray(finding.fields) && criteria.fieldPatterns.length > 0) {
       if (finding.fields.some(field =>
-        criteria.fieldPatterns.some(pattern => fieldMatchesPattern(field, pattern))
+        criteria.fieldPatterns.some(pattern => _matchFieldPattern(field, pattern))
       )) {
         hasMatch = true;
       }

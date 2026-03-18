@@ -758,6 +758,68 @@ const COMPLIANCE_RULE_MAPPINGS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Keyword and field pattern matching helpers (word-boundary-aware)
+// ---------------------------------------------------------------------------
+
+/**
+ * Escape special regex characters in a string so it can be used as a literal
+ * pattern inside a RegExp constructor.
+ *
+ * @param {string} str - Raw string that may contain regex-special chars
+ * @returns {string} Escaped string safe for new RegExp(...)
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Match a keyword against text using word boundaries (case-insensitive).
+ * Replaces simple substring matching to reduce false positives.
+ *
+ * "escrow" matches "escrow account" but NOT "escrowed"
+ * "APR" matches "The APR is 4.5%" but NOT "APRIL"
+ *
+ * @param {string} text - The text to search within
+ * @param {string} keyword - The keyword to find (may contain regex-special chars)
+ * @returns {boolean} True if keyword appears as a whole word/phrase in text
+ */
+function _matchKeyword(text, keyword) {
+  const pattern = new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i');
+  return pattern.test(text);
+}
+
+/**
+ * Match a field name against a field pattern, supporting wildcards.
+ *
+ * - 'escrow*'  -> matches fields starting with "escrow" (case-insensitive)
+ * - '*Balance' -> matches fields ending with "Balance" (case-insensitive)
+ * - 'apr'      -> exact match only (case-sensitive equality)
+ *
+ * @param {string} fieldName - The field name to test
+ * @param {string} pattern - The pattern (may include leading/trailing '*')
+ * @returns {boolean} True if fieldName matches the pattern
+ */
+function _matchFieldPattern(fieldName, pattern) {
+  if (pattern.startsWith('*') && pattern.endsWith('*')) {
+    // *foo* -> contains (case-insensitive)
+    const inner = pattern.slice(1, -1);
+    return fieldName.toLowerCase().includes(inner.toLowerCase());
+  }
+  if (pattern.endsWith('*')) {
+    // foo* -> starts with (case-insensitive)
+    const prefix = pattern.slice(0, -1);
+    return fieldName.toLowerCase().startsWith(prefix.toLowerCase());
+  }
+  if (pattern.startsWith('*')) {
+    // *Bar -> ends with (case-insensitive)
+    const suffix = pattern.slice(1);
+    return fieldName.toLowerCase().endsWith(suffix.toLowerCase());
+  }
+  // Exact match (strict equality)
+  return fieldName === pattern;
+}
+
+// ---------------------------------------------------------------------------
 // Helper functions
 // ---------------------------------------------------------------------------
 
@@ -817,14 +879,6 @@ function matchRules(finding) {
     return (findingLevel !== undefined ? findingLevel : 4) <= (minLevel !== undefined ? minLevel : 4);
   };
 
-  const fieldMatchesPattern = (fieldName, pattern) => {
-    if (!pattern.includes('*')) {
-      return fieldName === pattern;
-    }
-    const prefix = pattern.replace('*', '');
-    return fieldName.toLowerCase().startsWith(prefix.toLowerCase());
-  };
-
   const matched = COMPLIANCE_RULE_MAPPINGS.filter(rule => {
     const criteria = rule.matchCriteria;
 
@@ -859,18 +913,17 @@ function matchRules(finding) {
       hasMatch = true;
     }
 
-    // Check keywords in description
+    // Check keywords in description (word-boundary matching)
     if (finding.description && criteria.keywords.length > 0) {
-      const descLower = finding.description.toLowerCase();
-      if (criteria.keywords.some(kw => descLower.includes(kw.toLowerCase()))) {
+      if (criteria.keywords.some(kw => _matchKeyword(finding.description, kw))) {
         hasMatch = true;
       }
     }
 
-    // Check field patterns
+    // Check field patterns (proper wildcard regex)
     if (finding.fields && Array.isArray(finding.fields) && criteria.fieldPatterns.length > 0) {
       if (finding.fields.some(field =>
-        criteria.fieldPatterns.some(pattern => fieldMatchesPattern(field, pattern))
+        criteria.fieldPatterns.some(pattern => _matchFieldPattern(field, pattern))
       )) {
         hasMatch = true;
       }
@@ -891,5 +944,9 @@ module.exports = {
   COMPLIANCE_RULE_MAPPINGS,
   getRulesForSection,
   getRulesForCategory,
-  matchRules
+  matchRules,
+  // Exported for testing precision
+  _matchKeyword,
+  _matchFieldPattern,
+  escapeRegex
 };
