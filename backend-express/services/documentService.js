@@ -297,6 +297,34 @@ class DocumentService {
   }
 
   // ============================================
+  // MOCK DATA MANAGEMENT
+  // ============================================
+
+  /**
+   * Clear all mock data. Useful for test teardown and manual cleanup.
+   */
+  clearMockData() {
+    this.mockDocuments.clear();
+    logger.debug('Mock document data cleared', { reason: 'manual cleanup' });
+  }
+
+  /**
+   * Safety valve: if mock documents Map exceeds 500 entries, log a warning
+   * and evict the oldest 100 entries (by Map insertion order).
+   */
+  _enforceMockSizeLimit() {
+    if (this.mockDocuments.size > 500) {
+      logger.warn('Mock document store exceeded 500 entries, evicting oldest 100', {
+        currentSize: this.mockDocuments.size
+      });
+      const keys = [...this.mockDocuments.keys()].slice(0, 100);
+      for (const key of keys) {
+        this.mockDocuments.delete(key);
+      }
+    }
+  }
+
+  // ============================================
   // MOCK METHODS (used when Supabase not configured)
   // ============================================
 
@@ -314,6 +342,7 @@ class DocumentService {
       created_at: new Date().toISOString()
     });
 
+    this._enforceMockSizeLimit();
     logger.debug('Mock: uploaded document', { documentId, userId });
     return { documentId, storagePath };
   }

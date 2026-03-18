@@ -278,6 +278,44 @@ class CaseFileService {
   }
 
   // ============================================
+  // MOCK DATA MANAGEMENT
+  // ============================================
+
+  /**
+   * Clear all mock data. Useful for test teardown and manual cleanup.
+   */
+  clearMockData() {
+    this.mockCases.clear();
+    this.mockDocCaseMap.clear();
+    logger.debug('Mock case data cleared', { reason: 'manual cleanup' });
+  }
+
+  /**
+   * Safety valve: if mock Maps exceed 500 entries, log a warning
+   * and evict the oldest 100 entries (by Map insertion order).
+   */
+  _enforceMockSizeLimit() {
+    if (this.mockCases.size > 500) {
+      logger.warn('Mock case store exceeded 500 entries, evicting oldest 100', {
+        currentSize: this.mockCases.size
+      });
+      const keys = [...this.mockCases.keys()].slice(0, 100);
+      for (const key of keys) {
+        this.mockCases.delete(key);
+      }
+    }
+    if (this.mockDocCaseMap.size > 500) {
+      logger.warn('Mock doc-case map exceeded 500 entries, evicting oldest 100', {
+        currentSize: this.mockDocCaseMap.size
+      });
+      const keys = [...this.mockDocCaseMap.keys()].slice(0, 100);
+      for (const key of keys) {
+        this.mockDocCaseMap.delete(key);
+      }
+    }
+  }
+
+  // ============================================
   // MOCK METHODS (used when Supabase not configured)
   // ============================================
 
@@ -299,6 +337,7 @@ class CaseFileService {
     };
 
     this.mockCases.set(id, caseData);
+    this._enforceMockSizeLimit();
     logger.debug('Mock: created case', { caseId: id, userId });
     return caseData;
   }
@@ -378,6 +417,7 @@ class CaseFileService {
     }
 
     this.mockDocCaseMap.set(documentId, caseId);
+    this._enforceMockSizeLimit();
     logger.debug('Mock: added document to case', { caseId, documentId });
     return { document_id: documentId, case_id: caseId };
   }
