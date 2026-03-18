@@ -93,13 +93,12 @@ const confidenceScoringService = {
     // Completeness contribution: how much of the max completeness we have
     const completenessComponent = avgCompleteness; // already 0-100
 
-    // Anomaly penalty: sum of severity-weighted anomaly counts across all docs
+    // Anomaly penalty: severity multiplier values are calibrated penalty points
     let totalAnomalyPenalty = 0;
     for (const doc of documentAnalyses) {
       const anomalies = doc.anomalies || [];
       for (const anomaly of anomalies) {
-        const multiplier = severityMultiplier[anomaly.severity] || 1;
-        totalAnomalyPenalty += multiplier * 10; // 10 points per unit of severity
+        totalAnomalyPenalty += severityMultiplier[anomaly.severity] || 5;
       }
     }
 
@@ -128,21 +127,19 @@ const confidenceScoringService = {
     const factors = LAYER_SCORING_FACTORS.forensicAnalysis;
     const severityMultiplier = LAYER_SCORING_FACTORS.complianceAnalysis.severityMultiplier;
 
-    // Discrepancy penalty
+    // Discrepancy penalty: severity multiplier values are calibrated penalty points
     const discrepancies = forensicReport.discrepancies || [];
     let discrepancyPenalty = 0;
     for (const d of discrepancies) {
-      const multiplier = severityMultiplier[d.severity] || 1;
-      discrepancyPenalty += multiplier * 20;
+      discrepancyPenalty += severityMultiplier[d.severity] || 5;
     }
     const discrepancyComponent = Math.max(0, 100 - discrepancyPenalty);
 
-    // Timeline penalty
+    // Timeline penalty: severity multiplier values are calibrated penalty points
     const timelineViolations = (forensicReport.timeline && forensicReport.timeline.violations) || [];
     let timelinePenalty = 0;
     for (const tv of timelineViolations) {
-      const multiplier = severityMultiplier[tv.severity] || 1;
-      timelinePenalty += multiplier * 15;
+      timelinePenalty += severityMultiplier[tv.severity] || 5;
     }
     const timelineComponent = Math.max(0, 100 - timelinePenalty);
 
@@ -162,10 +159,11 @@ const confidenceScoringService = {
                           factors.timelinePenalty * timelineComponent +
                           factors.paymentPenalty * paymentComponent;
 
-    // Apply floor drag: if any component bottoms out, cap overall score
+    // Apply floor drag: if any component bottoms out, cap overall score.
+    // Cap at 35 (not 45) — a zero-confidence component indicates severe issues.
     const minComponent = Math.min(discrepancyComponent, timelineComponent, paymentComponent);
     const score = minComponent === 0
-      ? Math.min(weightedScore, 45)
+      ? Math.min(weightedScore, 35)
       : weightedScore;
 
     return clamp(Math.round(score * 100) / 100, 0, 100);
@@ -192,10 +190,12 @@ const confidenceScoringService = {
     const allViolations = [...federalViolations, ...stateViolations];
 
     // Calculate total penalty from all violations
+    // Severity multiplier values are calibrated penalty points (scaled by 1.25
+    // relative to anomaly base to reflect higher legal significance of compliance violations)
     let totalPenalty = 0;
     for (const v of allViolations) {
-      const multiplier = severityMultiplier[v.severity] || 1;
-      totalPenalty += multiplier * 12;
+      const basePenalty = severityMultiplier[v.severity] || 5;
+      totalPenalty += Math.round(basePenalty * 1.25);
     }
 
     // Violation component

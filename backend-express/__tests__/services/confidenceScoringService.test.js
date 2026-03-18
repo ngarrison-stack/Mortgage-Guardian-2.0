@@ -317,7 +317,9 @@ describe('ConfidenceScoringService', () => {
         }
       };
       const score = service.forensicAnalysisScore(forensicReport);
-      expect(score).toBeLessThan(50);
+      // 2 critical discrepancies (30pts each = 60pts), component drops to 40
+      // Weighted: 0.5*40 + 0.3*100 + 0.2*100 = 70
+      expect(score).toBeLessThan(75);
     });
 
     it('should return null for null input (missing, not bad)', () => {
@@ -403,7 +405,9 @@ describe('ConfidenceScoringService', () => {
         stateViolations: []
       };
       const score = service.complianceAnalysisScore(complianceReport);
-      expect(score).toBeLessThan(40);
+      // 2 critical violations (38pts each = 76pts), component = 24
+      // Score = 0.7*24 + 0.3*100 = 46.8
+      expect(score).toBeLessThan(50);
     });
 
     it('should return null for null input (missing, not bad)', () => {
@@ -822,6 +826,90 @@ describe('ConfidenceScoringService', () => {
 
       expect(links).toHaveLength(1);
       expect(links[0].findingType).toBe('anomaly');
+    });
+  });
+
+  // =========================================================================
+  // Penalty calibration tests (Phase 20-04)
+  // =========================================================================
+
+  describe('Penalty calibration', () => {
+    it('1 critical anomaly drops document analysis score ~30 points from component baseline', () => {
+      const docs = [
+        {
+          completenessScore: 95,
+          anomalies: [{ severity: 'critical' }]
+        }
+      ];
+      const score = service.documentAnalysisScore(docs);
+      // Anomaly component: 100 - 30 = 70. Layer: 0.4*95 + 0.6*70 = 38+42 = 80
+      // Baseline (no anomalies): 0.4*95 + 0.6*100 = 38+60 = 98
+      // Drop ≈ 18 on layer, 30 on anomaly component
+      const baselineDocs = [{ completenessScore: 95, anomalies: [] }];
+      const baselineScore = service.documentAnalysisScore(baselineDocs);
+      const drop = baselineScore - score;
+      expect(drop).toBeGreaterThanOrEqual(15);
+      expect(drop).toBeLessThanOrEqual(25);
+    });
+
+    it('3 medium anomalies total penalty is close to 1 critical anomaly', () => {
+      const criticalDocs = [
+        {
+          completenessScore: 95,
+          anomalies: [{ severity: 'critical' }]
+        }
+      ];
+      const mediumDocs = [
+        {
+          completenessScore: 95,
+          anomalies: [
+            { severity: 'medium' },
+            { severity: 'medium' },
+            { severity: 'medium' }
+          ]
+        }
+      ];
+      const criticalScore = service.documentAnalysisScore(criticalDocs);
+      const mediumScore = service.documentAnalysisScore(mediumDocs);
+      // 3 medium (3*12=36) should be in same ballpark as 1 critical (30)
+      // The scores should be within 20% of each other in terms of drop
+      const baselineDocs = [{ completenessScore: 95, anomalies: [] }];
+      const baseline = service.documentAnalysisScore(baselineDocs);
+      const criticalDrop = baseline - criticalScore;
+      const mediumDrop = baseline - mediumScore;
+      // 3 medium drop should be >= critical drop (slightly more penalty)
+      expect(mediumDrop).toBeGreaterThanOrEqual(criticalDrop * 0.8);
+      expect(mediumDrop).toBeLessThanOrEqual(criticalDrop * 1.5);
+    });
+
+    it('clean document with no findings scores 95-100', () => {
+      const data = makeCleanAggregatedData();
+      const result = service.calculateConfidence(data);
+      expect(result.overall).toBeGreaterThanOrEqual(95);
+      expect(result.overall).toBeLessThanOrEqual(100);
+    });
+
+    it('floor drag activates at 35 (not 45)', () => {
+      // Create a forensic report where discrepancy component bottoms out at 0
+      // but other components are at 100
+      const forensicReport = {
+        discrepancies: [
+          { id: 'disc-001', severity: 'critical' },
+          { id: 'disc-002', severity: 'critical' },
+          { id: 'disc-003', severity: 'critical' },
+          { id: 'disc-004', severity: 'critical' }
+        ],
+        timeline: { violations: [] },
+        paymentVerification: {
+          verified: true,
+          unmatchedDocumentPayments: [],
+          feeAnalysis: { irregularities: [] }
+        }
+      };
+      const score = service.forensicAnalysisScore(forensicReport);
+      // 4 critical discrepancies = 120pts penalty, component = 0
+      // Floor drag should cap at 35
+      expect(score).toBeLessThanOrEqual(35);
     });
   });
 });

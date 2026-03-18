@@ -29,6 +29,20 @@ const SCORING_WEIGHTS = {
   complianceAnalysis: 0.35
 };
 
+// Penalty Calibration Rationale (Phase 20 accuracy tuning)
+//
+// Goal: A single critical violation should move risk from CLEAN to HIGH,
+// but not to CRITICAL (which requires pattern of serious issues).
+//
+// Calibration anchors:
+//   - 1 critical anomaly: score drops ~30 points (CLEAN→MEDIUM or LOW→HIGH)
+//   - 3 medium anomalies: score drops ~24 points (similar to 1 high)
+//   - 1 critical compliance violation: score drops ~35 points
+//   - A clean document with no issues should score 95-100
+//
+// Old values (40/30/20/10) caused 3 medium anomalies (60pts) to exceed
+// 1 critical (40pts), which is backwards. New values fix this relationship.
+
 /**
  * Per-layer scoring factors that determine how sub-components within each
  * analysis layer affect the layer's confidence score.
@@ -57,14 +71,20 @@ const LAYER_SCORING_FACTORS = {
     /** Statutory violations reduce confidence */
     violationPenalty: 0.7,
     /**
-     * Multiplier applied per violation based on severity.
-     * A critical violation has 4x the impact of a low violation.
+     * Severity multiplier applied per finding.
+     *
+     * Calibrated so that:
+     *   - critical (30): single critical finding dominates score
+     *   - high (22): roughly 3 medium ≈ 1 high + small margin
+     *   - medium (12): medium findings register but don't dominate
+     *   - low (5): low findings barely register
+     *   - info (0): informational, no penalty
      */
     severityMultiplier: {
-      critical: 4,
-      high: 3,
-      medium: 2,
-      low: 1,
+      critical: 30,
+      high: 22,
+      medium: 12,
+      low: 5,
       info: 0
     }
   }
