@@ -463,34 +463,46 @@ describe('ConfidenceScoringService', () => {
   // =========================================================================
 
   describe('determineRiskLevel', () => {
-    it('should return critical for score 0-25', () => {
+    it('should return critical for score 0-30', () => {
       expect(service.determineRiskLevel(0)).toBe('critical');
       expect(service.determineRiskLevel(15)).toBe('critical');
-      expect(service.determineRiskLevel(25)).toBe('critical');
+      expect(service.determineRiskLevel(30)).toBe('critical');
     });
 
-    it('should return high for score 26-50', () => {
-      expect(service.determineRiskLevel(26)).toBe('high');
+    it('should return high for score 31-55', () => {
+      expect(service.determineRiskLevel(31)).toBe('high');
       expect(service.determineRiskLevel(40)).toBe('high');
-      expect(service.determineRiskLevel(50)).toBe('high');
+      expect(service.determineRiskLevel(55)).toBe('high');
     });
 
-    it('should return medium for score 51-70', () => {
-      expect(service.determineRiskLevel(51)).toBe('medium');
-      expect(service.determineRiskLevel(60)).toBe('medium');
-      expect(service.determineRiskLevel(70)).toBe('medium');
+    it('should return medium for score 56-75', () => {
+      expect(service.determineRiskLevel(56)).toBe('medium');
+      expect(service.determineRiskLevel(65)).toBe('medium');
+      expect(service.determineRiskLevel(75)).toBe('medium');
     });
 
-    it('should return low for score 71-90', () => {
-      expect(service.determineRiskLevel(71)).toBe('low');
-      expect(service.determineRiskLevel(80)).toBe('low');
-      expect(service.determineRiskLevel(90)).toBe('low');
+    it('should return low for score 76-92', () => {
+      expect(service.determineRiskLevel(76)).toBe('low');
+      expect(service.determineRiskLevel(85)).toBe('low');
+      expect(service.determineRiskLevel(92)).toBe('low');
     });
 
-    it('should return clean for score 91-100', () => {
-      expect(service.determineRiskLevel(91)).toBe('clean');
+    it('should return clean for score 93-100', () => {
+      expect(service.determineRiskLevel(93)).toBe('clean');
       expect(service.determineRiskLevel(95)).toBe('clean');
       expect(service.determineRiskLevel(100)).toBe('clean');
+    });
+
+    it('should correctly classify boundary values (30/55/75/92)', () => {
+      // Exact boundary values
+      expect(service.determineRiskLevel(30)).toBe('critical');
+      expect(service.determineRiskLevel(31)).toBe('high');
+      expect(service.determineRiskLevel(55)).toBe('high');
+      expect(service.determineRiskLevel(56)).toBe('medium');
+      expect(service.determineRiskLevel(75)).toBe('medium');
+      expect(service.determineRiskLevel(76)).toBe('low');
+      expect(service.determineRiskLevel(92)).toBe('low');
+      expect(service.determineRiskLevel(93)).toBe('clean');
     });
   });
 

@@ -99,20 +99,35 @@ const LAYER_SCORING_FACTORS = {
 // Evaluated in order: if score <= maxScore, that risk level applies.
 // ---------------------------------------------------------------------------
 
+// Risk Threshold Calibration (Phase 20)
+//
+// Based on recalibrated penalties from 20-04:
+//   - 1 critical violation alone → score ~65-70 → should be HIGH risk
+//   - 2-3 critical violations → score ~35-40 → should be CRITICAL risk
+//   - 1 medium anomaly → score ~88 → should be LOW risk
+//   - Clean document → score 95-100 → should be CLEAN
+//
+// Thresholds adjusted to align with penalty calibration:
+//   - critical: 30 (was 25 — slightly more room since penalties are now lower per-unit)
+//   - high: 55 (was 50 — aligned with recalibrated penalties)
+//   - medium: 75 (was 70 — medium should cover "some issues found")
+//   - low: 92 (was 90 — tighter band for "mostly clean")
+//   - clean: 100 (unchanged)
+
 /**
  * Confidence score thresholds for each risk level.
  * Evaluated from most severe to least severe:
- *   score <= 25 → critical
- *   score <= 50 → high
- *   score <= 70 → medium
- *   score <= 90 → low
+ *   score <= 30 → critical
+ *   score <= 55 → high
+ *   score <= 75 → medium
+ *   score <= 92 → low
  *   score <= 100 → clean
  */
 const RISK_THRESHOLDS = {
-  critical: { maxScore: 25 },
-  high: { maxScore: 50 },
-  medium: { maxScore: 70 },
-  low: { maxScore: 90 },
+  critical: { maxScore: 30 },
+  high: { maxScore: 55 },
+  medium: { maxScore: 75 },
+  low: { maxScore: 92 },
   clean: { maxScore: 100 }
 };
 
