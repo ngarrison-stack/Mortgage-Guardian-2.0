@@ -64,4 +64,14 @@ const morganStream = {
     }
 };
 
-module.exports = { logger, createLogger, morganStream };
+/**
+ * Create a request-scoped child logger that includes requestId in every log entry.
+ * @param {winston.Logger} baseLogger - Logger to create child from
+ * @param {string} requestId - Request ID to include in all log entries
+ * @returns {winston.Logger} Child logger with requestId metadata
+ */
+function createRequestLogger(baseLogger, requestId) {
+    return baseLogger.child({ requestId });
+}
+
+module.exports = { logger, createLogger, createRequestLogger, morganStream };

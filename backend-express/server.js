@@ -154,7 +154,8 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack, method: req.method, path: req.path });
+  const errorLogger = req.logger || logger;
+  errorLogger.error('Unhandled error', { error: err.message, stack: err.stack, method: req.method, path: req.path });
 
   const statusCode = err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production'
