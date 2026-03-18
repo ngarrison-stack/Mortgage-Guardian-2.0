@@ -63,6 +63,69 @@ class DocumentPipelineService {
   constructor() {
     // In-memory tracking — primary store for active pipelines
     this.pipelineState = new Map();
+    // Track scheduled cleanup timers so they can be cancelled if needed
+    this._cleanupTimers = new Map();
+  }
+
+  /**
+   * Get the current size of the in-memory pipeline state Map.
+   * Useful for monitoring and alerting on memory growth.
+   *
+   * @returns {number} Number of entries in the pipeline state Map
+   */
+  getMapSize() {
+    return this.pipelineState.size;
+  }
+
+  /**
+   * Safety valve: if the pipeline state Map exceeds 1000 entries,
+   * log a warning and evict the oldest 100 entries (by Map insertion order).
+   * Called before adding new entries to prevent unbounded growth.
+   */
+  _enforceMapSizeLimit() {
+    if (this.pipelineState.size > 1000) {
+      logger.warn('Pipeline state Map exceeded 1000 entries, evicting oldest 100', {
+        currentSize: this.pipelineState.size
+      });
+      const keys = [...this.pipelineState.keys()].slice(0, 100);
+      for (const key of keys) {
+        this.pipelineState.delete(key);
+        // Cancel any pending cleanup timer for evicted entries
+        const timer = this._cleanupTimers.get(key);
+        if (timer) {
+          clearTimeout(timer);
+          this._cleanupTimers.delete(key);
+        }
+      }
+    }
+  }
+
+  /**
+   * Schedule cleanup of a pipeline entry after a grace period.
+   * Clients may still poll for final status, so we delay removal
+   * by 5 minutes after reaching a terminal state.
+   *
+   * @param {string} documentId - Document identifier to clean up
+   */
+  _scheduleCleanup(documentId) {
+    // Cancel any existing timer for this document
+    const existing = this._cleanupTimers.get(documentId);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const timer = setTimeout(() => {
+      this.pipelineState.delete(documentId);
+      this._cleanupTimers.delete(documentId);
+      logger.info('Pipeline state cleaned up after grace period', { documentId });
+    }, 5 * 60 * 1000);
+
+    // Ensure the timer doesn't prevent Node.js from exiting
+    if (timer.unref) {
+      timer.unref();
+    }
+
+    this._cleanupTimers.set(documentId, timer);
   }
 
   // ============================================
@@ -269,6 +332,7 @@ class DocumentPipelineService {
       updatedAt: new Date().toISOString()
     };
 
+    this._enforceMapSizeLimit();
     this.pipelineState.set(documentId, pipeline);
     // Best-effort DB persistence (fire and forget)
     this._persistPipeline(pipeline).catch(() => {});
@@ -387,6 +451,8 @@ class DocumentPipelineService {
       this.pipelineState.set(documentId, pipeline);
       // Persist failure state
       this._persistPipeline(pipeline).catch(() => {});
+      // Schedule cleanup after grace period
+      this._scheduleCleanup(documentId);
 
       logger.error('Pipeline failed', {
         documentId,
@@ -677,6 +743,11 @@ class DocumentPipelineService {
       from: previousState,
       to: newState
     });
+
+    // Schedule cleanup when pipeline reaches a terminal state
+    if ([PIPELINE_STATES.COMPLETE, PIPELINE_STATES.FAILED].includes(newState)) {
+      this._scheduleCleanup(pipeline.documentId);
+    }
   }
 
   /**
