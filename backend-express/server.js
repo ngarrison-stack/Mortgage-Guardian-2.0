@@ -28,6 +28,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Import middleware
+const requestId = require('./middleware/requestId');
 const { requireAuth } = require('./middleware/auth');
 
 // Import routes
@@ -48,6 +49,9 @@ const PORT = process.env.PORT || 3000;
 
 // Security headers
 app.use(helmet());
+
+// Request ID — assign unique ID for log correlation (before all other middleware)
+app.use(requestId);
 
 // Compression
 app.use(compression());
