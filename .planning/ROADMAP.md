@@ -98,7 +98,7 @@ Plans:
 - [x] 20-02: Classification Confidence Gating (threshold filter + hint handling)
 - [x] 20-03: Compliance Rule Matching Precision (word boundaries + field patterns)
 - [x] 20-04: Scoring & Deduplication Fixes (dedup preservation + penalty calibration)
-- [ ] 20-05: Risk Threshold Calibration (thresholds + classification→scoring pipeline)
+- [x] 20-05: Risk Threshold Calibration (thresholds + classification→scoring pipeline)
 
 #### Phase 21: Report Generation & Integration Fixes
 
@@ -133,7 +133,7 @@ Plans:
 | 17. Integration Testing & Pipeline Hardening | v3.0 | 4/4 | Complete | 2026-03-15 |
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
-| 20. Pipeline Accuracy | v4.0 | 4/5 | In progress | - |
+| 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
 | 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | v4.0 in progress
