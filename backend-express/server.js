@@ -165,11 +165,56 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================
-// START SERVER (only in non-serverless environments)
+// ENVIRONMENT VALIDATION
+// ============================================
+
+function validateEnvironment() {
+  if (process.env.NODE_ENV === 'test') {
+    return; // Skip validation in test environment
+  }
+
+  const required = {
+    'SUPABASE_URL': 'Supabase database connection',
+    'SUPABASE_ANON_KEY': 'Supabase anonymous key for auth',
+  };
+
+  const recommended = {
+    'ANTHROPIC_API_KEY': 'Claude AI document analysis',
+    'PLAID_CLIENT_ID': 'Plaid banking integration',
+    'PLAID_SECRET': 'Plaid banking integration',
+  };
+
+  const missing = [];
+  const warnings = [];
+
+  for (const [key, desc] of Object.entries(required)) {
+    if (!process.env[key]) missing.push(`${key} (${desc})`);
+  }
+
+  for (const [key, desc] of Object.entries(recommended)) {
+    if (!process.env[key]) warnings.push(`${key} (${desc})`);
+  }
+
+  if (warnings.length > 0) {
+    logger.warn('Missing recommended environment variables', { missing: warnings });
+  }
+
+  if (missing.length > 0) {
+    logger.error('Missing required environment variables', { missing });
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  logger.info('Environment validation passed');
+}
+
+// ============================================
+// START SERVER (only when run directly)
 // ============================================
 
 // For local development and non-serverless deployments
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (require.main === module) {
+  validateEnvironment();
+
   const server = app.listen(PORT, () => {
     logger.info('Server started', {
       port: PORT,
