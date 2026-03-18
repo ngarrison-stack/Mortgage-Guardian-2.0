@@ -167,7 +167,14 @@ class ConsolidatedReportService {
     const scoreStart = Date.now();
 
     try {
-      confidenceScore = confidenceScoringService.calculateConfidence(aggregatedData);
+      // Pass classification confidence from pipeline results into scoring.
+      // aggregatedData.classificationConfidence is set by the aggregation service
+      // when document classification results are available.
+      const scoringOptions = {};
+      if (aggregatedData.classificationConfidence !== undefined) {
+        scoringOptions.classificationConfidence = aggregatedData.classificationConfidence;
+      }
+      confidenceScore = confidenceScoringService.calculateConfidence(aggregatedData, scoringOptions);
       overallRiskLevel = confidenceScoringService.determineRiskLevel(confidenceScore.overall);
 
       stepMeta.score = {

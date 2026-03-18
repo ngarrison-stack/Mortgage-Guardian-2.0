@@ -842,6 +842,92 @@ describe('ConfidenceScoringService', () => {
   });
 
   // =========================================================================
+  // Classification confidence impact (Phase 20-05)
+  // =========================================================================
+
+  describe('Classification confidence impact', () => {
+    it('high classification confidence (0.9) should not reduce documentAnalysis score', () => {
+      const data = makeMixedAggregatedData();
+      const withoutConf = service.calculateConfidence(data);
+      const withConf = service.calculateConfidence(data, { classificationConfidence: 0.9 });
+
+      expect(withConf.breakdown.documentAnalysis).toBe(withoutConf.breakdown.documentAnalysis);
+      expect(withConf.classificationImpact.factor).toBe(1.0);
+    });
+
+    it('medium classification confidence (0.55) should reduce documentAnalysis score by 15%', () => {
+      const data = makeMixedAggregatedData();
+      const withoutConf = service.calculateConfidence(data);
+      const withConf = service.calculateConfidence(data, { classificationConfidence: 0.55 });
+
+      const expectedDocScore = Math.round(withoutConf.breakdown.documentAnalysis * 0.85 * 100) / 100;
+      expect(withConf.breakdown.documentAnalysis).toBe(expectedDocScore);
+      expect(withConf.classificationImpact.factor).toBe(0.85);
+    });
+
+    it('low classification confidence (0.3) should reduce documentAnalysis score by 35%', () => {
+      const data = makeMixedAggregatedData();
+      const withoutConf = service.calculateConfidence(data);
+      const withConf = service.calculateConfidence(data, { classificationConfidence: 0.3 });
+
+      const expectedDocScore = Math.round(withoutConf.breakdown.documentAnalysis * 0.65 * 100) / 100;
+      expect(withConf.breakdown.documentAnalysis).toBe(expectedDocScore);
+      expect(withConf.classificationImpact.factor).toBe(0.65);
+    });
+
+    it('no classification confidence should default to factor 1.0 (backward compatible)', () => {
+      const data = makeMixedAggregatedData();
+      const result = service.calculateConfidence(data);
+
+      // No classificationImpact field when not provided
+      expect(result.classificationImpact).toBeUndefined();
+
+      // Score should match a high-confidence call
+      const withHighConf = service.calculateConfidence(data, { classificationConfidence: 0.9 });
+      expect(result.overall).toBe(withHighConf.overall);
+    });
+
+    it('classificationImpact field should be present in scoring response when confidence provided', () => {
+      const data = makeCleanAggregatedData();
+      const result = service.calculateConfidence(data, { classificationConfidence: 0.45 });
+
+      expect(result.classificationImpact).toBeDefined();
+      expect(result.classificationImpact.confidenceUsed).toBe(0.45);
+      expect(result.classificationImpact.factor).toBe(0.85);
+      expect(result.classificationImpact.layerAffected).toBe('documentAnalysis');
+    });
+
+    it('low classification confidence should reduce overall score', () => {
+      const data = makeMixedAggregatedData();
+      const highConf = service.calculateConfidence(data, { classificationConfidence: 0.9 });
+      const lowConf = service.calculateConfidence(data, { classificationConfidence: 0.2 });
+
+      expect(lowConf.overall).toBeLessThan(highConf.overall);
+    });
+
+    it('classification confidence should not affect forensic or compliance scores', () => {
+      const data = makeDegradedAggregatedData();
+      const withoutConf = service.calculateConfidence(data);
+      const withConf = service.calculateConfidence(data, { classificationConfidence: 0.3 });
+
+      expect(withConf.breakdown.forensicAnalysis).toBe(withoutConf.breakdown.forensicAnalysis);
+      expect(withConf.breakdown.complianceAnalysis).toBe(withoutConf.breakdown.complianceAnalysis);
+    });
+
+    it('boundary: confidence exactly 0.7 should use factor 1.0', () => {
+      const data = makeCleanAggregatedData();
+      const result = service.calculateConfidence(data, { classificationConfidence: 0.7 });
+      expect(result.classificationImpact.factor).toBe(1.0);
+    });
+
+    it('boundary: confidence exactly 0.4 should use factor 0.85', () => {
+      const data = makeCleanAggregatedData();
+      const result = service.calculateConfidence(data, { classificationConfidence: 0.4 });
+      expect(result.classificationImpact.factor).toBe(0.85);
+    });
+  });
+
+  // =========================================================================
   // Penalty calibration tests (Phase 20-04)
   // =========================================================================
 

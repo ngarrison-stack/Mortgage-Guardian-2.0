@@ -28,14 +28,35 @@ const confidenceScoringService = {
    * Calculate overall confidence score and per-layer breakdown.
    *
    * @param {Object} aggregatedData - { documentAnalyses, forensicReport, complianceReport }
-   * @returns {{ overall: number, breakdown: { documentAnalysis: number|null, forensicAnalysis: number|null, complianceAnalysis: number|null } }}
+   * @param {Object} [options={}] - Scoring options
+   * @param {number} [options.classificationConfidence] - Classification confidence (0.0-1.0).
+   *   When provided, scales the documentAnalysis layer score to reflect classification
+   *   trustworthiness. Forensic and compliance layers are unaffected because they don't
+   *   depend on document type classification.
+   *     - >= 0.7: factor 1.0 (high confidence, no penalty)
+   *     - 0.4-0.7: factor 0.85 (medium confidence, 15% reduction)
+   *     - < 0.4: factor 0.65 (low confidence, 35% reduction)
+   * @returns {{ overall: number, breakdown: Object, classificationImpact: Object|undefined }}
    */
-  calculateConfidence(aggregatedData) {
+  calculateConfidence(aggregatedData, options = {}) {
     const { documentAnalyses = [], forensicReport = null, complianceReport = null } = aggregatedData;
+    const { classificationConfidence } = options;
 
-    const docScore = this.documentAnalysisScore(documentAnalyses);
+    let docScore = this.documentAnalysisScore(documentAnalyses);
     const forensicScore = this.forensicAnalysisScore(forensicReport);
     const complianceScore = this.complianceAnalysisScore(complianceReport);
+
+    // Apply classification confidence factor to document analysis layer
+    let classificationImpact;
+    if (classificationConfidence !== undefined && classificationConfidence !== null) {
+      const factor = this._classificationConfidenceFactor(classificationConfidence);
+      docScore = clamp(Math.round(docScore * factor * 100) / 100, 0, 100);
+      classificationImpact = {
+        confidenceUsed: classificationConfidence,
+        factor,
+        layerAffected: 'documentAnalysis'
+      };
+    }
 
     // Build weighted average, redistributing weights for missing layers
     const layers = [
@@ -60,7 +81,7 @@ const confidenceScoringService = {
 
     overall = clamp(Math.round(overall * 100) / 100, 0, 100);
 
-    return {
+    const result = {
       overall,
       breakdown: {
         documentAnalysis: docScore,
@@ -68,6 +89,12 @@ const confidenceScoringService = {
         complianceAnalysis: complianceScore
       }
     };
+
+    if (classificationImpact) {
+      result.classificationImpact = classificationImpact;
+    }
+
+    return result;
   },
 
   /**
@@ -225,6 +252,19 @@ const confidenceScoringService = {
       }
     }
     return 'clean';
+  },
+
+  /**
+   * Map classification confidence to a scaling factor for the document analysis layer.
+   *
+   * @param {number} confidence - Classification confidence (0.0-1.0)
+   * @returns {number} Scaling factor (0.65, 0.85, or 1.0)
+   * @private
+   */
+  _classificationConfidenceFactor(confidence) {
+    if (confidence >= 0.7) return 1.0;
+    if (confidence >= 0.4) return 0.85;
+    return 0.65;
   },
 
   /**
