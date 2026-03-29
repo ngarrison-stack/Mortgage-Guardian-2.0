@@ -543,4 +543,115 @@ describe('ReportAggregationService', () => {
       expect(result.errors).toContainEqual(expect.stringContaining('partial'));
     });
   });
+
+  // =========================================================================
+  // Schema validation with null breakdown layers
+  // =========================================================================
+
+  describe('validateConsolidatedReport with null breakdown layers', () => {
+    const { validateConsolidatedReport } = require('../../schemas/consolidatedReportSchema');
+    const crypto = require('crypto');
+
+    function makeMinimalReport(overrides = {}) {
+      return {
+        reportId: crypto.randomUUID(),
+        caseId: 'case-001',
+        userId: 'user-001',
+        generatedAt: new Date().toISOString(),
+        reportVersion: '1.0',
+        caseSummary: {
+          borrowerName: 'John Doe',
+          propertyAddress: '123 Main St',
+          loanNumber: 'LN-123456',
+          servicerName: 'ABC Mortgage',
+          documentCount: 1,
+          caseCreatedAt: '2026-01-15T10:00:00Z'
+        },
+        overallRiskLevel: 'low',
+        confidenceScore: {
+          overall: 85,
+          breakdown: {
+            documentAnalysis: 85,
+            forensicAnalysis: null,
+            complianceAnalysis: null
+          }
+        },
+        findingSummary: {
+          totalFindings: 0,
+          bySeverity: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+          byCategory: {
+            documentAnomalies: 0,
+            crossDocDiscrepancies: 0,
+            timelineViolations: 0,
+            paymentIssues: 0,
+            federalViolations: 0,
+            stateViolations: 0
+          }
+        },
+        documentAnalysis: [],
+        forensicFindings: {
+          discrepancies: [],
+          timelineViolations: [],
+          paymentVerification: null
+        },
+        complianceFindings: {
+          federalViolations: [],
+          stateViolations: [],
+          jurisdiction: null
+        },
+        evidenceLinks: [],
+        recommendations: [],
+        disputeLetterAvailable: false,
+        disputeLetter: null,
+        ...overrides
+      };
+    }
+
+    it('should validate a report with null forensic and compliance breakdown scores', () => {
+      const report = makeMinimalReport();
+      const result = validateConsolidatedReport(report);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should validate a report with classificationImpact present', () => {
+      const report = makeMinimalReport({
+        confidenceScore: {
+          overall: 72.25,
+          breakdown: {
+            documentAnalysis: 72.25,
+            forensicAnalysis: null,
+            complianceAnalysis: null
+          },
+          classificationImpact: {
+            confidenceUsed: 0.85,
+            factor: 1.0,
+            layerAffected: 'documentAnalysis'
+          }
+        }
+      });
+      const result = validateConsolidatedReport(report);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should still reject null documentAnalysis score', () => {
+      const report = makeMinimalReport({
+        confidenceScore: {
+          overall: 85,
+          breakdown: {
+            documentAnalysis: null,
+            forensicAnalysis: 90,
+            complianceAnalysis: 80
+          }
+        }
+      });
+      const result = validateConsolidatedReport(report);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('documentAnalysis'))).toBe(true);
+    });
+  });
 });

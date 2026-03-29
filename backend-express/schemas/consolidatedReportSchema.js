@@ -74,11 +74,11 @@ const confidenceBreakdownSchema = Joi.object({
   /** Confidence from individual document analysis (0-100) */
   documentAnalysis: Joi.number().min(0).max(100).required(),
 
-  /** Confidence from cross-document forensic analysis (0-100) */
-  forensicAnalysis: Joi.number().min(0).max(100).required(),
+  /** Confidence from cross-document forensic analysis (0-100, null when absent) */
+  forensicAnalysis: Joi.number().min(0).max(100).allow(null).required(),
 
-  /** Confidence from compliance analysis (0-100) */
-  complianceAnalysis: Joi.number().min(0).max(100).required()
+  /** Confidence from compliance analysis (0-100, null when absent) */
+  complianceAnalysis: Joi.number().min(0).max(100).allow(null).required()
 }).required();
 
 const confidenceScoreSchema = Joi.object({
@@ -86,7 +86,14 @@ const confidenceScoreSchema = Joi.object({
   overall: Joi.number().min(0).max(100).required(),
 
   /** Per-layer confidence breakdown */
-  breakdown: confidenceBreakdownSchema
+  breakdown: confidenceBreakdownSchema,
+
+  /** Classification confidence impact on scoring (present when classificationConfidence provided) */
+  classificationImpact: Joi.object({
+    confidenceUsed: Joi.number().min(0).max(1).required(),
+    factor: Joi.number().required(),
+    layerAffected: Joi.string().required()
+  }).optional()
 }).required();
 
 // ---------------------------------------------------------------------------
