@@ -542,6 +542,91 @@ describe('ReportAggregationService', () => {
       expect(result.forensicReport).toBeDefined();
       expect(result.errors).toContainEqual(expect.stringContaining('partial'));
     });
+
+    it('should include classificationConfidence when documents have it', async () => {
+      const report1 = makeAnalysisReport({ classificationConfidence: 0.9 });
+      const report2 = makeAnalysisReport({
+        classificationConfidence: 0.8,
+        documentInfo: {
+          documentId: 'doc-002',
+          fileName: 'deed.pdf',
+          classificationType: 'deed',
+          classificationSubtype: 'warranty_deed'
+        }
+      });
+
+      const caseData = makeCaseData({
+        documents: [
+          { document_id: 'doc-001', analysis_report: report1 },
+          { document_id: 'doc-002', analysis_report: report2 }
+        ],
+        forensic_analysis: null,
+        compliance_report: null
+      });
+
+      caseFileService.getCase.mockResolvedValue(caseData);
+
+      const result = await service.gatherCaseFindings('case-001', 'user-001');
+
+      expect(result.classificationConfidence).toBeCloseTo(0.85, 10);
+    });
+
+    it('should not include classificationConfidence when no documents have it', async () => {
+      const report = makeAnalysisReport(); // no classificationConfidence field
+
+      const caseData = makeCaseData({
+        documents: [
+          { document_id: 'doc-001', analysis_report: report }
+        ],
+        forensic_analysis: null,
+        compliance_report: null
+      });
+
+      caseFileService.getCase.mockResolvedValue(caseData);
+
+      const result = await service.gatherCaseFindings('case-001', 'user-001');
+
+      expect(result.classificationConfidence).toBeUndefined();
+    });
+
+    it('should average only documents that have classificationConfidence', async () => {
+      const report1 = makeAnalysisReport({ classificationConfidence: 0.6 });
+      const report2 = makeAnalysisReport({
+        documentInfo: {
+          documentId: 'doc-002',
+          fileName: 'deed.pdf',
+          classificationType: 'deed',
+          classificationSubtype: 'warranty_deed'
+        }
+        // no classificationConfidence
+      });
+      const report3 = makeAnalysisReport({
+        classificationConfidence: 0.4,
+        documentInfo: {
+          documentId: 'doc-003',
+          fileName: 'note.pdf',
+          classificationType: 'promissory_note',
+          classificationSubtype: 'note'
+        }
+      });
+
+      const caseData = makeCaseData({
+        documents: [
+          { document_id: 'doc-001', analysis_report: report1 },
+          { document_id: 'doc-002', analysis_report: report2 },
+          { document_id: 'doc-003', analysis_report: report3 }
+        ],
+        forensic_analysis: null,
+        compliance_report: null
+      });
+
+      caseFileService.getCase.mockResolvedValue(caseData);
+
+      const result = await service.gatherCaseFindings('case-001', 'user-001');
+
+      // Only doc-001 (0.6) and doc-003 (0.4) — average = 0.5
+      expect(result.classificationConfidence).toBe(0.5);
+    });
   });
 
   // =========================================================================

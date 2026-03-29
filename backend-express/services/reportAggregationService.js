@@ -64,6 +64,15 @@ class ReportAggregationService {
       .filter(doc => doc.analysis_report)
       .map(doc => this.normalizeDocumentAnalysis(doc.analysis_report));
 
+    // --- Extract average classification confidence from document analyses ---
+    const classificationConfidences = documents
+      .filter(doc => doc.analysis_report && doc.analysis_report.classificationConfidence != null)
+      .map(doc => doc.analysis_report.classificationConfidence);
+
+    const classificationConfidence = classificationConfidences.length > 0
+      ? classificationConfidences.reduce((sum, c) => sum + c, 0) / classificationConfidences.length
+      : undefined;
+
     // --- Retrieve forensic report ---
     let forensicReport = caseData.forensic_analysis || caseData.forensicAnalysis || null;
 
@@ -89,13 +98,19 @@ class ReportAggregationService {
       errorCount: errors.length
     });
 
-    return {
+    const result = {
       caseInfo,
       documentAnalyses,
       forensicReport,
       complianceReport,
       errors
     };
+
+    if (classificationConfidence !== undefined) {
+      result.classificationConfidence = classificationConfidence;
+    }
+
+    return result;
   }
 
   /**
