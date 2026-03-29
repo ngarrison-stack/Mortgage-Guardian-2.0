@@ -108,7 +108,7 @@ Plans:
 **Plans**: 5
 
 Plans:
-- [ ] 21-01: Confidence Score Schema & Classification Pipeline (null layer fix + classificationConfidence wiring)
+- [x] 21-01: Confidence Score Schema & Classification Pipeline (null layer fix + classificationConfidence wiring)
 - [ ] 21-02: Dispute Letter Schema & Field Alignment (content/recipientInfo schema fix + dual-format field reads)
 - [ ] 21-03: Report Assembly Finding Preservation (anomaly details in documentAnalysis + count consistency check)
 - [ ] 21-04: End-to-End Integrity Tests (report pipeline tests + letter-from-stored-report tests)
@@ -138,6 +138,6 @@ Plans:
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
-| 21. Report Generation & Integration Fixes | v4.0 | 0/5 | In progress | - |
+| 21. Report Generation & Integration Fixes | v4.0 | 1/5 | In progress | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | v4.0 in progress
