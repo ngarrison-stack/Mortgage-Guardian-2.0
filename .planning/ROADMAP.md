@@ -105,10 +105,14 @@ Plans:
 **Goal**: Fix incorrect report aggregation, missing findings, formatting issues in consolidated reports, and cross-system verification to ensure end-to-end data integrity
 **Depends on**: Phase 20
 **Research**: Unlikely (internal aggregation patterns, existing report pipeline)
-**Plans**: TBD
+**Plans**: 5
 
 Plans:
-- [ ] 21-01: TBD (run /gsd:plan-phase 21 to break down)
+- [ ] 21-01: Confidence Score Schema & Classification Pipeline (null layer fix + classificationConfidence wiring)
+- [ ] 21-02: Dispute Letter Schema & Field Alignment (content/recipientInfo schema fix + dual-format field reads)
+- [ ] 21-03: Report Assembly Finding Preservation (anomaly details in documentAnalysis + count consistency check)
+- [ ] 21-04: End-to-End Integrity Tests (report pipeline tests + letter-from-stored-report tests)
+- [ ] 21-05: Milestone Verification & Completion (full test suite + v4.0 milestone closure)
 
 ## Progress
 
@@ -134,6 +138,6 @@ Plans:
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
-| 21. Report Generation & Integration Fixes | v4.0 | 0/? | Not started | - |
+| 21. Report Generation & Integration Fixes | v4.0 | 0/5 | In progress | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | v4.0 in progress
