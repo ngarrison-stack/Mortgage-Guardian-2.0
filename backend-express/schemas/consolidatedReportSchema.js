@@ -333,6 +333,16 @@ const recommendationSchema = Joi.object({
 // Section: disputeLetter
 // Optional generated RESPA dispute letter.
 // ---------------------------------------------------------------------------
+const disputeLetterContentSchema = Joi.object({
+  subject: Joi.string().allow('').required(),
+  salutation: Joi.string().allow('').required(),
+  body: Joi.string().allow('').required(),
+  demands: Joi.array().items(Joi.string()).default([]),
+  legalCitations: Joi.array().items(Joi.string()).default([]),
+  responseDeadline: Joi.string().allow('').required(),
+  closingStatement: Joi.string().allow('').required()
+}).required();
+
 const disputeLetterSchema = Joi.object({
   /** Type of dispute letter */
   letterType: Joi.string().required(),
@@ -340,14 +350,13 @@ const disputeLetterSchema = Joi.object({
   /** ISO-8601 timestamp of letter generation */
   generatedAt: Joi.string().isoDate().required(),
 
-  /** Letter content */
-  content: Joi.string().required(),
+  /** Structured letter content from Claude AI */
+  content: disputeLetterContentSchema,
 
-  /** Recipient information */
+  /** Recipient/servicer information */
   recipientInfo: Joi.object({
-    name: Joi.string().required(),
-    address: Joi.string().required(),
-    department: Joi.string().optional()
+    servicerName: Joi.string().required(),
+    servicerAddress: Joi.string().required()
   }).required()
 }).allow(null).default(null);
 
