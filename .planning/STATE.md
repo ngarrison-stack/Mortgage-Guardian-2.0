@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v4.0 Bug Fix & Stability Sprint
+**Current focus:** v4.0 Bug Fix & Stability Sprint — COMPLETE
 
 ## Current Position
 
 Phase: 21 of 21 (Report Generation & Integration Fixes)
-Plan: 3 of 5 in current phase
-Status: In progress
-Last activity: 2026-03-30 - Completed 21-03-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Phase complete — v4.0 milestone shipped
+Last activity: 2026-03-30 - Completed 21-05-PLAN.md
 
-Progress: █████████░░░░░░░░░░░ 41%
+Progress: ████████████████████ 100%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: █████████░░░░░░░░░░░ 41%
 
 All v2.0 decisions documented in PROJECT.md Key Decisions table.
 All v3.0 decisions documented in prior STATE.md snapshots and phase summaries.
+All v4.0 decisions documented in phase summaries (Phases 18-21).
 
 ### Deferred Issues
 
@@ -50,7 +51,13 @@ None.
 
 ### Pending Todos
 
-None.
+6 todos in `.planning/todos/pending/`:
+- Generate OpenAPI spec from existing routes (docs)
+- Build web dashboard frontend (ui)
+- Close branch coverage gap to 90% (testing)
+- Complete iOS app TODOs (general)
+- Production deployment dry run (tooling)
+- Codify Supabase database migrations (database)
 
 ### Blockers/Concerns
 
@@ -60,10 +67,10 @@ None.
 
 - Milestone v2.0 shipped: 2026-02-26 (Phases 1-9, 32 plans)
 - Milestone v3.0 shipped: 2026-03-15 (Phases 10-17, 42 plans)
-- Milestone v4.0 created: 2026-03-16 — Bug Fix & Stability Sprint, 4 phases (Phase 18-21)
+- Milestone v4.0 shipped: 2026-03-30 (Phases 18-21, 20 plans) — Bug Fix & Stability Sprint
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Completed 21-03-PLAN.md — Anomaly preservation + consistency check
+Stopped at: Completed 21-05-PLAN.md — v4.0 milestone closure, all 1,275 tests passing
 Resume file: None
