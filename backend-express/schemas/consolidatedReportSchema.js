@@ -151,6 +151,15 @@ const documentAnalysisItemSchema = Joi.object({
   /** Number of anomalies detected */
   anomalyCount: Joi.number().integer().min(0).required(),
 
+  /** Anomaly details */
+  anomalies: Joi.array().items(Joi.object({
+    id: Joi.string().optional(),
+    field: Joi.string().optional(),
+    type: Joi.string().optional(),
+    severity: Joi.string().valid('critical', 'high', 'medium', 'low', 'info').optional(),
+    description: Joi.string().optional()
+  })).default([]),
+
   /** Top findings from individual analysis */
   keyFindings: Joi.array().items(Joi.string()).default([])
 });

@@ -355,6 +355,7 @@ class ConsolidatedReportService {
         subtype: da.subtype,
         completenessScore: da.completenessScore,
         anomalyCount: da.anomalyCount,
+        anomalies: da.anomalies || [],
         keyFindings: da.keyFindings || []
       })),
       forensicFindings,
