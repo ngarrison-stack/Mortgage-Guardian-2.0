@@ -9,6 +9,7 @@ Mortgage Guardian 2.0 roadmap tracking milestones from MVP hardening through for
 - ✅ [v2.0 Production Hardening](milestones/v2.0-ROADMAP.md) (Phases 1-9, 32 plans) — SHIPPED 2026-02-26
 - ✅ [v3.0 Forensic Analysis Engine](milestones/v3.0-ROADMAP.md) (Phases 10-17, 42 plans) — SHIPPED 2026-03-15
 - ✅ [v4.0 Bug Fix & Stability Sprint](milestones/v4.0-ROADMAP.md) (Phases 18-21, 20 plans) — SHIPPED 2026-03-30
+- 🚧 **v5.0 Production Readiness** — Phases 22-31 (in progress)
 
 ## Completed Milestones
 
@@ -66,6 +67,117 @@ Comprehensive bug fixing across backend, frontend, and analysis pipeline to impr
 **Key results:** 1,275 tests across 48 suites (zero failures), OCR accuracy gating, compliance rule precision, scoring calibration, report pipeline integrity, dual-format dispute letter support, stale test fix.
 
 </details>
+
+### 🚧 v5.0 Production Readiness (In Progress)
+
+**Milestone Goal:** Get Mortgage Guardian 2.0 production-ready with codified database migrations, CI/CD automation, test coverage hardening, monitoring, security audit, and a validated deployment pipeline.
+
+#### Phase 22: Database Migration Framework
+
+**Goal**: Codify Supabase schema into version-controlled migration scripts with up/down support
+**Depends on**: v4.0 milestone complete
+**Research**: Unlikely (Supabase patterns established in codebase)
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: TBD (run /gsd:plan-phase 22 to break down)
+
+#### Phase 23: CI/CD Pipeline
+
+**Goal**: GitHub Actions workflows for automated testing, linting, building, and deployment
+**Depends on**: Phase 22
+**Research**: Likely (GitHub Actions configuration, deployment target integration)
+**Research topics**: GitHub Actions best practices for Node.js/Next.js, deployment to Railway/Vercel via CI, test/coverage reporting
+**Plans**: TBD
+
+Plans:
+- [ ] 23-01: TBD (run /gsd:plan-phase 23 to break down)
+
+#### Phase 24: Test Coverage Hardening
+
+**Goal**: Close branch coverage gap to 90% target across all critical paths
+**Depends on**: Phase 23
+**Research**: Unlikely (internal testing patterns established in v2.0-v4.0)
+**Plans**: TBD
+
+Plans:
+- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+
+#### Phase 25: Environment & Secrets Management
+
+**Goal**: Production environment validation, secrets rotation strategy, and secure configuration management
+**Depends on**: Phase 24
+**Research**: Likely (secrets management tooling, rotation strategies)
+**Research topics**: Secrets management approaches for Railway/Vercel, env validation libraries, rotation patterns
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+
+#### Phase 26: Container & Deploy Infrastructure
+
+**Goal**: Production Docker configurations, deployment scripts, and infrastructure automation
+**Depends on**: Phase 25
+**Research**: Likely (Docker production optimization, hosting platform specifics)
+**Research topics**: Docker multi-stage builds for Node.js, Railway/Vercel production configs, container security scanning
+**Plans**: TBD
+
+Plans:
+- [ ] 26-01: TBD (run /gsd:plan-phase 26 to break down)
+
+#### Phase 27: Monitoring & Observability
+
+**Goal**: Health check endpoints, error tracking integration, alerting, and operational dashboards
+**Depends on**: Phase 26
+**Research**: Likely (error tracking services, APM tools)
+**Research topics**: Sentry/Datadog integration, structured log aggregation, uptime monitoring services
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD (run /gsd:plan-phase 27 to break down)
+
+#### Phase 28: Performance & Load Testing
+
+**Goal**: Benchmarks, load tests, and bottleneck optimization to meet performance targets
+**Depends on**: Phase 27
+**Research**: Likely (load testing tools, benchmarking approaches)
+**Research topics**: Artillery/k6 for API load testing, performance profiling Node.js, response time baseline establishment
+**Plans**: TBD
+
+Plans:
+- [ ] 28-01: TBD (run /gsd:plan-phase 28 to break down)
+
+#### Phase 29: Security Audit & Compliance Review
+
+**Goal**: Final OWASP top-10 review, dependency audit, and security compliance verification
+**Depends on**: Phase 28
+**Research**: Unlikely (OWASP patterns established, security hardening done in v2.0)
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD (run /gsd:plan-phase 29 to break down)
+
+#### Phase 30: Production Deployment Dry Run
+
+**Goal**: Deploy to staging environment, run end-to-end smoke tests, validate full pipeline
+**Depends on**: Phase 29
+**Research**: Unlikely (internal deployment steps, existing infrastructure)
+**Plans**: TBD
+
+Plans:
+- [ ] 30-01: TBD (run /gsd:plan-phase 30 to break down)
+
+#### Phase 31: Operations Runbooks
+
+**Goal**: Incident response procedures, deployment guides, and troubleshooting documentation
+**Depends on**: Phase 30
+**Research**: Unlikely (internal documentation)
+**Plans**: TBD
+
+Plans:
+- [ ] 31-01: TBD (run /gsd:plan-phase 31 to break down)
+
+---
 
 ### v4.0 Bug Fix & Stability Sprint — SHIPPED 2026-03-30
 
@@ -153,5 +265,15 @@ Plans:
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
 | 21. Report Generation & Integration Fixes | v4.0 | 5/5 | Complete | 2026-03-30 |
+| 22. Database Migration Framework | v5.0 | 0/? | Not started | - |
+| 23. CI/CD Pipeline | v5.0 | 0/? | Not started | - |
+| 24. Test Coverage Hardening | v5.0 | 0/? | Not started | - |
+| 25. Environment & Secrets Management | v5.0 | 0/? | Not started | - |
+| 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |
+| 27. Monitoring & Observability | v5.0 | 0/? | Not started | - |
+| 28. Performance & Load Testing | v5.0 | 0/? | Not started | - |
+| 29. Security Audit & Compliance Review | v5.0 | 0/? | Not started | - |
+| 30. Production Deployment Dry Run | v5.0 | 0/? | Not started | - |
+| 31. Operations Runbooks | v5.0 | 0/? | Not started | - |
 
-**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE
+**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | v5.0 in progress
