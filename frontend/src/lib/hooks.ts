@@ -13,8 +13,7 @@ import type { Case, ConsolidatedReport, PipelineStatus } from './types'
 export function useApiToken() {
   const { getToken } = useAuth()
   return useCallback(async () => {
-    // Try Clerk JWT Template for Supabase first, fall back to default
-    const token = await getToken({ template: 'supabase' }).catch(() => getToken())
+    const token = await getToken()
     if (!token) throw new Error('Not authenticated')
     return token
   }, [getToken])

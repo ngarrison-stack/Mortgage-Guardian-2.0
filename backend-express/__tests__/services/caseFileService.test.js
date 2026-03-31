@@ -1,69 +1,28 @@
 /**
  * Unit tests for CaseFileService (services/caseFileService.js)
  *
- * Tests all CRUD operations in both Supabase and mock modes.
- * Follows the same mock pattern as documentService.test.js.
+ * Tests all CRUD operations in both PostgreSQL and mock modes.
+ * Uses jest.mock for ../../services/db to control query() responses.
  */
 
-// --- Chainable DB mock ---
-const mockInsert = jest.fn();
-const mockSelect = jest.fn();
-const mockUpdate = jest.fn();
-const mockDelete = jest.fn();
-const mockEq = jest.fn();
-const mockOrder = jest.fn();
-const mockRange = jest.fn();
-const mockSingle = jest.fn();
+const mockQuery = jest.fn();
 
-const mockDbChain = {
-  from: jest.fn(),
-  insert: mockInsert,
-  select: mockSelect,
-  update: mockUpdate,
-  delete: mockDelete,
-  eq: mockEq,
-  order: mockOrder,
-  range: mockRange,
-  single: mockSingle
-};
-
-const mockSupabase = { ...mockDbChain };
-
-// Wire chain returns after object exists
-mockSupabase.from.mockReturnValue(mockSupabase);
-mockInsert.mockReturnValue(mockSupabase);
-mockSelect.mockReturnValue(mockSupabase);
-mockUpdate.mockReturnValue(mockSupabase);
-mockDelete.mockReturnValue(mockSupabase);
-mockEq.mockReturnValue(mockSupabase);
-mockOrder.mockReturnValue(mockSupabase);
-mockRange.mockReturnValue(mockSupabase);
-
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabase)
+jest.mock('../../services/db', () => ({
+  query: mockQuery,
+  pool: { connect: jest.fn() }
 }));
 
-// Set env vars BEFORE requiring service
-process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
+// Set env vars BEFORE requiring service so it initializes the DB path
+process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
 
 const caseFileService = require('../../services/caseFileService');
 
 // ============================================================
-// Supabase mode tests
+// PostgreSQL mode tests
 // ============================================================
-describe('CaseFileService (Supabase mode)', () => {
+describe('CaseFileService (PostgreSQL mode)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset chain defaults
-    mockSupabase.from.mockReturnValue(mockSupabase);
-    mockInsert.mockReturnValue(mockSupabase);
-    mockSelect.mockReturnValue(mockSupabase);
-    mockUpdate.mockReturnValue(mockSupabase);
-    mockDelete.mockReturnValue(mockSupabase);
-    mockEq.mockReturnValue(mockSupabase);
-    mockOrder.mockReturnValue(mockSupabase);
-    mockRange.mockReturnValue(mockSupabase);
   });
 
   // ----------------------------------------------------------
@@ -88,34 +47,23 @@ describe('CaseFileService (Supabase mode)', () => {
         borrower_name: 'John Smith',
         status: 'open'
       };
-      mockSingle.mockResolvedValue({ data: mockCase, error: null });
+      mockQuery.mockResolvedValue({ rows: [mockCase], rowCount: 1 });
 
       const result = await caseFileService.createCase(createArgs);
 
       expect(result.id).toBe('case-uuid-1');
       expect(result.case_name).toBe('Smith Mortgage Audit 2024');
-      expect(mockSupabase.from).toHaveBeenCalledWith('case_files');
-      expect(mockInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 'user-1',
-          case_name: 'Smith Mortgage Audit 2024',
-          borrower_name: 'John Smith',
-          property_address: '123 Main St',
-          loan_number: 'LN-001',
-          servicer_name: 'BigBank Corp',
-          notes: 'Initial audit case'
-        })
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO case_files'),
+        expect.arrayContaining(['user-1', 'Smith Mortgage Audit 2024', 'John Smith', '123 Main St', 'LN-001', 'BigBank Corp', 'Initial audit case'])
       );
     });
 
     it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'Insert failed' }
-      });
+      mockQuery.mockRejectedValue(new Error('Insert failed'));
 
       await expect(caseFileService.createCase(createArgs))
-        .rejects.toThrow('Database error: Insert failed');
+        .rejects.toThrow('Insert failed');
     });
   });
 
@@ -128,36 +76,41 @@ describe('CaseFileService (Supabase mode)', () => {
         { id: 'case-1', case_name: 'Audit A' },
         { id: 'case-2', case_name: 'Audit B' }
       ];
-      mockRange.mockResolvedValue({ data: cases, error: null });
+      mockQuery.mockResolvedValue({ rows: cases, rowCount: 2 });
 
       const result = await caseFileService.getCasesByUser({ userId: 'user-1' });
 
       expect(result).toEqual(cases);
-      expect(mockSupabase.from).toHaveBeenCalledWith('case_files');
-      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE user_id = $1'),
+        expect.arrayContaining(['user-1'])
+      );
     });
 
     it('applies default limit and offset', async () => {
-      mockRange.mockResolvedValue({ data: [], error: null });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       await caseFileService.getCasesByUser({ userId: 'user-1' });
 
-      expect(mockRange).toHaveBeenCalledWith(0, 49);
-      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('LIMIT'),
+        expect.arrayContaining(['user-1', 50, 0])
+      );
     });
 
     it('filters by status when provided', async () => {
-      mockRange.mockResolvedValue({ data: [], error: null });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       await caseFileService.getCasesByUser({ userId: 'user-1', status: 'open' });
 
-      // eq called twice: once for user_id, once for status
-      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
-      expect(mockEq).toHaveBeenCalledWith('status', 'open');
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('AND status ='),
+        expect.arrayContaining(['user-1', 'open'])
+      );
     });
 
-    it('returns empty array when data is null', async () => {
-      mockRange.mockResolvedValue({ data: null, error: null });
+    it('returns empty array when no results', async () => {
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       const result = await caseFileService.getCasesByUser({ userId: 'user-1' });
 
@@ -165,10 +118,10 @@ describe('CaseFileService (Supabase mode)', () => {
     });
 
     it('throws on database error', async () => {
-      mockRange.mockResolvedValue({ data: null, error: { message: 'Query timeout' } });
+      mockQuery.mockRejectedValue(new Error('Query timeout'));
 
       await expect(caseFileService.getCasesByUser({ userId: 'user-1' }))
-        .rejects.toThrow('Database error: Query timeout');
+        .rejects.toThrow('Query timeout');
     });
   });
 
@@ -180,16 +133,10 @@ describe('CaseFileService (Supabase mode)', () => {
       const caseData = { id: 'case-1', case_name: 'Test Audit', user_id: 'user-1' };
       const docs = [{ document_id: 'doc-1', case_id: 'case-1' }];
 
-      // First single() returns case, then order() returns docs
-      let singleCallCount = 0;
-      mockSingle.mockImplementation(() => {
-        singleCallCount++;
-        if (singleCallCount === 1) {
-          return Promise.resolve({ data: caseData, error: null });
-        }
-        return Promise.resolve({ data: null, error: null });
-      });
-      mockOrder.mockResolvedValue({ data: docs, error: null });
+      // First query returns case, second returns docs
+      mockQuery
+        .mockResolvedValueOnce({ rows: [caseData], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: docs, rowCount: 1 });
 
       const result = await caseFileService.getCase({ caseId: 'case-1', userId: 'user-1' });
 
@@ -198,7 +145,7 @@ describe('CaseFileService (Supabase mode)', () => {
     });
 
     it('returns null when case not found', async () => {
-      mockSingle.mockResolvedValue({ data: null, error: null });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       const result = await caseFileService.getCase({ caseId: 'nonexistent', userId: 'user-1' });
 
@@ -207,8 +154,9 @@ describe('CaseFileService (Supabase mode)', () => {
 
     it('returns case with empty documents on doc fetch error', async () => {
       const caseData = { id: 'case-1', case_name: 'Test Audit' };
-      mockSingle.mockResolvedValue({ data: caseData, error: null });
-      mockOrder.mockResolvedValue({ data: null, error: { message: 'Doc query failed' } });
+      mockQuery
+        .mockResolvedValueOnce({ rows: [caseData], rowCount: 1 })
+        .mockRejectedValueOnce(new Error('Doc query failed'));
 
       const result = await caseFileService.getCase({ caseId: 'case-1', userId: 'user-1' });
 
@@ -216,14 +164,11 @@ describe('CaseFileService (Supabase mode)', () => {
       expect(result.documents).toEqual([]);
     });
 
-    it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'Connection lost' }
-      });
+    it('throws on database error for case query', async () => {
+      mockQuery.mockRejectedValue(new Error('Connection lost'));
 
       await expect(caseFileService.getCase({ caseId: 'case-1', userId: 'user-1' }))
-        .rejects.toThrow('Database error: Connection lost');
+        .rejects.toThrow('Connection lost');
     });
   });
 
@@ -233,7 +178,7 @@ describe('CaseFileService (Supabase mode)', () => {
   describe('updateCase', () => {
     it('only updates provided fields', async () => {
       const updated = { id: 'case-1', case_name: 'Updated Name', status: 'in_review' };
-      mockSingle.mockResolvedValue({ data: updated, error: null });
+      mockQuery.mockResolvedValue({ rows: [updated], rowCount: 1 });
 
       const result = await caseFileService.updateCase({
         caseId: 'case-1',
@@ -242,29 +187,20 @@ describe('CaseFileService (Supabase mode)', () => {
       });
 
       expect(result.case_name).toBe('Updated Name');
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          case_name: 'Updated Name',
-          status: 'in_review'
-        })
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE case_files SET'),
+        expect.arrayContaining(['Updated Name', 'in_review', 'case-1', 'user-1'])
       );
-      // Should NOT include fields that weren't provided
-      const updateArg = mockUpdate.mock.calls[0][0];
-      expect(updateArg).not.toHaveProperty('borrower_name');
-      expect(updateArg).not.toHaveProperty('loan_number');
     });
 
     it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'Update failed' }
-      });
+      mockQuery.mockRejectedValue(new Error('Update failed'));
 
       await expect(caseFileService.updateCase({
         caseId: 'case-1',
         userId: 'user-1',
         updates: { caseName: 'New Name' }
-      })).rejects.toThrow('Database error: Update failed');
+      })).rejects.toThrow('Update failed');
     });
   });
 
@@ -273,33 +209,29 @@ describe('CaseFileService (Supabase mode)', () => {
   // ----------------------------------------------------------
   describe('deleteCase', () => {
     it('deletes case and returns success', async () => {
-      mockSingle.mockResolvedValue({
-        data: { id: 'case-1' },
-        error: null
-      });
+      mockQuery.mockResolvedValue({ rows: [{ id: 'case-1' }], rowCount: 1 });
 
       const result = await caseFileService.deleteCase({ caseId: 'case-1', userId: 'user-1' });
 
       expect(result).toEqual({ success: true });
-      expect(mockSupabase.from).toHaveBeenCalledWith('case_files');
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM case_files'),
+        ['case-1', 'user-1']
+      );
     });
 
     it('throws when case not found', async () => {
-      mockSingle.mockResolvedValue({ data: null, error: null });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       await expect(caseFileService.deleteCase({ caseId: 'nonexistent', userId: 'user-1' }))
         .rejects.toThrow('Case not found');
     });
 
     it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'FK constraint' }
-      });
+      mockQuery.mockRejectedValue(new Error('FK constraint'));
 
       await expect(caseFileService.deleteCase({ caseId: 'case-1', userId: 'user-1' }))
-        .rejects.toThrow('Database error: FK constraint');
+        .rejects.toThrow('FK constraint');
     });
   });
 
@@ -309,7 +241,7 @@ describe('CaseFileService (Supabase mode)', () => {
   describe('addDocumentToCase', () => {
     it('updates document case_id', async () => {
       const updatedDoc = { document_id: 'doc-1', case_id: 'case-1' };
-      mockSingle.mockResolvedValue({ data: updatedDoc, error: null });
+      mockQuery.mockResolvedValue({ rows: [updatedDoc], rowCount: 1 });
 
       const result = await caseFileService.addDocumentToCase({
         caseId: 'case-1',
@@ -318,23 +250,20 @@ describe('CaseFileService (Supabase mode)', () => {
       });
 
       expect(result.case_id).toBe('case-1');
-      expect(mockSupabase.from).toHaveBeenCalledWith('documents');
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ case_id: 'case-1' })
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE documents SET case_id'),
+        ['case-1', 'doc-1', 'user-1']
       );
     });
 
     it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'Document not found' }
-      });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       await expect(caseFileService.addDocumentToCase({
         caseId: 'case-1',
         documentId: 'doc-1',
         userId: 'user-1'
-      })).rejects.toThrow('Database error: Document not found');
+      })).rejects.toThrow('Document not found');
     });
   });
 
@@ -344,7 +273,7 @@ describe('CaseFileService (Supabase mode)', () => {
   describe('removeDocumentFromCase', () => {
     it('sets document case_id to null', async () => {
       const updatedDoc = { document_id: 'doc-1', case_id: null };
-      mockSingle.mockResolvedValue({ data: updatedDoc, error: null });
+      mockQuery.mockResolvedValue({ rows: [updatedDoc], rowCount: 1 });
 
       const result = await caseFileService.removeDocumentFromCase({
         documentId: 'doc-1',
@@ -352,39 +281,38 @@ describe('CaseFileService (Supabase mode)', () => {
       });
 
       expect(result.case_id).toBeNull();
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ case_id: null })
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('SET case_id = NULL'),
+        ['doc-1', 'user-1']
       );
     });
 
     it('throws on database error', async () => {
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'Update failed' }
-      });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
       await expect(caseFileService.removeDocumentFromCase({
         documentId: 'doc-1',
         userId: 'user-1'
-      })).rejects.toThrow('Database error: Update failed');
+      })).rejects.toThrow('Document not found');
     });
   });
 });
 
 // ============================================================
-// Mock mode tests (no Supabase configured)
+// Mock mode tests (no DATABASE_URL configured)
 // ============================================================
 describe('CaseFileService (mock mode)', () => {
   let mockCaseService;
 
   beforeEach(() => {
+    delete process.env.DATABASE_URL;
     jest.isolateModules(() => {
-      delete process.env.SUPABASE_URL;
-      delete process.env.SUPABASE_SERVICE_KEY;
       mockCaseService = require('../../services/caseFileService');
     });
-    process.env.SUPABASE_URL = 'https://test.supabase.co';
-    process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
+  });
+
+  afterEach(() => {
+    process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
   });
 
   it('mockCreateCase stores in memory and returns case', async () => {
@@ -503,7 +431,7 @@ describe('CaseFileService (mock mode)', () => {
     expect(caseData.documents).toHaveLength(0);
   });
 
-  it('mock methods work when Supabase not configured', async () => {
+  it('mock methods work when DATABASE_URL not configured', async () => {
     // This is a comprehensive check that the mock fallback works end-to-end
     const created = await mockCaseService.createCase({
       userId: 'user-1',

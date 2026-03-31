@@ -1,4 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs').promises;
+const path = require('path');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('document');
 
@@ -28,16 +29,19 @@ function getEncryptionService() {
   }
 }
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+// Lazy-loaded db module — only initialized when DATABASE_URL is set
+let _db = null;
+function getDb() {
+  if (_db) return _db;
+  if (!process.env.DATABASE_URL) return null;
+  _db = require('../db');
+  logger.info('Database client initialized');
+  return _db;
+}
 
-let supabase = null;
-if (supabaseUrl && supabaseServiceKey) {
-  supabase = createClient(supabaseUrl, supabaseServiceKey);
-  logger.info('Supabase client initialized');
-} else {
-  logger.warn('Supabase not configured - document storage will use mock service');
+// Resolve the upload directory for local file storage
+function getUploadDir() {
+  return process.env.UPLOAD_DIR || './uploads';
 }
 
 class DocumentService {
@@ -77,16 +81,25 @@ class DocumentService {
   }
 
   /**
-   * Upload document to Supabase Storage and save metadata to database
+   * Resolve a local filesystem path for a document.
+   */
+  _localPath(userId, documentId) {
+    return path.join(getUploadDir(), userId, documentId);
+  }
+
+  /**
+   * Upload document to local filesystem and save metadata to database
    */
   async uploadDocument({ documentId, userId, fileName, documentType, content, analysisResults, metadata }) {
-    // Use mock storage if Supabase not configured
-    if (!supabase) {
+    // Use mock storage if database not configured
+    if (!process.env.DATABASE_URL) {
       return this.mockUploadDocument({ documentId, userId, fileName, documentType, content, analysisResults, metadata });
     }
 
     try {
-      // 1. Upload file content to Supabase Storage
+      const db = getDb();
+
+      // 1. Upload file content to local filesystem
       const storagePath = `documents/${userId}/${documentId}`;
       this.validateStoragePath(userId, storagePath);
       const fileBuffer = Buffer.from(content, 'base64');
@@ -103,38 +116,31 @@ class DocumentService {
         uploadBuffer = fileBuffer;
       }
 
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('documents')
-        .upload(storagePath, uploadBuffer, {
-          contentType: this.getContentType(fileName),
-          upsert: true
-        });
-
-      if (storageError) {
-        throw new Error(`Storage error: ${storageError.message}`);
-      }
+      const filePath = this._localPath(userId, documentId);
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, uploadBuffer);
 
       // 2. Save metadata to database
-      const { data: dbData, error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          document_id: documentId,
-          user_id: userId,
-          file_name: fileName,
-          document_type: documentType,
-          analysis_results: analysisResults || null,
-          metadata: metadata || {},
-          storage_path: storagePath,
+      const now = new Date().toISOString();
+      const result = await db.query(
+        `INSERT INTO documents (document_id, user_id, file_name, document_type, analysis_results, metadata, storage_path, encrypted, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING *`,
+        [
+          documentId,
+          userId,
+          fileName,
+          documentType,
+          analysisResults ? JSON.stringify(analysisResults) : null,
+          JSON.stringify(metadata || {}),
+          storagePath,
           encrypted,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+          now,
+          now
+        ]
+      );
 
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
+      const dbData = result.rows[0];
 
       return {
         documentId,
@@ -152,23 +158,18 @@ class DocumentService {
    * Get all documents for a user
    */
   async getDocumentsByUser({ userId, limit = 50, offset = 0 }) {
-    if (!supabase) {
+    if (!process.env.DATABASE_URL) {
       return this.mockGetDocumentsByUser({ userId, limit, offset });
     }
 
     try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+      const db = getDb();
+      const result = await db.query(
+        `SELECT * FROM documents WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
+      );
 
-      if (error) {
-        throw new Error(`Database error: ${error.message}`);
-      }
-
-      return data || [];
+      return result.rows || [];
 
     } catch (error) {
       logger.error('Get documents error', { error: error.message, userId });
@@ -180,22 +181,20 @@ class DocumentService {
    * Get a specific document
    */
   async getDocument({ documentId, userId }) {
-    if (!supabase) {
+    if (!process.env.DATABASE_URL) {
       return this.mockGetDocument({ documentId, userId });
     }
 
     try {
-      // Get metadata from database
-      const { data: metadata, error: dbError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', documentId)
-        .eq('user_id', userId)
-        .single();
+      const db = getDb();
 
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
+      // Get metadata from database
+      const result = await db.query(
+        `SELECT * FROM documents WHERE document_id = $1 AND user_id = $2`,
+        [documentId, userId]
+      );
+
+      const metadata = result.rows[0];
 
       if (!metadata) {
         return null;
@@ -204,20 +203,16 @@ class DocumentService {
       // Validate storage path before downloading
       this.validateStoragePath(userId, metadata.storage_path);
 
-      // Get file from storage
-      const { data: fileData, error: storageError } = await supabase.storage
-        .from('documents')
-        .download(metadata.storage_path);
-
-      if (storageError) {
-        logger.warn('Could not download file', { error: storageError.message, documentId });
+      // Get file from local filesystem
+      let buffer;
+      try {
+        const filePath = this._localPath(userId, documentId);
+        buffer = await fs.readFile(filePath);
+      } catch (readErr) {
+        logger.warn('Could not download file', { error: readErr.message, documentId });
         // Return metadata even if file download fails
         return metadata;
       }
-
-      // Convert downloaded data to buffer
-      const arrayBuffer = await fileData.arrayBuffer();
-      let buffer = Buffer.from(arrayBuffer);
 
       // Decrypt if the document was stored encrypted
       if (metadata.encrypted) {
@@ -248,18 +243,20 @@ class DocumentService {
    * Delete a document
    */
   async deleteDocument({ documentId, userId }) {
-    if (!supabase) {
+    if (!process.env.DATABASE_URL) {
       return this.mockDeleteDocument({ documentId, userId });
     }
 
     try {
+      const db = getDb();
+
       // Get document metadata first
-      const { data: doc } = await supabase
-        .from('documents')
-        .select('storage_path')
-        .eq('document_id', documentId)
-        .eq('user_id', userId)
-        .single();
+      const result = await db.query(
+        `SELECT storage_path FROM documents WHERE document_id = $1 AND user_id = $2`,
+        [documentId, userId]
+      );
+
+      const doc = result.rows[0];
 
       if (!doc) {
         throw new Error('Document not found');
@@ -268,25 +265,19 @@ class DocumentService {
       // Validate storage path before deleting
       this.validateStoragePath(userId, doc.storage_path);
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([doc.storage_path]);
-
-      if (storageError) {
-        logger.warn('Storage deletion error', { error: storageError.message, documentId });
+      // Delete from local filesystem
+      try {
+        const filePath = this._localPath(userId, documentId);
+        await fs.unlink(filePath);
+      } catch (unlinkErr) {
+        logger.warn('Storage deletion error', { error: unlinkErr.message, documentId });
       }
 
       // Delete from database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('document_id', documentId)
-        .eq('user_id', userId);
-
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
+      await db.query(
+        `DELETE FROM documents WHERE document_id = $1 AND user_id = $2`,
+        [documentId, userId]
+      );
 
       return { success: true };
 
