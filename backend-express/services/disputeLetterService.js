@@ -267,10 +267,14 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
   _extractViolations(report) {
     const violations = [];
 
+    // Support both consolidated report and raw aggregated data
+    const complianceData = report.complianceFindings || report.complianceReport || {};
+    const federalViolations = complianceData.federalViolations || complianceData.violations || [];
+    const stateViolations = complianceData.stateViolations || [];
+
     // Federal violations
-    const complianceReport = report.complianceReport || {};
-    if (Array.isArray(complianceReport.violations)) {
-      for (const v of complianceReport.violations) {
+    if (Array.isArray(federalViolations)) {
+      for (const v of federalViolations) {
         violations.push({
           type: 'federal',
           statuteName: v.statuteName || 'Unknown Statute',
@@ -283,8 +287,8 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
     }
 
     // State violations
-    if (Array.isArray(complianceReport.stateViolations)) {
-      for (const v of complianceReport.stateViolations) {
+    if (Array.isArray(stateViolations)) {
+      for (const v of stateViolations) {
         violations.push({
           type: 'state',
           jurisdiction: v.jurisdiction || '',
@@ -308,8 +312,12 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
   _extractFindings(report) {
     const findings = [];
 
+    // Support both consolidated report and raw aggregated data
+    const documentAnalyses = report.documentAnalysis || report.documentAnalyses || [];
+    const forensicData = report.forensicFindings || report.forensicReport || {};
+    const discrepancies = forensicData.discrepancies || [];
+
     // Document anomalies
-    const documentAnalyses = report.documentAnalyses || [];
     for (const doc of documentAnalyses) {
       if (Array.isArray(doc.anomalies)) {
         for (const a of doc.anomalies) {
@@ -325,9 +333,8 @@ Respond ONLY with valid JSON. No explanation outside the JSON.`;
     }
 
     // Forensic discrepancies
-    const forensicReport = report.forensicReport || {};
-    if (Array.isArray(forensicReport.discrepancies)) {
-      for (const d of forensicReport.discrepancies) {
+    if (Array.isArray(discrepancies)) {
+      for (const d of discrepancies) {
         findings.push({
           type: 'discrepancy',
           severity: d.severity || 'medium',
