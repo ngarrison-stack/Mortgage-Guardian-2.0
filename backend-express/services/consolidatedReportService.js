@@ -366,6 +366,33 @@ class ConsolidatedReportService {
       disputeLetter
     };
 
+    // Defensive consistency check: log if summary counts diverge from detail sections
+    const detailFederalCount = complianceFindings.federalViolations.length;
+    const detailStateCount = complianceFindings.stateViolations.length;
+    const detailDiscrepancyCount = forensicFindings.discrepancies.length;
+    const detailTimelineCount = forensicFindings.timelineViolations.length;
+    const detailAnomalyCount = report.documentAnalysis.reduce(
+      (sum, da) => sum + (da.anomalies ? da.anomalies.length : 0), 0
+    );
+
+    if (findingSummary.byCategory.federalViolations !== detailFederalCount ||
+        findingSummary.byCategory.stateViolations !== detailStateCount ||
+        findingSummary.byCategory.crossDocDiscrepancies !== detailDiscrepancyCount ||
+        findingSummary.byCategory.timelineViolations !== detailTimelineCount ||
+        findingSummary.byCategory.documentAnomalies !== detailAnomalyCount) {
+      logger.warn('Finding summary counts diverge from detail sections', {
+        caseId,
+        summary: findingSummary.byCategory,
+        detail: {
+          federalViolations: detailFederalCount,
+          stateViolations: detailStateCount,
+          crossDocDiscrepancies: detailDiscrepancyCount,
+          timelineViolations: detailTimelineCount,
+          documentAnomalies: detailAnomalyCount
+        }
+      });
+    }
+
     stepMeta.assemble = {
       status: 'completed',
       duration: Date.now() - assembleStart
