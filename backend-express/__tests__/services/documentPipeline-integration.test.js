@@ -22,9 +22,11 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Mock pdf-parse (used by ocrService)
+// Text must be >=200 chars to pass the MEANINGFUL_TEXT_THRESHOLD in ocrService,
+// otherwise it falls back to Claude Vision (Phase 20 accuracy improvement).
 jest.mock('pdf-parse', () => {
   return jest.fn().mockResolvedValue({
-    text: 'Extracted PDF text for mortgage statement dated 2024-01-15. Loan #12345. Payment due: $1,500.00.',
+    text: 'Mortgage Statement for Loan #12345 dated 2024-01-15. Borrower: John Doe. Property: 123 Main St, Springfield, IL 62701. Monthly payment due: $1,500.00. Principal balance: $245,000.00. Escrow balance: $3,200.00. Interest rate: 4.25%. Next payment due: 2024-02-15.',
     numpages: 2,
     info: { Title: 'Mortgage Statement' }
   });

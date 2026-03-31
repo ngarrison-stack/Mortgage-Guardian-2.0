@@ -40,6 +40,12 @@ const complianceRoutes = require('./routes/compliance');
 const reportRoutes = require('./routes/reports');
 const healthRoutes = require('./routes/health');
 
+// API documentation
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const path = require('path');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -98,6 +104,19 @@ app.use('/v1/', requireAuth);
 // ============================================
 // ROUTES
 // ============================================
+
+// API Documentation (no auth, no rate limit)
+try {
+  const openapiPath = path.join(__dirname, 'docs', 'openapi.yaml');
+  const openapiDoc = yaml.load(fs.readFileSync(openapiPath, 'utf8'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+    customSiteTitle: 'Mortgage Guardian API',
+    customCss: '.swagger-ui .topbar { display: none }'
+  }));
+  logger.info('API documentation available at /api-docs');
+} catch (err) {
+  logger.warn('Failed to load OpenAPI spec — /api-docs will not be available', { error: err.message });
+}
 
 // Health check (no rate limit)
 app.use('/', healthRoutes);

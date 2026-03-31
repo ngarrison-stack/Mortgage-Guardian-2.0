@@ -452,3 +452,186 @@ describe('generateDisputeLetter — content defaults', () => {
     expect(result.recipientInfo.servicerName).toBe('Test Servicer');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Dual-format extraction — Phase 21-02 regression tests
+//
+// _extractViolations and _extractFindings must support both:
+//   1. Consolidated report format (complianceFindings, documentAnalysis, forensicFindings)
+//   2. Raw aggregated format (complianceReport, documentAnalyses, forensicReport)
+// ---------------------------------------------------------------------------
+
+describe('_extractViolations — dual format support', () => {
+  test('reads violations from consolidated report format (complianceFindings)', () => {
+    const report = {
+      complianceFindings: {
+        federalViolations: [
+          { statuteName: 'RESPA', citation: '12 USC 2605(e)', severity: 'critical', description: 'QWR failure' }
+        ],
+        stateViolations: [
+          { jurisdiction: 'CA', statuteName: 'CA HBOR', citation: 'Cal. Civ. Code §2924.18', severity: 'high', description: 'Dual tracking' }
+        ]
+      }
+    };
+
+    const violations = disputeLetterService._extractViolations(report);
+
+    expect(violations).toHaveLength(2);
+    expect(violations[0].type).toBe('federal');
+    expect(violations[0].citation).toBe('12 USC 2605(e)');
+    expect(violations[1].type).toBe('state');
+    expect(violations[1].jurisdiction).toBe('CA');
+  });
+
+  test('reads violations from raw aggregated format (complianceReport)', () => {
+    const report = {
+      complianceReport: {
+        violations: [
+          { statuteName: 'TILA', citation: '15 USC 1601', severity: 'high', description: 'Disclosure failure' }
+        ],
+        stateViolations: [
+          { jurisdiction: 'IL', statuteName: 'IL Interest Act', citation: '815 ILCS 205/4', severity: 'medium', description: 'Interest overcharge' }
+        ]
+      }
+    };
+
+    const violations = disputeLetterService._extractViolations(report);
+
+    expect(violations).toHaveLength(2);
+    expect(violations[0].type).toBe('federal');
+    expect(violations[0].statuteName).toBe('TILA');
+    expect(violations[1].type).toBe('state');
+    expect(violations[1].jurisdiction).toBe('IL');
+  });
+});
+
+describe('_extractFindings — dual format support', () => {
+  test('reads findings from consolidated report format (documentAnalysis singular, forensicFindings)', () => {
+    const report = {
+      documentAnalysis: [
+        {
+          documentName: 'statement.pdf',
+          anomalies: [
+            { field: 'escrowBalance', severity: 'high', description: 'Escrow shortage' }
+          ]
+        }
+      ],
+      forensicFindings: {
+        discrepancies: [
+          { severity: 'critical', description: 'Amount mismatch between documents' }
+        ]
+      }
+    };
+
+    const findings = disputeLetterService._extractFindings(report);
+
+    expect(findings).toHaveLength(2);
+    const anomaly = findings.find(f => f.type === 'anomaly');
+    expect(anomaly).toBeDefined();
+    expect(anomaly.source).toBe('statement.pdf');
+    expect(anomaly.field).toBe('escrowBalance');
+
+    const discrepancy = findings.find(f => f.type === 'discrepancy');
+    expect(discrepancy).toBeDefined();
+    expect(discrepancy.description).toBe('Amount mismatch between documents');
+  });
+
+  test('reads findings from raw aggregated format (documentAnalyses plural, forensicReport)', () => {
+    const report = {
+      documentAnalyses: [
+        {
+          documentName: 'disclosure.pdf',
+          anomalies: [
+            { field: 'loanAmount', severity: 'critical', description: 'Loan amount discrepancy' }
+          ]
+        }
+      ],
+      forensicReport: {
+        discrepancies: [
+          { severity: 'high', type: 'date_inconsistency' }
+        ]
+      }
+    };
+
+    const findings = disputeLetterService._extractFindings(report);
+
+    expect(findings).toHaveLength(2);
+    const anomaly = findings.find(f => f.type === 'anomaly');
+    expect(anomaly).toBeDefined();
+    expect(anomaly.source).toBe('disclosure.pdf');
+
+    const discrepancy = findings.find(f => f.type === 'discrepancy');
+    expect(discrepancy).toBeDefined();
+    expect(discrepancy.description).toBe('date_inconsistency');
+  });
+});
+
+describe('Full letter generation from stored consolidated report', () => {
+  test('generates letter from stored report with complianceFindings/documentAnalysis/forensicFindings', async () => {
+    const mockResponse = makeMockLetterResponse();
+    mockCreate.mockResolvedValueOnce({
+      content: [{ text: JSON.stringify(mockResponse) }],
+      usage: { input_tokens: 600, output_tokens: 900 }
+    });
+
+    // Stored consolidated report uses the consolidated format (not raw)
+    const storedReport = {
+      caseSummary: {
+        borrowerName: 'Alice Johnson',
+        loanNumber: 'LN-99999',
+        propertyAddress: '789 Oak Ave',
+        servicerName: 'National Mortgage Corp',
+        servicerAddress: '100 Corp Way'
+      },
+      documentAnalysis: [
+        {
+          documentId: 'doc-001',
+          documentName: 'statement.pdf',
+          anomalies: [
+            { id: 'anom-001', field: 'escrowBalance', severity: 'high', description: 'Escrow shortage' }
+          ]
+        }
+      ],
+      forensicFindings: {
+        discrepancies: [
+          { id: 'disc-001', severity: 'critical', description: 'Payment amount differs' }
+        ]
+      },
+      complianceFindings: {
+        federalViolations: [
+          {
+            id: 'viol-001',
+            statuteName: 'RESPA',
+            citation: '12 USC 2605(e)',
+            severity: 'critical',
+            description: 'QWR response failure',
+            legalBasis: 'RESPA Section 6(e)'
+          }
+        ],
+        stateViolations: []
+      }
+    };
+
+    const result = await disputeLetterService.generateDisputeLetter(
+      'qualified_written_request',
+      storedReport
+    );
+
+    // Verify letter generated without error
+    expect(result.error).toBeUndefined();
+    expect(result.letterType).toBe('qualified_written_request');
+    expect(result.content).toBeDefined();
+    expect(result.content.subject).toBeDefined();
+    expect(result.content.body).toBeDefined();
+    expect(result.content.demands).toBeInstanceOf(Array);
+
+    // Verify the prompt included violation and finding details
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain('RESPA');
+    expect(prompt).toContain('12 USC 2605(e)');
+    expect(prompt).toContain('QWR response failure');
+    expect(prompt).toContain('Escrow shortage');
+    expect(prompt).toContain('Payment amount differs');
+  });
+});

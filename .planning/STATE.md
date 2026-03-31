@@ -51,8 +51,7 @@ None.
 
 ### Pending Todos
 
-6 todos in `.planning/todos/pending/`:
-- Generate OpenAPI spec from existing routes (docs)
+5 todos in `.planning/todos/pending/`:
 - Build web dashboard frontend (ui)
 - Close branch coverage gap to 90% (testing)
 - Complete iOS app TODOs (general)

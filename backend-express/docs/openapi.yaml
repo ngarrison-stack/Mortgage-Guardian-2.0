@@ -1,0 +1,1542 @@
+openapi: 3.0.3
+info:
+  title: Mortgage Guardian API
+  version: 2.0.0
+  description: |
+    Mortgage Guardian 2.0 — AI-powered mortgage servicing audit platform.
+
+    Analyzes mortgage documents using Claude AI to detect servicing errors,
+    cross-references with bank data via Plaid, evaluates federal and state
+    lending law compliance, and generates RESPA-compliant dispute letters.
+
+    ## Authentication
+    All `/v1/` endpoints require a JWT Bearer token from Supabase Auth.
+    The only exception is the Plaid webhook endpoint which uses HMAC-SHA256 signature verification.
+
+    ## Rate Limiting
+    All `/v1/` endpoints are rate-limited to 100 requests per 15-minute window per IP (configurable).
+  contact:
+    name: Mortgage Guardian
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://api.mortgageguardian.app
+    description: Production
+
+tags:
+  - name: Health
+    description: Health check and service status
+  - name: Claude AI
+    description: AI-powered document analysis using Claude
+  - name: Plaid
+    description: Bank account integration via Plaid
+  - name: Documents
+    description: Document upload, storage, and processing pipeline
+  - name: Cases
+    description: Case file management and document association
+  - name: Forensic Analysis
+    description: Cross-document forensic analysis
+  - name: Compliance
+    description: Federal and state lending law compliance evaluation
+  - name: Reports
+    description: Consolidated audit reports and RESPA dispute letters
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ===========================================================================
+  # Health
+  # ===========================================================================
+  /:
+    get:
+      tags: [Health]
+      summary: Root endpoint
+      description: Returns API name, version, and available endpoints.
+      security: []
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Mortgage Guardian API
+                  version:
+                    type: string
+                    example: '2.0'
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service status including Anthropic, Plaid, and Supabase connectivity.
+      security: []
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded]
+                  services:
+                    type: object
+                    properties:
+                      anthropic:
+                        type: string
+                        enum: [configured, not_configured]
+                      plaid:
+                        type: string
+                        enum: [configured, not_configured]
+                      supabase:
+                        type: string
+                        enum: [configured, not_configured]
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ===========================================================================
+  # Claude AI
+  # ===========================================================================
+  /v1/ai/claude/analyze:
+    post:
+      tags: [Claude AI]
+      summary: Analyze document with Claude AI
+      description: |
+        Submit mortgage document text or a custom prompt for AI analysis.
+        At least one of `prompt` or `documentText` must be provided.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '200':
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ServiceError'
+
+  /v1/ai/claude/test:
+    post:
+      tags: [Claude AI]
+      summary: Test Claude API connection
+      description: Verify that the Anthropic API key is configured and working.
+      responses:
+        '200':
+          description: Connection successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Plaid
+  # ===========================================================================
+  /v1/plaid/link_token:
+    post:
+      tags: [Plaid]
+      summary: Create Plaid Link token
+      description: Create a Link token to initialize the Plaid Link flow for bank account connection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTokenRequest'
+      responses:
+        '200':
+          description: Link token created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link_token:
+                    type: string
+                  expiration:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/exchange_token:
+    post:
+      tags: [Plaid]
+      summary: Exchange public token for access token
+      description: Exchange a Plaid public token (from Link) for a persistent access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeTokenRequest'
+      responses:
+        '200':
+          description: Token exchanged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  access_token:
+                    type: string
+                  item_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/accounts:
+    post:
+      tags: [Plaid]
+      summary: Get account information
+      description: Retrieve account balances and details for a connected bank.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountsRequest'
+      responses:
+        '200':
+          description: Account information
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/transactions:
+    post:
+      tags: [Plaid]
+      summary: Get transaction history
+      description: Retrieve transactions with date range filtering and pagination.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionsRequest'
+      responses:
+        '200':
+          description: Transaction list
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/item:
+    post:
+      tags: [Plaid]
+      summary: Get item metadata
+      description: Retrieve metadata about a bank connection (item).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemRequest'
+      responses:
+        '200':
+          description: Item information
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Plaid]
+      summary: Remove bank connection
+      description: Revoke access and delete a bank connection item.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemRequest'
+      responses:
+        '200':
+          description: Item removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/item/webhook:
+    post:
+      tags: [Plaid]
+      summary: Update webhook URL
+      description: Update the webhook URL for a Plaid item.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/plaid/webhook:
+    post:
+      tags: [Plaid]
+      summary: Plaid webhook receiver
+      description: |
+        Receives webhook notifications from Plaid. No JWT auth required —
+        verified via HMAC-SHA256 signature in the `Plaid-Verification` header.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                webhook_type:
+                  type: string
+                  enum: [TRANSACTIONS, ITEM, AUTH]
+                webhook_code:
+                  type: string
+                item_id:
+                  type: string
+      responses:
+        '200':
+          description: Webhook processed
+        '401':
+          description: Invalid webhook signature
+
+  /v1/plaid/sandbox_public_token:
+    post:
+      tags: [Plaid]
+      summary: Create sandbox token (non-production only)
+      description: Create a sandbox public token for testing. Blocked in production environment.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxTokenRequest'
+      responses:
+        '200':
+          description: Sandbox token created
+        '403':
+          description: Blocked in production
+
+  /v1/plaid/test:
+    post:
+      tags: [Plaid]
+      summary: Test Plaid connection
+      description: Verify that Plaid API credentials are configured and working.
+      responses:
+        '200':
+          description: Connection successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Documents
+  # ===========================================================================
+  /v1/documents:
+    get:
+      tags: [Documents]
+      summary: List documents
+      description: List the authenticated user's documents with pagination.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DocumentSummary'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/upload:
+    post:
+      tags: [Documents]
+      summary: Upload a document
+      description: Upload a base64-encoded mortgage document for storage and processing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadDocumentRequest'
+      responses:
+        '201':
+          description: Document uploaded
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/process:
+    post:
+      tags: [Documents]
+      summary: Process document through pipeline
+      description: |
+        Trigger the full processing pipeline: OCR → classify → analyze → review.
+        Provide either `documentText` (pre-extracted) or `fileBuffer` (base64-encoded file for server-side OCR).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentRequest'
+      responses:
+        '200':
+          description: Pipeline processing result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/pipeline:
+    get:
+      tags: [Documents]
+      summary: List pipeline documents
+      description: List documents in the processing pipeline, optionally filtered by status.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [uploaded, ocr, classifying, analyzing, analyzed, review, complete, failed]
+      responses:
+        '200':
+          description: Pipeline document list
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/{documentId}:
+    get:
+      tags: [Documents]
+      summary: Get document details
+      description: Retrieve a specific document's metadata and content.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Document details
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Document not found
+    delete:
+      tags: [Documents]
+      summary: Delete a document
+      description: Delete a document from storage.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Document deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Document not found
+
+  /v1/documents/{documentId}/status:
+    get:
+      tags: [Documents]
+      summary: Get pipeline status
+      description: Check a document's current pipeline processing status.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Pipeline status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [uploaded, ocr, classifying, analyzing, analyzed, review, complete, failed]
+                  steps:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/{documentId}/analysis:
+    get:
+      tags: [Documents]
+      summary: Get analysis report
+      description: Retrieve the structured analysis report for a processed document.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Analysis report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentAnalysis'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Document or analysis not found
+
+  /v1/documents/{documentId}/retry:
+    post:
+      tags: [Documents]
+      summary: Retry failed pipeline
+      description: Retry a failed document's pipeline from the last successful step.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                documentText:
+                  type: string
+                fileBuffer:
+                  type: string
+                  description: Base64-encoded file content
+      responses:
+        '200':
+          description: Retry result
+        '400':
+          description: Document not in failed state
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/documents/{documentId}/complete:
+    post:
+      tags: [Documents]
+      summary: Mark document complete
+      description: Mark a document as complete after user review.
+      parameters:
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Document marked complete
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Cases
+  # ===========================================================================
+  /v1/cases:
+    post:
+      tags: [Cases]
+      summary: Create a case
+      description: Create a new case file for organizing mortgage documents and analyses.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+      responses:
+        '201':
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      tags: [Cases]
+      summary: List cases
+      description: List the authenticated user's cases with optional status filter and pagination.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_review, complete, archived]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Case list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Case'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/cases/{caseId}:
+    get:
+      tags: [Cases]
+      summary: Get case details
+      description: Retrieve a single case with its associated documents.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      responses:
+        '200':
+          description: Case details with documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Case not found
+    put:
+      tags: [Cases]
+      summary: Update a case
+      description: Update case fields. At least one field must be provided.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCaseRequest'
+      responses:
+        '200':
+          description: Case updated
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Case not found
+    delete:
+      tags: [Cases]
+      summary: Delete a case
+      description: Delete a case and disassociate its documents.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      responses:
+        '200':
+          description: Case deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Case not found
+
+  /v1/cases/{caseId}/documents:
+    post:
+      tags: [Cases]
+      summary: Add document to case
+      description: Associate an uploaded document with a case.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentId]
+              properties:
+                documentId:
+                  type: string
+      responses:
+        '200':
+          description: Document added to case
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Case or document not found
+
+  /v1/cases/{caseId}/documents/{documentId}:
+    delete:
+      tags: [Cases]
+      summary: Remove document from case
+      description: Disassociate a document from a case (does not delete the document).
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+        - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Document removed from case
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Forensic Analysis
+  # ===========================================================================
+  /v1/cases/{caseId}/forensic-analysis:
+    post:
+      tags: [Forensic Analysis]
+      summary: Run forensic analysis
+      description: |
+        Trigger cross-document forensic analysis for a case. Compares documents
+        against each other to find discrepancies, timeline violations, and
+        optionally cross-references with Plaid bank transaction data.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForensicAnalysisRequest'
+      responses:
+        '200':
+          description: Forensic analysis results
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Case not found
+        '422':
+          $ref: '#/components/responses/ServiceError'
+    get:
+      tags: [Forensic Analysis]
+      summary: Get forensic analysis
+      description: Retrieve the stored forensic analysis report for a case.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      responses:
+        '200':
+          description: Forensic analysis report
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No forensic analysis found
+
+  # ===========================================================================
+  # Compliance
+  # ===========================================================================
+  /v1/compliance/statutes:
+    get:
+      tags: [Compliance]
+      summary: List federal statutes
+      description: List all federal lending statutes in the compliance taxonomy.
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by regulatory body category
+      responses:
+        '200':
+          description: Federal statute list
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/compliance/statutes/{statuteId}:
+    get:
+      tags: [Compliance]
+      summary: Get federal statute details
+      description: Retrieve detailed information about a specific federal statute including sections, requirements, and penalties.
+      parameters:
+        - name: statuteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statute details
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Statute not found
+
+  /v1/compliance/states:
+    get:
+      tags: [Compliance]
+      summary: List supported states
+      description: List all states with available lending law statutes and their statute counts.
+      responses:
+        '200':
+          description: Supported states list
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/compliance/states/{stateCode}/statutes:
+    get:
+      tags: [Compliance]
+      summary: List state statutes
+      description: List lending law statutes for a specific state.
+      parameters:
+        - $ref: '#/components/parameters/stateCode'
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: State statute list
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/compliance/states/{stateCode}/statutes/{statuteId}:
+    get:
+      tags: [Compliance]
+      summary: Get state statute details
+      description: Retrieve detailed information about a specific state statute.
+      parameters:
+        - $ref: '#/components/parameters/stateCode'
+        - name: statuteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: State statute details
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Statute not found
+
+  /v1/cases/{caseId}/compliance:
+    post:
+      tags: [Compliance]
+      summary: Run compliance evaluation
+      description: |
+        Evaluate a case against federal and state lending laws. Analyzes
+        document findings for statutory violations with optional AI-powered
+        analysis and Plaid transaction cross-reference.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateComplianceRequest'
+      responses:
+        '200':
+          description: Compliance evaluation results
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ServiceError'
+    get:
+      tags: [Compliance]
+      summary: Get compliance report
+      description: Retrieve the stored compliance report for a case.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      responses:
+        '200':
+          description: Compliance report
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No compliance report found
+
+  # ===========================================================================
+  # Reports & Dispute Letters
+  # ===========================================================================
+  /v1/cases/{caseId}/report:
+    post:
+      tags: [Reports]
+      summary: Generate consolidated report
+      description: |
+        Generate a consolidated audit report aggregating all analyses for a case:
+        document analysis, forensic findings, compliance violations, confidence scoring,
+        evidence links, and recommendations. Optionally generates a RESPA dispute letter.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportRequest'
+      responses:
+        '200':
+          description: Consolidated report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidatedReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ServiceError'
+    get:
+      tags: [Reports]
+      summary: Get consolidated report
+      description: Retrieve the latest consolidated report for a case.
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      responses:
+        '200':
+          description: Consolidated report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidatedReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No report found
+
+  /v1/cases/{caseId}/report/letter:
+    post:
+      tags: [Reports]
+      summary: Generate dispute letter
+      description: |
+        Generate a RESPA-compliant dispute letter from the case's consolidated report.
+        Supports three letter types: Qualified Written Request (QWR),
+        Notice of Error, and Request for Information (RFI).
+      parameters:
+        - $ref: '#/components/parameters/caseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateLetterRequest'
+      responses:
+        '200':
+          description: Generated dispute letter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeLetter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ServiceError'
+
+# =============================================================================
+# Components
+# =============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase Auth JWT token
+
+  parameters:
+    caseId:
+      name: caseId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Case identifier
+    documentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Document identifier
+    stateCode:
+      name: stateCode
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 2
+        pattern: '^[A-Z]{2}$'
+      description: Two-letter US state code (e.g., CA, IL, TX)
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Validation Error
+              message:
+                type: string
+                example: '"documentId" is required'
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized
+              message:
+                type: string
+                example: No authorization token provided
+    ServiceError:
+      description: Service processing error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+  schemas:
+    # --- Claude AI ---
+    AnalyzeRequest:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: Custom analysis prompt
+        documentText:
+          type: string
+          description: Document text to analyze
+        model:
+          type: string
+          default: claude-3-5-sonnet-20241022
+        maxTokens:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 4096
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.1
+        documentType:
+          type: string
+      description: At least one of `prompt` or `documentText` is required.
+
+    AnalyzeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        analysis:
+          type: string
+        model:
+          type: string
+        usage:
+          type: object
+          properties:
+            input_tokens:
+              type: integer
+            output_tokens:
+              type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    # --- Plaid ---
+    LinkTokenRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+          maxLength: 255
+        client_name:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        access_token:
+          type: string
+          description: For update mode
+        products:
+          type: array
+          items:
+            type: string
+
+    ExchangeTokenRequest:
+      type: object
+      required: [public_token]
+      properties:
+        public_token:
+          type: string
+          pattern: '^public-'
+        user_id:
+          type: string
+        institution_id:
+          type: string
+
+    AccountsRequest:
+      type: object
+      required: [access_token]
+      properties:
+        access_token:
+          type: string
+          pattern: '^access[-_]'
+        account_ids:
+          type: array
+          items:
+            type: string
+
+    TransactionsRequest:
+      type: object
+      required: [access_token, start_date, end_date]
+      properties:
+        access_token:
+          type: string
+          pattern: '^access[-_]'
+        start_date:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-01-01'
+        end_date:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-31'
+        account_ids:
+          type: array
+          items:
+            type: string
+        count:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+
+    ItemRequest:
+      type: object
+      required: [access_token]
+      properties:
+        access_token:
+          type: string
+          pattern: '^access[-_]'
+
+    UpdateWebhookRequest:
+      type: object
+      required: [access_token, webhook]
+      properties:
+        access_token:
+          type: string
+          pattern: '^access[-_]'
+        webhook:
+          type: string
+          format: uri
+
+    SandboxTokenRequest:
+      type: object
+      properties:
+        institution_id:
+          type: string
+        initial_products:
+          type: array
+          items:
+            type: string
+
+    # --- Documents ---
+    UploadDocumentRequest:
+      type: object
+      required: [documentId, fileName, content]
+      properties:
+        documentId:
+          type: string
+        fileName:
+          type: string
+          maxLength: 255
+          pattern: '^[a-zA-Z0-9._\s()-]+$'
+        content:
+          type: string
+          description: Base64-encoded file content (max 28MB)
+          maxLength: 28000000
+        documentType:
+          type: string
+          enum: [mortgage_statement, bank_statement, tax_document, correspondence, legal_document, unknown]
+          default: unknown
+        analysisResults:
+          type: object
+        metadata:
+          type: object
+
+    ProcessDocumentRequest:
+      type: object
+      required: [documentId]
+      properties:
+        documentId:
+          type: string
+        documentText:
+          type: string
+          description: Pre-extracted document text
+        fileBuffer:
+          type: string
+          description: Base64-encoded file for server-side OCR
+        documentType:
+          type: string
+          enum: [origination, servicing, correspondence, legal, financial, regulatory, mortgage_statement, escrow_statement, payment_history, bank_statement, tax_document, legal_document, unknown]
+          default: unknown
+      description: At least one of `documentText` or `fileBuffer` is required.
+
+    DocumentSummary:
+      type: object
+      properties:
+        documentId:
+          type: string
+        fileName:
+          type: string
+        documentType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentAnalysis:
+      type: object
+      properties:
+        documentId:
+          type: string
+        status:
+          type: string
+        analysis:
+          type: object
+          description: Structured analysis findings
+
+    PipelineResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+          enum: [review, complete, failed]
+        documentId:
+          type: string
+        classificationResults:
+          type: object
+        analysisResults:
+          type: object
+        steps:
+          type: object
+
+    # --- Cases ---
+    CreateCaseRequest:
+      type: object
+      required: [caseName]
+      properties:
+        caseName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        borrowerName:
+          type: string
+          maxLength: 200
+        propertyAddress:
+          type: string
+          maxLength: 500
+        loanNumber:
+          type: string
+          maxLength: 100
+        servicerName:
+          type: string
+          maxLength: 200
+        notes:
+          type: string
+          maxLength: 5000
+
+    UpdateCaseRequest:
+      type: object
+      minProperties: 1
+      properties:
+        caseName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        borrowerName:
+          type: string
+          maxLength: 200
+        propertyAddress:
+          type: string
+          maxLength: 500
+        loanNumber:
+          type: string
+          maxLength: 100
+        servicerName:
+          type: string
+          maxLength: 200
+        status:
+          type: string
+          enum: [open, in_review, complete, archived]
+        notes:
+          type: string
+          maxLength: 5000
+
+    Case:
+      type: object
+      properties:
+        id:
+          type: string
+        caseName:
+          type: string
+        borrowerName:
+          type: string
+        propertyAddress:
+          type: string
+        loanNumber:
+          type: string
+        servicerName:
+          type: string
+        status:
+          type: string
+          enum: [open, in_review, complete, archived]
+        notes:
+          type: string
+        documents:
+          type: array
+          items:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    # --- Forensic Analysis ---
+    ForensicAnalysisRequest:
+      type: object
+      properties:
+        plaidAccessToken:
+          type: string
+          description: Plaid access token for bank transaction cross-reference
+        transactionStartDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        transactionEndDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        dateTolerance:
+          type: integer
+          minimum: 0
+          maximum: 30
+          description: Days of tolerance for date matching
+        amountTolerance:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Dollar amount tolerance for payment matching
+
+    # --- Compliance ---
+    EvaluateComplianceRequest:
+      type: object
+      properties:
+        skipAiAnalysis:
+          type: boolean
+          default: false
+        statuteFilter:
+          type: array
+          items:
+            type: string
+          description: Limit evaluation to specific federal statute IDs
+        plaidAccessToken:
+          type: string
+        state:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: '^[A-Z]{2}$'
+          description: Override property state for state law evaluation
+        skipStateAnalysis:
+          type: boolean
+          default: false
+        stateStatuteFilter:
+          type: array
+          items:
+            type: string
+          description: Limit state evaluation to specific statute IDs
+
+    # --- Reports ---
+    GenerateReportRequest:
+      type: object
+      properties:
+        generateLetter:
+          type: boolean
+          default: false
+          description: Also generate a RESPA dispute letter
+        letterType:
+          type: string
+          enum: [qualified_written_request, notice_of_error, request_for_information]
+          default: qualified_written_request
+        skipPersistence:
+          type: boolean
+          default: false
+
+    GenerateLetterRequest:
+      type: object
+      required: [letterType]
+      properties:
+        letterType:
+          type: string
+          enum: [qualified_written_request, notice_of_error, request_for_information]
+
+    ConsolidatedReport:
+      type: object
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+        userId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        reportVersion:
+          type: string
+        caseSummary:
+          type: object
+          properties:
+            borrowerName:
+              type: string
+            propertyAddress:
+              type: string
+            loanNumber:
+              type: string
+            servicerName:
+              type: string
+            documentCount:
+              type: integer
+            caseCreatedAt:
+              type: string
+              format: date-time
+        overallRiskLevel:
+          type: string
+          enum: [critical, high, medium, low, clean]
+        confidenceScore:
+          type: object
+          properties:
+            overall:
+              type: number
+              minimum: 0
+              maximum: 100
+            breakdown:
+              type: object
+              properties:
+                documentAnalysis:
+                  type: number
+                forensicAnalysis:
+                  type: number
+                  nullable: true
+                complianceAnalysis:
+                  type: number
+                  nullable: true
+        findingSummary:
+          type: object
+          properties:
+            totalFindings:
+              type: integer
+            bySeverity:
+              type: object
+            byCategory:
+              type: object
+        documentAnalysis:
+          type: array
+          items:
+            type: object
+        forensicFindings:
+          type: object
+        complianceFindings:
+          type: object
+        evidenceLinks:
+          type: array
+          items:
+            type: object
+        recommendations:
+          type: array
+          items:
+            type: object
+        disputeLetterAvailable:
+          type: boolean
+        disputeLetter:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/DisputeLetter'
+
+    DisputeLetter:
+      type: object
+      properties:
+        letterType:
+          type: string
+          enum: [qualified_written_request, notice_of_error, request_for_information]
+        generatedAt:
+          type: string
+          format: date-time
+        content:
+          type: object
+          properties:
+            subject:
+              type: string
+            salutation:
+              type: string
+            body:
+              type: string
+            demands:
+              type: array
+              items:
+                type: string
+            legalCitations:
+              type: array
+              items:
+                type: string
+            responseDeadline:
+              type: string
+            closingStatement:
+              type: string
+        recipientInfo:
+          type: object
+          properties:
+            servicerName:
+              type: string
+            servicerAddress:
+              type: string

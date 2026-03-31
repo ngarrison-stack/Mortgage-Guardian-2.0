@@ -8,7 +8,7 @@ Mortgage Guardian 2.0 roadmap tracking milestones from MVP hardening through for
 
 - ✅ [v2.0 Production Hardening](milestones/v2.0-ROADMAP.md) (Phases 1-9, 32 plans) — SHIPPED 2026-02-26
 - ✅ [v3.0 Forensic Analysis Engine](milestones/v3.0-ROADMAP.md) (Phases 10-17, 42 plans) — SHIPPED 2026-03-15
-- 🚧 **v4.0 Bug Fix & Stability Sprint** — Phases 18-21 (in progress)
+- ✅ [v4.0 Bug Fix & Stability Sprint](milestones/v4.0-ROADMAP.md) (Phases 18-21, 20 plans) — SHIPPED 2026-03-30
 
 ## Completed Milestones
 
@@ -53,7 +53,21 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 
 </details>
 
-### 🚧 v4.0 Bug Fix & Stability Sprint (In Progress)
+<details>
+<summary>v4.0 Bug Fix & Stability Sprint (Phases 18-21) — SHIPPED 2026-03-30</summary>
+
+Comprehensive bug fixing across backend, frontend, and analysis pipeline to improve reliability, accuracy, and usability. Bug fixes only — no new features.
+
+- [x] **Phase 18: Backend API Stability** — 7/7 plans — 2026-03-18
+- [x] **Phase 19: Frontend UI & State Repairs** — 3/3 plans — 2026-03-18
+- [x] **Phase 20: Pipeline Accuracy** — 5/5 plans — 2026-03-18
+- [x] **Phase 21: Report Generation & Integration Fixes** — 5/5 plans — 2026-03-30
+
+**Key results:** 1,275 tests across 48 suites (zero failures), OCR accuracy gating, compliance rule precision, scoring calibration, report pipeline integrity, dual-format dispute letter support, stale test fix.
+
+</details>
+
+### v4.0 Bug Fix & Stability Sprint — SHIPPED 2026-03-30
 
 **Milestone Goal:** Comprehensive bug fixing across backend, frontend, and analysis pipeline to improve reliability, accuracy, and usability. Bug fixes only — no new features.
 
@@ -111,8 +125,8 @@ Plans:
 - [x] 21-01: Confidence Score Schema & Classification Pipeline (null layer fix + classificationConfidence wiring)
 - [x] 21-02: Dispute Letter Schema & Field Alignment (content/recipientInfo schema fix + dual-format field reads)
 - [x] 21-03: Report Assembly Finding Preservation (anomaly details in documentAnalysis + count consistency check)
-- [ ] 21-04: End-to-End Integrity Tests (report pipeline tests + letter-from-stored-report tests)
-- [ ] 21-05: Milestone Verification & Completion (full test suite + v4.0 milestone closure)
+- [x] 21-04: End-to-End Integrity Tests (report pipeline tests + letter-from-stored-report tests)
+- [x] 21-05: Milestone Verification & Completion (full test suite + v4.0 milestone closure)
 
 ## Progress
 
@@ -138,6 +152,6 @@ Plans:
 | 18. Backend API Stability | v4.0 | 7/7 | Complete | 2026-03-18 |
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
-| 21. Report Generation & Integration Fixes | v4.0 | 3/5 | In progress | - |
+| 21. Report Generation & Integration Fixes | v4.0 | 5/5 | Complete | 2026-03-30 |
 
-**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | v4.0 in progress
+**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE
