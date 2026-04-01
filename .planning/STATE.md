@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 22 of 31 (Database Migration Framework)
-Plan: 1 of 3 in current phase
-Status: Plan 22-01 complete — schema captured, public schema empty
-Last activity: 2026-04-01 - Completed 22-01-PLAN.md
+Plan: 2 of 3 in current phase
+Status: Plan 22-02 complete — baseline migration, rollback, archived old migrations
+Last activity: 2026-04-01 - Completed 22-02-PLAN.md
 
 Progress: █░░░░░░░░░░░░░░░░░░░ 10%
 
@@ -45,6 +45,7 @@ All v2.0 decisions documented in PROJECT.md Key Decisions table.
 All v3.0 decisions documented in prior STATE.md snapshots and phase summaries.
 All v4.0 decisions documented in phase summaries (Phases 18-21).
 v5.0 Phase 22-01: Public schema empty in remote Supabase — migration files (001-005) are authoritative schema source.
+v5.0 Phase 22-02: Baseline built from migration files + bootstrap tables (documents, users not in any migration). Reserved word "limit" quoted.
 
 ### Deferred Issues
 
@@ -72,5 +73,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Completed 22-01-PLAN.md — Supabase schema capture, public schema empty discovery
+Stopped at: Completed 22-02-PLAN.md — baseline migration, rollback, archived old migrations
 Resume file: None

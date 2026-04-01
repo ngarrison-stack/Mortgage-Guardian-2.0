@@ -81,7 +81,7 @@ Comprehensive bug fixing across backend, frontend, and analysis pipeline to impr
 
 Plans:
 - [x] 22-01: Supabase CLI Setup & Schema Capture (verify CLI setup, dump remote schema) — 2026-04-01
-- [ ] 22-02: Migration Organization & Rollback (baseline migration, rollback, archive old migrations)
+- [x] 22-02: Migration Organization & Rollback (baseline migration, rollback, archive old migrations) — 2026-04-01
 - [ ] 22-03: Completeness Verification (cross-reference code, verify clean reset)
 
 #### Phase 23: CI/CD Pipeline
@@ -267,7 +267,7 @@ Plans:
 | 19. Frontend UI & State Repairs | v4.0 | 3/3 | Complete | 2026-03-18 |
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
 | 21. Report Generation & Integration Fixes | v4.0 | 5/5 | Complete | 2026-03-30 |
-| 22. Database Migration Framework | v5.0 | 1/3 | In progress | - |
+| 22. Database Migration Framework | v5.0 | 2/3 | In progress | - |
 | 23. CI/CD Pipeline | v5.0 | 0/? | Not started | - |
 | 24. Test Coverage Hardening | v5.0 | 0/? | Not started | - |
 | 25. Environment & Secrets Management | v5.0 | 0/? | Not started | - |
