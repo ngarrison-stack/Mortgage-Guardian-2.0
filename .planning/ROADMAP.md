@@ -77,10 +77,12 @@ Comprehensive bug fixing across backend, frontend, and analysis pipeline to impr
 **Goal**: Codify Supabase schema into version-controlled migration scripts with up/down support
 **Depends on**: v4.0 milestone complete
 **Research**: Unlikely (Supabase patterns established in codebase)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 22-01: TBD (run /gsd:plan-phase 22 to break down)
+- [ ] 22-01: Supabase CLI Setup & Schema Capture (verify CLI setup, dump remote schema)
+- [ ] 22-02: Migration Organization & Rollback (baseline migration, rollback, archive old migrations)
+- [ ] 22-03: Completeness Verification (cross-reference code, verify clean reset)
 
 #### Phase 23: CI/CD Pipeline
 
