@@ -53,7 +53,9 @@ CREATE TABLE IF NOT EXISTS documents (
   analysis_results JSONB,
   metadata JSONB,
   storage_path TEXT,
+  encrypted BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
@@ -212,7 +214,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id);
 -- 10. pipeline_state — depends on case_files
 CREATE TABLE IF NOT EXISTS pipeline_state (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id text NOT NULL,
+  document_id text UNIQUE NOT NULL,
   user_id text NOT NULL,
   document_type text,
   file_name text,
@@ -550,6 +552,10 @@ $$;
 -- =============================================
 -- Triggers
 -- =============================================
+
+CREATE TRIGGER update_documents_updated_at
+  BEFORE UPDATE ON documents
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_plaid_items_updated_at
   BEFORE UPDATE ON plaid_items
