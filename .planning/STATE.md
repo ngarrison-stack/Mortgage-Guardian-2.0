@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v4.0 Bug Fix & Stability Sprint — COMPLETE
+**Current focus:** v5.0 Production Readiness — Phase 22: Database Migration Framework
 
 ## Current Position
 
-Phase: 21 of 21 (Report Generation & Integration Fixes)
-Plan: 5 of 5 in current phase
-Status: Phase complete — v4.0 milestone shipped
-Last activity: 2026-03-30 - Completed 21-05-PLAN.md
+Phase: 22 of 31 (Database Migration Framework)
+Plan: 1 of 3 in current phase
+Status: Plan 22-01 complete — schema captured, public schema empty
+Last activity: 2026-04-01 - Completed 22-01-PLAN.md
 
-Progress: ████████████████████ 100%
+Progress: █░░░░░░░░░░░░░░░░░░░ 10%
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: ████████████████████ 100%
 All v2.0 decisions documented in PROJECT.md Key Decisions table.
 All v3.0 decisions documented in prior STATE.md snapshots and phase summaries.
 All v4.0 decisions documented in phase summaries (Phases 18-21).
+v5.0 Phase 22-01: Public schema empty in remote Supabase — migration files (001-005) are authoritative schema source.
 
 ### Deferred Issues
 
@@ -70,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: Completed 21-05-PLAN.md — v4.0 milestone closure, all 1,275 tests passing
+Last session: 2026-04-01
+Stopped at: Completed 22-01-PLAN.md — Supabase schema capture, public schema empty discovery
 Resume file: None
