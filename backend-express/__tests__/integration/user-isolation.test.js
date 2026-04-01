@@ -15,16 +15,18 @@
  * - Cross-user document association prevention
  */
 
+const { createMockSupabaseClient } = require('../mocks/mockSupabaseClient');
 const mockClaudeService = require('../mocks/mockClaudeService');
 const request = require('supertest');
+
+const mockClient = createMockSupabaseClient();
 
 // ============================================================
 // MOCKS — set up before any module loads
 // ============================================================
 
-const mockVerifyToken = jest.fn();
-jest.mock('@clerk/backend', () => ({
-  verifyToken: mockVerifyToken
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockClient)
 }));
 
 jest.mock('../../services/claudeService', () => mockClaudeService);
@@ -141,8 +143,8 @@ const USER_B_ID = 'user-b-different-99999';
 // TEST SETUP
 // ============================================================
 
-process.env.CLERK_SECRET_KEY = 'test-clerk-secret';
-
+process.env.SUPABASE_URL = 'https://mock.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
 process.env.NODE_ENV = 'production';
 process.env.VERCEL = '1';
 
@@ -174,8 +176,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockVerifyToken.mockReset();
-  mockVerifyToken.mockResolvedValue({ sub: 'mock-user-id-12345' });
+  mockClient.reset();
   mockClaudeService.reset();
   mockDocumentStore.clear();
   mockCaseStore.clear();

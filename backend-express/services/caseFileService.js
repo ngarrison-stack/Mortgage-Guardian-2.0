@@ -1,14 +1,17 @@
+const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('case-file');
 
-// Initialize pg query function when DATABASE_URL is available
-let query = null;
-if (process.env.DATABASE_URL) {
-  const db = require('./db');
-  query = db.query;
-  logger.info('PostgreSQL client initialized for case files');
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  logger.info('Supabase client initialized for case files');
 } else {
-  logger.warn('DATABASE_URL not configured - case file service will use mock storage');
+  logger.warn('Supabase not configured - case file service will use mock storage');
 }
 
 class CaseFileService {
@@ -18,27 +21,40 @@ class CaseFileService {
   }
 
   // ============================================
-  // POSTGRESQL METHODS
+  // SUPABASE METHODS
   // ============================================
 
   /**
    * Create a new case file
    */
   async createCase({ userId, caseName, borrowerName, propertyAddress, loanNumber, servicerName, notes }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockCreateCase({ userId, caseName, borrowerName, propertyAddress, loanNumber, servicerName, notes });
     }
 
     try {
-      const { rows } = await query(
-        `INSERT INTO case_files (user_id, case_name, borrower_name, property_address, loan_number, servicer_name, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING *`,
-        [userId, caseName, borrowerName || null, propertyAddress || null, loanNumber || null, servicerName || null, notes || null]
-      );
+      const { data, error } = await supabase
+        .from('case_files')
+        .insert({
+          user_id: userId,
+          case_name: caseName,
+          borrower_name: borrowerName || null,
+          property_address: propertyAddress || null,
+          loan_number: loanNumber || null,
+          servicer_name: servicerName || null,
+          notes: notes || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-      logger.info('Case created', { caseId: rows[0].id, userId });
-      return rows[0];
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      logger.info('Case created', { caseId: data.id, userId });
+      return data;
 
     } catch (error) {
       logger.error('Create case error', { error: error.message, userId });
@@ -50,26 +66,29 @@ class CaseFileService {
    * Get all cases for a user, optionally filtered by status
    */
   async getCasesByUser({ userId, status, limit = 50, offset = 0 }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockGetCasesByUser({ userId, status, limit, offset });
     }
 
     try {
-      let sql = 'SELECT * FROM case_files WHERE user_id = $1';
-      const params = [userId];
-      let paramIdx = 2;
+      let query = supabase
+        .from('case_files')
+        .select('*')
+        .eq('user_id', userId);
 
       if (status) {
-        sql += ` AND status = $${paramIdx}`;
-        params.push(status);
-        paramIdx++;
+        query = query.eq('status', status);
       }
 
-      sql += ` ORDER BY created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
-      params.push(limit, offset);
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
-      const { rows } = await query(sql, params);
-      return rows;
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return data || [];
 
     } catch (error) {
       logger.error('Get cases error', { error: error.message, userId });
@@ -81,34 +100,41 @@ class CaseFileService {
    * Get a single case with its associated documents
    */
   async getCase({ caseId, userId }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockGetCase({ caseId, userId });
     }
 
     try {
       // Get the case
-      const { rows: caseRows } = await query(
-        'SELECT * FROM case_files WHERE id = $1 AND user_id = $2',
-        [caseId, userId]
-      );
+      const { data: caseData, error: caseError } = await supabase
+        .from('case_files')
+        .select('*')
+        .eq('id', caseId)
+        .eq('user_id', userId)
+        .single();
 
-      if (caseRows.length === 0) {
+      if (caseError) {
+        throw new Error(`Database error: ${caseError.message}`);
+      }
+
+      if (!caseData) {
         return null;
       }
 
       // Get associated documents
-      let documents = [];
-      try {
-        const { rows: docRows } = await query(
-          'SELECT * FROM documents WHERE case_id = $1 AND user_id = $2 ORDER BY created_at DESC',
-          [caseId, userId]
-        );
-        documents = docRows;
-      } catch (docError) {
+      const { data: documents, error: docError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('case_id', caseId)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (docError) {
         logger.warn('Could not fetch case documents', { error: docError.message, caseId });
+        return { ...caseData, documents: [] };
       }
 
-      return { ...caseRows[0], documents };
+      return { ...caseData, documents: documents || [] };
 
     } catch (error) {
       logger.error('Get case error', { error: error.message, caseId });
@@ -120,36 +146,36 @@ class CaseFileService {
    * Update case fields (only provided fields are updated)
    */
   async updateCase({ caseId, userId, updates }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockUpdateCase({ caseId, userId, updates });
     }
 
     try {
-      // Build SET clause dynamically from updates
-      const setClauses = [];
-      const params = [];
-      let idx = 1;
+      // Map camelCase input to snake_case columns
+      const dbUpdates = {};
+      if (updates.caseName !== undefined) dbUpdates.case_name = updates.caseName;
+      if (updates.borrowerName !== undefined) dbUpdates.borrower_name = updates.borrowerName;
+      if (updates.propertyAddress !== undefined) dbUpdates.property_address = updates.propertyAddress;
+      if (updates.loanNumber !== undefined) dbUpdates.loan_number = updates.loanNumber;
+      if (updates.servicerName !== undefined) dbUpdates.servicerName = updates.servicerName;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      dbUpdates.updated_at = new Date().toISOString();
 
-      if (updates.caseName !== undefined) { setClauses.push(`case_name = $${idx++}`); params.push(updates.caseName); }
-      if (updates.borrowerName !== undefined) { setClauses.push(`borrower_name = $${idx++}`); params.push(updates.borrowerName); }
-      if (updates.propertyAddress !== undefined) { setClauses.push(`property_address = $${idx++}`); params.push(updates.propertyAddress); }
-      if (updates.loanNumber !== undefined) { setClauses.push(`loan_number = $${idx++}`); params.push(updates.loanNumber); }
-      if (updates.servicerName !== undefined) { setClauses.push(`servicer_name = $${idx++}`); params.push(updates.servicerName); }
-      if (updates.status !== undefined) { setClauses.push(`status = $${idx++}`); params.push(updates.status); }
-      if (updates.notes !== undefined) { setClauses.push(`notes = $${idx++}`); params.push(updates.notes); }
-      setClauses.push(`updated_at = NOW()`);
+      const { data, error } = await supabase
+        .from('case_files')
+        .update(dbUpdates)
+        .eq('id', caseId)
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-      const sql = `UPDATE case_files SET ${setClauses.join(', ')} WHERE id = $${idx++} AND user_id = $${idx} RETURNING *`;
-      params.push(caseId, userId);
-
-      const { rows } = await query(sql, params);
-
-      if (rows.length === 0) {
-        throw new Error('Case not found');
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
-      logger.info('Case updated', { caseId, userId, fields: Object.keys(updates) });
-      return rows[0];
+      logger.info('Case updated', { caseId, userId, fields: Object.keys(dbUpdates) });
+      return data;
 
     } catch (error) {
       logger.error('Update case error', { error: error.message, caseId });
@@ -161,17 +187,24 @@ class CaseFileService {
    * Delete a case (documents remain but case_id set to NULL by FK cascade)
    */
   async deleteCase({ caseId, userId }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockDeleteCase({ caseId, userId });
     }
 
     try {
-      const { rows } = await query(
-        'DELETE FROM case_files WHERE id = $1 AND user_id = $2 RETURNING *',
-        [caseId, userId]
-      );
+      const { data, error } = await supabase
+        .from('case_files')
+        .delete()
+        .eq('id', caseId)
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-      if (rows.length === 0) {
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      if (!data) {
         throw new Error('Case not found');
       }
 
@@ -188,22 +221,25 @@ class CaseFileService {
    * Add a document to a case (update documents.case_id)
    */
   async addDocumentToCase({ caseId, documentId, userId }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockAddDocumentToCase({ caseId, documentId, userId });
     }
 
     try {
-      const { rows } = await query(
-        'UPDATE documents SET case_id = $1, updated_at = NOW() WHERE document_id = $2 AND user_id = $3 RETURNING *',
-        [caseId, documentId, userId]
-      );
+      const { data, error } = await supabase
+        .from('documents')
+        .update({ case_id: caseId, updated_at: new Date().toISOString() })
+        .eq('document_id', documentId)
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-      if (rows.length === 0) {
-        throw new Error('Document not found');
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
       logger.info('Document added to case', { caseId, documentId, userId });
-      return rows[0];
+      return data;
 
     } catch (error) {
       logger.error('Add document to case error', { error: error.message, caseId, documentId });
@@ -215,22 +251,25 @@ class CaseFileService {
    * Remove a document from its case (set case_id to NULL)
    */
   async removeDocumentFromCase({ documentId, userId }) {
-    if (!query) {
+    if (!supabase) {
       return this.mockRemoveDocumentFromCase({ documentId, userId });
     }
 
     try {
-      const { rows } = await query(
-        'UPDATE documents SET case_id = NULL, updated_at = NOW() WHERE document_id = $1 AND user_id = $2 RETURNING *',
-        [documentId, userId]
-      );
+      const { data, error } = await supabase
+        .from('documents')
+        .update({ case_id: null, updated_at: new Date().toISOString() })
+        .eq('document_id', documentId)
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-      if (rows.length === 0) {
-        throw new Error('Document not found');
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
       logger.info('Document removed from case', { documentId, userId });
-      return rows[0];
+      return data;
 
     } catch (error) {
       logger.error('Remove document from case error', { error: error.message, documentId });
@@ -277,7 +316,7 @@ class CaseFileService {
   }
 
   // ============================================
-  // MOCK METHODS (used when DATABASE_URL not configured)
+  // MOCK METHODS (used when Supabase not configured)
   // ============================================
 
   mockCreateCase({ userId, caseName, borrowerName, propertyAddress, loanNumber, servicerName, notes }) {

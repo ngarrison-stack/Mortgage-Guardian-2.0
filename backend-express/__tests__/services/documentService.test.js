@@ -1,39 +1,58 @@
 /**
  * Unit tests for DocumentService (services/documentService.js)
  *
- * Tests all CRUD operations in both DB and mock modes.
+ * Tests all CRUD operations in both Supabase and mock modes.
  * Includes encryption integration tests for upload/download.
- * Mocks fs/promises for filesystem and ../db for database.
+ * Supabase mock is hoisted because the module creates a client at load time.
  */
 
-const mockQuery = jest.fn();
+// --- Chainable DB mock ---
+const mockInsert = jest.fn();
+const mockSelect = jest.fn();
+const mockDelete = jest.fn();
+const mockEq = jest.fn();
+const mockOrder = jest.fn();
+const mockRange = jest.fn();
+const mockSingle = jest.fn();
 
-// Mock the db module (service uses require('../db') from services/)
-jest.mock('../../services/db', () => ({
-  query: mockQuery,
-  pool: { connect: jest.fn() }
-}));
+const mockDbChain = {
+  from: jest.fn(),
+  insert: mockInsert,
+  select: mockSelect,
+  delete: mockDelete,
+  eq: mockEq,
+  order: mockOrder,
+  range: mockRange,
+  single: mockSingle
+};
 
-// For the lazy-loaded require('../db') in documentService, we also need:
-jest.mock('../../db', () => ({
-  query: mockQuery,
-  pool: { connect: jest.fn() }
-}), { virtual: true });
+// --- Storage mock ---
+const mockStorageUpload = jest.fn();
+const mockStorageDownload = jest.fn();
+const mockStorageRemove = jest.fn();
 
-// Mock fs/promises for filesystem operations
-const mockWriteFile = jest.fn().mockResolvedValue(undefined);
-const mockReadFile = jest.fn();
-const mockMkdir = jest.fn().mockResolvedValue(undefined);
-const mockUnlink = jest.fn().mockResolvedValue(undefined);
-
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  promises: {
-    writeFile: mockWriteFile,
-    readFile: mockReadFile,
-    mkdir: mockMkdir,
-    unlink: mockUnlink
+const mockSupabase = {
+  ...mockDbChain,
+  storage: {
+    from: jest.fn(() => ({
+      upload: mockStorageUpload,
+      download: mockStorageDownload,
+      remove: mockStorageRemove
+    }))
   }
+};
+
+// Wire chain returns after object exists
+mockSupabase.from.mockReturnValue(mockSupabase);
+mockInsert.mockReturnValue(mockSupabase);
+mockSelect.mockReturnValue(mockSupabase);
+mockDelete.mockReturnValue(mockSupabase);
+mockEq.mockReturnValue(mockSupabase);
+mockOrder.mockReturnValue(mockSupabase);
+mockRange.mockReturnValue(mockSupabase);
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockSupabase)
 }));
 
 // --- Encryption service mock ---
@@ -46,21 +65,36 @@ jest.mock('../../services/documentEncryptionService', () => ({
 }));
 
 // Set env vars BEFORE requiring service
-process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+process.env.SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
 
 const documentService = require('../../services/documentService');
 
 // ============================================================
-// DB mode tests
+// Supabase mode tests
 // ============================================================
-describe('DocumentService (DB mode)', () => {
+describe('DocumentService (Supabase mode)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset chain defaults
+    mockSupabase.from.mockReturnValue(mockSupabase);
+    mockInsert.mockReturnValue(mockSupabase);
+    mockSelect.mockReturnValue(mockSupabase);
+    mockDelete.mockReturnValue(mockSupabase);
+    mockEq.mockReturnValue(mockSupabase);
+    mockOrder.mockReturnValue(mockSupabase);
+    mockRange.mockReturnValue(mockSupabase);
+    // Default storage success
+    mockStorageUpload.mockResolvedValue({ data: {}, error: null });
+    mockStorageDownload.mockResolvedValue({ data: null, error: null });
+    mockStorageRemove.mockResolvedValue({ data: {}, error: null });
     // Default encryption mock behavior
     mockEncrypt.mockImplementation((userId, buffer) => {
+      // Return a distinguishable "encrypted" buffer
       return Buffer.concat([Buffer.from('ENC:'), buffer]);
     });
     mockDecrypt.mockImplementation((userId, buffer) => {
+      // Strip the "ENC:" prefix to simulate decryption
       return buffer.subarray(4);
     });
     // Ensure encryption key is NOT set by default (tests opt in)
@@ -81,10 +115,10 @@ describe('DocumentService (DB mode)', () => {
       metadata: { source: 'upload' }
     };
 
-    it('uploads file to filesystem and saves metadata to DB', async () => {
-      mockQuery.mockResolvedValue({
-        rows: [{ document_id: 'doc-1', storage_path: 'documents/user-1/doc-1' }],
-        rowCount: 1
+    it('uploads file to storage and saves metadata', async () => {
+      mockSingle.mockResolvedValue({
+        data: { document_id: 'doc-1', storage_path: 'documents/user-1/doc-1' },
+        error: null
       });
 
       const result = await documentService.uploadDocument(uploadArgs);
@@ -92,34 +126,109 @@ describe('DocumentService (DB mode)', () => {
       expect(result.documentId).toBe('doc-1');
       expect(result.storagePath).toBe('documents/user-1/doc-1');
       expect(result.metadata).toBeDefined();
-      // Verify filesystem write
-      expect(mockMkdir).toHaveBeenCalled();
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Buffer)
+      // Verify storage upload
+      expect(mockSupabase.storage.from).toHaveBeenCalledWith('documents');
+      expect(mockStorageUpload).toHaveBeenCalledWith(
+        'documents/user-1/doc-1',
+        expect.any(Buffer),
+        { contentType: 'application/pdf', upsert: true }
       );
       // Verify db insert
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO documents'),
-        expect.arrayContaining(['doc-1', 'user-1', 'statement.pdf', 'mortgage_statement'])
+      expect(mockSupabase.from).toHaveBeenCalledWith('documents');
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document_id: 'doc-1',
+          user_id: 'user-1',
+          file_name: 'statement.pdf',
+          document_type: 'mortgage_statement',
+          analysis_results: { findings: [] }
+        })
       );
     });
 
     it('converts base64 content to Buffer for storage', async () => {
-      mockQuery.mockResolvedValue({ rows: [{ document_id: 'doc-1' }], rowCount: 1 });
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
 
       await documentService.uploadDocument(uploadArgs);
 
-      const writtenBuffer = mockWriteFile.mock.calls[0][1];
-      expect(Buffer.isBuffer(writtenBuffer)).toBe(true);
-      expect(writtenBuffer.toString()).toBe('mock-pdf-content');
+      const uploadedBuffer = mockStorageUpload.mock.calls[0][1];
+      expect(Buffer.isBuffer(uploadedBuffer)).toBe(true);
+      expect(uploadedBuffer.toString()).toBe('mock-pdf-content');
+    });
+
+    it('throws on storage error', async () => {
+      mockStorageUpload.mockResolvedValue({
+        data: null,
+        error: { message: 'Bucket full' }
+      });
+
+      await expect(documentService.uploadDocument(uploadArgs))
+        .rejects.toThrow('Storage error: Bucket full');
     });
 
     it('throws on database error', async () => {
-      mockQuery.mockRejectedValue(new Error('Constraint violation'));
+      mockSingle.mockResolvedValue({
+        data: null,
+        error: { message: 'Constraint violation' }
+      });
 
       await expect(documentService.uploadDocument(uploadArgs))
-        .rejects.toThrow('Constraint violation');
+        .rejects.toThrow('Database error: Constraint violation');
+    });
+
+    it('sets null analysisResults when not provided', async () => {
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-2' }, error: null });
+
+      await documentService.uploadDocument({
+        ...uploadArgs,
+        analysisResults: undefined,
+        metadata: undefined
+      });
+
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          analysis_results: null,
+          metadata: {}
+        })
+      );
+    });
+
+    it('uploads plaintext when DOCUMENT_ENCRYPTION_KEY is not set', async () => {
+      // Key is not set (default in beforeEach)
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
+
+      await documentService.uploadDocument(uploadArgs);
+
+      // encrypt should NOT have been called
+      expect(mockEncrypt).not.toHaveBeenCalled();
+      // Uploaded buffer should be the raw plaintext
+      const uploadedBuffer = mockStorageUpload.mock.calls[0][1];
+      expect(uploadedBuffer.toString()).toBe('mock-pdf-content');
+      // Metadata should have encrypted: false
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ encrypted: false })
+      );
+    });
+
+    it('encrypts file buffer when DOCUMENT_ENCRYPTION_KEY is set', async () => {
+      process.env.DOCUMENT_ENCRYPTION_KEY = 'a'.repeat(64);
+      mockSingle.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
+
+      await documentService.uploadDocument(uploadArgs);
+
+      // encrypt should have been called with userId and the plaintext buffer
+      expect(mockEncrypt).toHaveBeenCalledWith('user-1', expect.any(Buffer));
+      const plaintextArg = mockEncrypt.mock.calls[0][1];
+      expect(plaintextArg.toString()).toBe('mock-pdf-content');
+      // Uploaded buffer should be the encrypted result
+      const uploadedBuffer = mockStorageUpload.mock.calls[0][1];
+      expect(uploadedBuffer.toString()).toBe('ENC:mock-pdf-content');
+      // Metadata should have encrypted: true
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ encrypted: true })
+      );
+
+      delete process.env.DOCUMENT_ENCRYPTION_KEY;
     });
   });
 
@@ -129,19 +238,35 @@ describe('DocumentService (DB mode)', () => {
   describe('getDocumentsByUser', () => {
     it('returns documents filtered by userId', async () => {
       const docs = [{ document_id: 'doc-1' }, { document_id: 'doc-2' }];
-      mockQuery.mockResolvedValue({ rows: docs, rowCount: 2 });
+      mockRange.mockResolvedValue({ data: docs, error: null });
 
       const result = await documentService.getDocumentsByUser({ userId: 'user-1' });
 
       expect(result).toEqual(docs);
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE user_id = $1'),
-        expect.arrayContaining(['user-1'])
-      );
+      expect(mockSupabase.from).toHaveBeenCalledWith('documents');
+      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
     });
 
-    it('returns empty array when no results', async () => {
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+    it('applies limit and offset defaults', async () => {
+      mockRange.mockResolvedValue({ data: [], error: null });
+
+      await documentService.getDocumentsByUser({ userId: 'user-1' });
+
+      // Default: limit=50, offset=0 -> range(0, 49)
+      expect(mockRange).toHaveBeenCalledWith(0, 49);
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+    });
+
+    it('applies custom limit and offset', async () => {
+      mockRange.mockResolvedValue({ data: [], error: null });
+
+      await documentService.getDocumentsByUser({ userId: 'user-1', limit: 10, offset: 20 });
+
+      expect(mockRange).toHaveBeenCalledWith(20, 29);
+    });
+
+    it('returns empty array when data is null', async () => {
+      mockRange.mockResolvedValue({ data: null, error: null });
 
       const result = await documentService.getDocumentsByUser({ userId: 'user-1' });
 
@@ -149,10 +274,10 @@ describe('DocumentService (DB mode)', () => {
     });
 
     it('throws on database error', async () => {
-      mockQuery.mockRejectedValue(new Error('Query timeout'));
+      mockRange.mockResolvedValue({ data: null, error: { message: 'Query timeout' } });
 
       await expect(documentService.getDocumentsByUser({ userId: 'user-1' }))
-        .rejects.toThrow('Query timeout');
+        .rejects.toThrow('Database error: Query timeout');
     });
   });
 
@@ -166,10 +291,18 @@ describe('DocumentService (DB mode)', () => {
         storage_path: 'documents/user-1/doc-1',
         file_name: 'test.pdf'
       };
-      mockQuery.mockResolvedValue({ rows: [metadata], rowCount: 1 });
+      // First single() call returns metadata
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
 
+      // Storage download returns file data
       const fileContent = Buffer.from('file-content');
-      mockReadFile.mockResolvedValue(fileContent);
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(fileContent.buffer.slice(
+          fileContent.byteOffset,
+          fileContent.byteOffset + fileContent.byteLength
+        ))
+      };
+      mockStorageDownload.mockResolvedValue({ data: mockBlob, error: null });
 
       const result = await documentService.getDocument({
         documentId: 'doc-1',
@@ -178,10 +311,12 @@ describe('DocumentService (DB mode)', () => {
 
       expect(result.document_id).toBe('doc-1');
       expect(result.content).toBe(fileContent.toString('base64'));
+      expect(mockEq).toHaveBeenCalledWith('document_id', 'doc-1');
+      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
     });
 
     it('returns null when document not found', async () => {
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+      mockSingle.mockResolvedValue({ data: null, error: null });
 
       const result = await documentService.getDocument({
         documentId: 'nonexistent',
@@ -191,13 +326,16 @@ describe('DocumentService (DB mode)', () => {
       expect(result).toBeNull();
     });
 
-    it('returns metadata only when file read fails', async () => {
+    it('returns metadata only when download fails', async () => {
       const metadata = {
         document_id: 'doc-1',
         storage_path: 'documents/user-1/doc-1'
       };
-      mockQuery.mockResolvedValue({ rows: [metadata], rowCount: 1 });
-      mockReadFile.mockRejectedValue(new Error('File not found'));
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
+      mockStorageDownload.mockResolvedValue({
+        data: null,
+        error: { message: 'File not found in storage' }
+      });
 
       const result = await documentService.getDocument({
         documentId: 'doc-1',
@@ -210,12 +348,82 @@ describe('DocumentService (DB mode)', () => {
     });
 
     it('throws on database error', async () => {
-      mockQuery.mockRejectedValue(new Error('Connection lost'));
+      mockSingle.mockResolvedValue({
+        data: null,
+        error: { message: 'Connection lost' }
+      });
 
       await expect(documentService.getDocument({
         documentId: 'doc-1',
         userId: 'user-1'
-      })).rejects.toThrow('Connection lost');
+      })).rejects.toThrow('Database error: Connection lost');
+    });
+
+    it('downloads unencrypted document without calling decrypt (backward compatibility)', async () => {
+      // Document metadata does NOT have encrypted: true
+      const metadata = {
+        document_id: 'doc-old',
+        storage_path: 'documents/user-1/doc-old',
+        file_name: 'old.pdf'
+        // no 'encrypted' field — pre-encryption document
+      };
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
+
+      const fileContent = Buffer.from('old-plaintext-content');
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(fileContent.buffer.slice(
+          fileContent.byteOffset,
+          fileContent.byteOffset + fileContent.byteLength
+        ))
+      };
+      mockStorageDownload.mockResolvedValue({ data: mockBlob, error: null });
+
+      const result = await documentService.getDocument({
+        documentId: 'doc-old',
+        userId: 'user-1'
+      });
+
+      // decrypt should NOT have been called
+      expect(mockDecrypt).not.toHaveBeenCalled();
+      // Content should be raw base64
+      expect(result.content).toBe(fileContent.toString('base64'));
+    });
+
+    it('decrypts document when metadata has encrypted: true', async () => {
+      process.env.DOCUMENT_ENCRYPTION_KEY = 'a'.repeat(64);
+
+      const metadata = {
+        document_id: 'doc-enc',
+        storage_path: 'documents/user-1/doc-enc',
+        file_name: 'encrypted.pdf',
+        encrypted: true
+      };
+      mockSingle.mockResolvedValue({ data: metadata, error: null });
+
+      // Storage returns "encrypted" content
+      const encryptedContent = Buffer.from('ENC:real-document-data');
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(encryptedContent.buffer.slice(
+          encryptedContent.byteOffset,
+          encryptedContent.byteOffset + encryptedContent.byteLength
+        ))
+      };
+      mockStorageDownload.mockResolvedValue({ data: mockBlob, error: null });
+
+      const result = await documentService.getDocument({
+        documentId: 'doc-enc',
+        userId: 'user-1'
+      });
+
+      // decrypt should have been called with userId and the encrypted buffer
+      expect(mockDecrypt).toHaveBeenCalledWith('user-1', expect.any(Buffer));
+      const encryptedArg = mockDecrypt.mock.calls[0][1];
+      expect(encryptedArg.toString()).toBe('ENC:real-document-data');
+      // Content should be the decrypted result as base64
+      const expectedDecrypted = Buffer.from('real-document-data');
+      expect(result.content).toBe(expectedDecrypted.toString('base64'));
+
+      delete process.env.DOCUMENT_ENCRYPTION_KEY;
     });
   });
 
@@ -223,10 +431,38 @@ describe('DocumentService (DB mode)', () => {
   // deleteDocument
   // ----------------------------------------------------------
   describe('deleteDocument', () => {
-    it('deletes from filesystem and database', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ storage_path: 'documents/user-1/doc-1' }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
+    // Helper: set up the two-phase delete mock chain.
+    // Phase 1 (SELECT): from -> select -> eq -> eq -> single -> returns doc
+    // Phase 2 (DELETE): from -> delete -> eq -> eq -> resolves with { error }
+    // Since `await mockSupabase` resolves to mockSupabase itself (plain object),
+    // and mockSupabase has no `error` property, dbError is undefined -> happy path.
+    function setupDeleteMocks({ docData, storageError = null, dbDeleteError = null }) {
+      mockEq.mockReturnValue(mockSupabase);
+      mockSingle.mockResolvedValue({ data: docData });
+      mockStorageRemove.mockResolvedValue({
+        data: storageError ? null : {},
+        error: storageError
+      });
+
+      if (dbDeleteError) {
+        // For DB delete error: last eq in delete chain must return { error }
+        // Track from() calls to know when we're in the delete phase
+        let fromCalls = 0;
+        let eqCalls = 0;
+        mockSupabase.from.mockImplementation(() => { fromCalls++; return mockSupabase; });
+        mockEq.mockImplementation(() => {
+          eqCalls++;
+          // 4th eq call is the terminal eq in the delete chain (2 in select, 2 in delete)
+          if (fromCalls >= 2 && eqCalls >= 4) {
+            return Promise.resolve({ error: dbDeleteError });
+          }
+          return mockSupabase;
+        });
+      }
+    }
+
+    it('deletes from storage and database', async () => {
+      setupDeleteMocks({ docData: { storage_path: 'documents/user-1/doc-1' } });
 
       const result = await documentService.deleteDocument({
         documentId: 'doc-1',
@@ -234,12 +470,12 @@ describe('DocumentService (DB mode)', () => {
       });
 
       expect(result).toEqual({ success: true });
-      expect(mockUnlink).toHaveBeenCalled();
-      expect(mockQuery).toHaveBeenCalledTimes(2);
+      expect(mockStorageRemove).toHaveBeenCalledWith(['documents/user-1/doc-1']);
+      expect(mockSupabase.from).toHaveBeenCalledWith('documents');
     });
 
     it('throws when document not found', async () => {
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+      setupDeleteMocks({ docData: null });
 
       await expect(documentService.deleteDocument({
         documentId: 'nonexistent',
@@ -247,19 +483,31 @@ describe('DocumentService (DB mode)', () => {
       })).rejects.toThrow('Document not found');
     });
 
-    it('continues delete when filesystem deletion fails', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ storage_path: 'documents/user-1/doc-1' }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
-      mockUnlink.mockRejectedValue(new Error('File not found'));
+    it('continues delete when storage deletion fails', async () => {
+      setupDeleteMocks({
+        docData: { storage_path: 'documents/user-1/doc-1' },
+        storageError: { message: 'Storage unavailable' }
+      });
 
       const result = await documentService.deleteDocument({
         documentId: 'doc-1',
         userId: 'user-1'
       });
 
-      // Should succeed despite filesystem error (logged as warning)
+      // Should succeed despite storage error (logged as warning)
       expect(result).toEqual({ success: true });
+    });
+
+    it('throws on database delete error', async () => {
+      setupDeleteMocks({
+        docData: { storage_path: 'documents/user-1/doc-1' },
+        dbDeleteError: { message: 'FK constraint' }
+      });
+
+      await expect(documentService.deleteDocument({
+        documentId: 'doc-1',
+        userId: 'user-1'
+      })).rejects.toThrow('Database error: FK constraint');
     });
   });
 
@@ -267,31 +515,50 @@ describe('DocumentService (DB mode)', () => {
   // getContentType
   // ----------------------------------------------------------
   describe('getContentType', () => {
-    it('returns application/pdf for .pdf', () => { expect(documentService.getContentType('doc.pdf')).toBe('application/pdf'); });
-    it('returns image/jpeg for .jpg', () => { expect(documentService.getContentType('photo.jpg')).toBe('image/jpeg'); });
-    it('returns image/jpeg for .jpeg', () => { expect(documentService.getContentType('photo.jpeg')).toBe('image/jpeg'); });
-    it('returns image/png for .png', () => { expect(documentService.getContentType('screenshot.png')).toBe('image/png'); });
-    it('returns image/heic for .heic', () => { expect(documentService.getContentType('photo.heic')).toBe('image/heic'); });
-    it('returns text/plain for .txt', () => { expect(documentService.getContentType('notes.txt')).toBe('text/plain'); });
-    it('returns application/octet-stream for unknown extension', () => { expect(documentService.getContentType('file.xyz')).toBe('application/octet-stream'); });
+    it('returns application/pdf for .pdf', () => {
+      expect(documentService.getContentType('doc.pdf')).toBe('application/pdf');
+    });
+
+    it('returns image/jpeg for .jpg', () => {
+      expect(documentService.getContentType('photo.jpg')).toBe('image/jpeg');
+    });
+
+    it('returns image/jpeg for .jpeg', () => {
+      expect(documentService.getContentType('photo.jpeg')).toBe('image/jpeg');
+    });
+
+    it('returns image/png for .png', () => {
+      expect(documentService.getContentType('screenshot.png')).toBe('image/png');
+    });
+
+    it('returns image/heic for .heic', () => {
+      expect(documentService.getContentType('photo.heic')).toBe('image/heic');
+    });
+
+    it('returns text/plain for .txt', () => {
+      expect(documentService.getContentType('notes.txt')).toBe('text/plain');
+    });
+
+    it('returns application/octet-stream for unknown extension', () => {
+      expect(documentService.getContentType('file.xyz')).toBe('application/octet-stream');
+    });
   });
 });
 
 // ============================================================
-// Mock mode tests (no DATABASE_URL configured)
+// Mock mode tests (no Supabase configured)
 // ============================================================
 describe('DocumentService (mock mode)', () => {
   let mockDocService;
 
   beforeEach(() => {
-    delete process.env.DATABASE_URL;
     jest.isolateModules(() => {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_KEY;
       mockDocService = require('../../services/documentService');
     });
-  });
-
-  afterEach(() => {
-    process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
   });
 
   it('mockUploadDocument stores in memory', async () => {
@@ -308,8 +575,20 @@ describe('DocumentService (mock mode)', () => {
   });
 
   it('mockGetDocumentsByUser returns user documents', async () => {
-    await mockDocService.uploadDocument({ documentId: 'doc-a', userId: 'user-1', fileName: 'a.pdf', documentType: 'pdf', content: 'data' });
-    await mockDocService.uploadDocument({ documentId: 'doc-b', userId: 'user-2', fileName: 'b.pdf', documentType: 'pdf', content: 'data' });
+    await mockDocService.uploadDocument({
+      documentId: 'doc-a',
+      userId: 'user-1',
+      fileName: 'a.pdf',
+      documentType: 'pdf',
+      content: 'data'
+    });
+    await mockDocService.uploadDocument({
+      documentId: 'doc-b',
+      userId: 'user-2',
+      fileName: 'b.pdf',
+      documentType: 'pdf',
+      content: 'data'
+    });
 
     const docs = await mockDocService.getDocumentsByUser({ userId: 'user-1' });
 
@@ -318,33 +597,67 @@ describe('DocumentService (mock mode)', () => {
   });
 
   it('mockGetDocument returns document by ID and userId', async () => {
-    await mockDocService.uploadDocument({ documentId: 'doc-get', userId: 'user-1', fileName: 'get.pdf', documentType: 'pdf', content: 'data' });
+    await mockDocService.uploadDocument({
+      documentId: 'doc-get',
+      userId: 'user-1',
+      fileName: 'get.pdf',
+      documentType: 'pdf',
+      content: 'data'
+    });
 
-    const doc = await mockDocService.getDocument({ documentId: 'doc-get', userId: 'user-1' });
+    const doc = await mockDocService.getDocument({
+      documentId: 'doc-get',
+      userId: 'user-1'
+    });
 
     expect(doc.document_id).toBe('doc-get');
     expect(doc.file_name).toBe('get.pdf');
   });
 
   it('mockGetDocument returns null for wrong userId', async () => {
-    await mockDocService.uploadDocument({ documentId: 'doc-owned', userId: 'user-1', fileName: 'owned.pdf', documentType: 'pdf', content: 'data' });
+    await mockDocService.uploadDocument({
+      documentId: 'doc-owned',
+      userId: 'user-1',
+      fileName: 'owned.pdf',
+      documentType: 'pdf',
+      content: 'data'
+    });
 
-    const doc = await mockDocService.getDocument({ documentId: 'doc-owned', userId: 'user-other' });
+    const doc = await mockDocService.getDocument({
+      documentId: 'doc-owned',
+      userId: 'user-other'
+    });
 
     expect(doc).toBeNull();
   });
 
   it('mockDeleteDocument removes document', async () => {
-    await mockDocService.uploadDocument({ documentId: 'doc-del', userId: 'user-1', fileName: 'del.pdf', documentType: 'pdf', content: 'data' });
+    await mockDocService.uploadDocument({
+      documentId: 'doc-del',
+      userId: 'user-1',
+      fileName: 'del.pdf',
+      documentType: 'pdf',
+      content: 'data'
+    });
 
-    const result = await mockDocService.deleteDocument({ documentId: 'doc-del', userId: 'user-1' });
+    const result = await mockDocService.deleteDocument({
+      documentId: 'doc-del',
+      userId: 'user-1'
+    });
     expect(result).toEqual({ success: true });
 
-    const doc = await mockDocService.getDocument({ documentId: 'doc-del', userId: 'user-1' });
+    // Verify it's gone
+    const doc = await mockDocService.getDocument({
+      documentId: 'doc-del',
+      userId: 'user-1'
+    });
     expect(doc).toBeNull();
   });
 
   it('mockDeleteDocument throws for missing document', async () => {
-    await expect(mockDocService.deleteDocument({ documentId: 'nonexistent', userId: 'user-1' })).rejects.toThrow('Document not found');
+    await expect(mockDocService.deleteDocument({
+      documentId: 'nonexistent',
+      userId: 'user-1'
+    })).rejects.toThrow('Document not found');
   });
 });

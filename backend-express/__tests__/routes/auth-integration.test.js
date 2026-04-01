@@ -8,18 +8,21 @@
  *   - Public routes (health, root) remain accessible without auth
  *
  * Mock strategy:
- *   - @clerk/backend is mocked to control verifyToken() responses
+ *   - @supabase/supabase-js is mocked to control auth.getUser() responses
  *   - Service modules are mocked to prevent real API calls (Claude, Plaid, documents)
  *   - setupTestApp() clears module cache and requires a fresh app instance
  */
 
+const { createMockSupabaseClient } = require('../mocks/mockSupabaseClient');
 const mockClaudeService = require('../mocks/mockClaudeService');
 const request = require('supertest');
 
-// Mock @clerk/backend before any module loads it
-const mockVerifyToken = jest.fn();
-jest.mock('@clerk/backend', () => ({
-  verifyToken: mockVerifyToken
+// Create mock Supabase client
+const mockClient = createMockSupabaseClient();
+
+// Mock @supabase/supabase-js before any module loads it
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockClient)
 }));
 
 // Mock service modules to prevent real API calls
@@ -56,9 +59,12 @@ jest.mock('../../services/documentService', () => ({
 }));
 
 // Set env vars so modules initialize properly
-process.env.CLERK_SECRET_KEY = 'test-clerk-secret';
+process.env.SUPABASE_URL = 'https://mock.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
 
 // Prevent server.js from calling app.listen() during tests.
+// server.js condition: if (NODE_ENV !== 'production' || !VERCEL)
+// We need NODE_ENV === 'production' AND VERCEL set to skip listen().
 process.env.NODE_ENV = 'production';
 process.env.VERCEL = '1';
 
@@ -93,10 +99,8 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockVerifyToken.mockReset();
+  mockClient.reset();
   mockClaudeService.reset();
-  // Default: valid token returns user
-  mockVerifyToken.mockResolvedValue({ sub: 'mock-user-id-12345' });
 });
 
 describe('Route-level authentication', () => {
@@ -104,7 +108,6 @@ describe('Route-level authentication', () => {
   // Protected routes reject unauthenticated requests
   // ==================================================
   describe('protected routes reject unauthenticated requests', () => {
-    // For unauthenticated tests, verifyToken should not be called (no Bearer token)
     test('POST /v1/ai/claude/analyze -> 401 without auth', async () => {
       const response = await request(app)
         .post('/v1/ai/claude/analyze')
@@ -218,7 +221,11 @@ describe('Route-level authentication', () => {
   // ==================================================
   describe('protected routes accept authenticated requests', () => {
     test('POST /v1/ai/claude/analyze -> passes auth with valid token (may fail validation, but not 401)', async () => {
-      mockVerifyToken.mockResolvedValue({ sub: 'user-123' });
+      // Configure mock Supabase to accept the token
+      mockClient.setResponse('auth', {
+        data: { user: { id: 'user-123', email: 'test@example.com', role: 'authenticated' } },
+        error: null
+      });
 
       const response = await request(app)
         .post('/v1/ai/claude/analyze')
@@ -226,6 +233,7 @@ describe('Route-level authentication', () => {
         .send({ prompt: 'Analyze this mortgage statement' });
 
       // The key assertion: NOT a 401. It should pass auth and reach the handler.
+      // Could be 200 (if mock service returns valid response) or 400 (if validation fails)
       expect(response.status).not.toBe(401);
     });
   });

@@ -2,7 +2,7 @@
  * Cross-service integration tests
  *
  * Verifies data flows between Claude, Plaid, PlaidData, and Document services.
- * External APIs (Anthropic, Plaid SDK) are mocked — but the tests
+ * External APIs (Anthropic, Plaid SDK, Supabase) are mocked — but the tests
  * exercise real service-to-service interactions within the backend.
  */
 
@@ -28,30 +28,42 @@ jest.mock('plaid', () => ({
   CountryCode: { Us: 'US' }
 }));
 
-// --- Mock db module (documentService uses it) ---
-const mockQuery = jest.fn();
-jest.mock('../../services/db', () => ({
-  query: mockQuery,
-  pool: { connect: jest.fn() }
-}));
-jest.mock('../../db', () => ({
-  query: mockQuery,
-  pool: { connect: jest.fn() }
-}), { virtual: true });
-
-// Mock fs/promises for documentService
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  promises: {
-    writeFile: jest.fn().mockResolvedValue(undefined),
-    readFile: jest.fn().mockResolvedValue(Buffer.from('test')),
-    mkdir: jest.fn().mockResolvedValue(undefined),
-    unlink: jest.fn().mockResolvedValue(undefined)
+// --- Mock Supabase (documentService and plaidDataService both use it at module scope) ---
+const mockSupabase = {
+  from: jest.fn(),
+  upsert: jest.fn(),
+  insert: jest.fn(),
+  select: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  eq: jest.fn(),
+  in: jest.fn(),
+  single: jest.fn(),
+  storage: {
+    from: jest.fn(() => ({
+      upload: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      download: jest.fn().mockResolvedValue({ data: null, error: null }),
+      remove: jest.fn().mockResolvedValue({ data: {}, error: null })
+    }))
   }
+};
+// Wire chain returns after object exists (can't self-reference during init)
+mockSupabase.from.mockReturnValue(mockSupabase);
+mockSupabase.upsert.mockResolvedValue({ data: [], error: null });
+mockSupabase.insert.mockReturnValue(mockSupabase);
+mockSupabase.select.mockReturnValue(mockSupabase);
+mockSupabase.update.mockReturnValue(mockSupabase);
+mockSupabase.delete.mockReturnValue(mockSupabase);
+mockSupabase.eq.mockReturnValue(mockSupabase);
+mockSupabase.in.mockReturnValue(mockSupabase);
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockSupabase)
 }));
 
 // Set env vars before requiring services
-process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+process.env.SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
 process.env.ANTHROPIC_API_KEY = 'test-api-key';
 
 // Require services AFTER all mocks are in place
@@ -64,8 +76,12 @@ const documentService = require('../../services/documentService');
 describe('Cross-service integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default: db query returns success
-    mockQuery.mockResolvedValue({ rows: [{ document_id: 'doc-1' }], rowCount: 1 });
+    // Reset chainable defaults
+    mockSupabase.from.mockReturnValue(mockSupabase);
+    mockSupabase.upsert.mockResolvedValue({ data: [], error: null });
+    mockSupabase.insert.mockReturnValue(mockSupabase);
+    mockSupabase.select.mockReturnValue(mockSupabase);
+    mockSupabase.single.mockResolvedValue({ data: { document_id: 'doc-1' }, error: null });
   });
 
   describe('Claude -> Document flow', () => {
@@ -85,9 +101,14 @@ describe('Cross-service integration', () => {
       expect(analysis.content).toContain('escrow calculation errors');
 
       // Step 2: Store the analysis with the document
-      mockQuery.mockResolvedValue({
-        rows: [{ document_id: 'doc-1', analysis_results: analysis }],
-        rowCount: 1
+      mockSupabase.insert.mockReturnValue(mockSupabase);
+      mockSupabase.select.mockReturnValue(mockSupabase);
+      mockSupabase.single.mockResolvedValue({
+        data: {
+          document_id: 'doc-1',
+          analysis_results: analysis
+        },
+        error: null
       });
 
       const stored = await documentService.uploadDocument({
@@ -101,10 +122,13 @@ describe('Cross-service integration', () => {
       });
 
       expect(stored.documentId).toBe('doc-1');
-      // Verify the analysis was passed through to the query
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO documents'),
-        expect.arrayContaining([expect.stringContaining('escrow calculation errors')])
+      // Verify the analysis was passed through to the insert call
+      expect(mockSupabase.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          analysis_results: expect.objectContaining({
+            content: expect.stringContaining('escrow calculation errors')
+          })
+        })
       );
     });
 
@@ -117,7 +141,12 @@ describe('Cross-service integration', () => {
       })).rejects.toThrow('API unavailable');
 
       // Document service still works independently
-      mockQuery.mockResolvedValue({ rows: [{ document_id: 'doc-2' }], rowCount: 1 });
+      mockSupabase.insert.mockReturnValue(mockSupabase);
+      mockSupabase.select.mockReturnValue(mockSupabase);
+      mockSupabase.single.mockResolvedValue({
+        data: { document_id: 'doc-2' },
+        error: null
+      });
 
       const stored = await documentService.uploadDocument({
         documentId: 'doc-2',
@@ -139,23 +168,24 @@ describe('Cross-service integration', () => {
     let plaidDataService;
 
     beforeEach(() => {
-      // Use mock mode for plaidDataService to avoid DB complexity
-      delete process.env.DATABASE_URL;
+      // Use mock mode for plaidDataService to avoid Supabase chain complexity
       jest.isolateModules(() => {
+        delete process.env.SUPABASE_URL;
+        delete process.env.SUPABASE_SERVICE_KEY;
         plaidDataService = require('../../services/plaidDataService');
       });
-    });
-
-    afterEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
     });
 
     it('exchangePublicToken result feeds into plaidDataService.upsertPlaidItem', async () => {
+      // Simulate Plaid exchange response (from mock service since no PLAID_CLIENT_ID)
       const exchangeResult = {
         accessToken: 'access-sandbox-abc123',
         itemId: 'item-sandbox-xyz'
       };
 
+      // Feed into plaidDataService
       const stored = await plaidDataService.upsertPlaidItem({
         itemId: exchangeResult.itemId,
         userId: 'user-1',
@@ -165,6 +195,7 @@ describe('Cross-service integration', () => {
 
       expect(stored).toMatchObject({ success: true, mock: true });
 
+      // Verify item can be retrieved
       const retrieved = await plaidDataService.getItem(exchangeResult.itemId);
       expect(retrieved.data.accessToken).toBe('access-sandbox-abc123');
     });
@@ -204,8 +235,33 @@ describe('Cross-service integration', () => {
       }
     });
 
-    it('Database error in documentService throws', async () => {
-      mockQuery.mockRejectedValue(new Error('Storage quota exceeded'));
+    it('Supabase error in plaidDataService returns { success: false }', async () => {
+      // plaidDataService is loaded with Supabase mocks
+      const plaidDataSupa = require('../../services/plaidDataService');
+
+      mockSupabase.upsert.mockResolvedValue({
+        data: null,
+        error: { message: 'Connection timeout' }
+      });
+
+      const result = await plaidDataSupa.upsertPlaidItem({
+        itemId: 'item-fail',
+        userId: 'user-1',
+        accessToken: 'tok'
+      });
+
+      // Graceful degradation: returns failure object, does NOT throw
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Connection timeout');
+    });
+
+    it('Supabase error in documentService throws', async () => {
+      mockSupabase.insert.mockReturnValue(mockSupabase);
+      mockSupabase.select.mockReturnValue(mockSupabase);
+      mockSupabase.single.mockResolvedValue({
+        data: null,
+        error: { message: 'Storage quota exceeded' }
+      });
 
       await expect(documentService.uploadDocument({
         documentId: 'doc-fail',
@@ -231,11 +287,13 @@ describe('Cross-service integration', () => {
 
       // PlaidDataService (mock mode) still works fine
       let plaidDataMock;
-      const savedUrl = process.env.DATABASE_URL;
-      delete process.env.DATABASE_URL;
       jest.isolateModules(() => {
+        delete process.env.SUPABASE_URL;
+        delete process.env.SUPABASE_SERVICE_KEY;
         plaidDataMock = require('../../services/plaidDataService');
       });
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
 
       const result = await plaidDataMock.upsertPlaidItem({
         itemId: 'isolated-item',
@@ -244,18 +302,19 @@ describe('Cross-service integration', () => {
       });
 
       expect(result.success).toBe(true);
-      process.env.DATABASE_URL = savedUrl;
     });
 
     it('Each service maintains independent state', async () => {
       let plaidDataMock;
       let docServiceMock;
-      const savedUrl2 = process.env.DATABASE_URL;
-      delete process.env.DATABASE_URL;
       jest.isolateModules(() => {
+        delete process.env.SUPABASE_URL;
+        delete process.env.SUPABASE_SERVICE_KEY;
         plaidDataMock = require('../../services/plaidDataService');
         docServiceMock = require('../../services/documentService');
       });
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
 
       // Store a Plaid item
       await plaidDataMock.upsertPlaidItem({
@@ -283,7 +342,6 @@ describe('Cross-service integration', () => {
         userId: 'user-1'
       });
       expect(docGet).toBeNull();
-      process.env.DATABASE_URL = savedUrl2;
     });
   });
 });

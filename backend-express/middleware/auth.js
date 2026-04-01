@@ -1,6 +1,18 @@
-const { verifyToken } = require('@clerk/backend');
+const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('auth');
+
+// Initialize Supabase client for JWT validation
+// Uses anon key (not service key) — correct for auth.getUser() token validation
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  logger.warn('Supabase not configured - auth middleware will reject all requests unless mocked');
+}
 
 /**
  * Paths that bypass JWT authentication.
@@ -25,10 +37,10 @@ function isPublicPath(method, url) {
 }
 
 /**
- * Express middleware that enforces JWT authentication via Clerk.
+ * Express middleware that enforces JWT authentication via Supabase Auth.
  *
  * Extracts the Bearer token from the Authorization header, validates it
- * using Clerk's verifyToken(), and attaches the authenticated user to req.user.
+ * using supabase.auth.getUser(), and attaches the authenticated user to req.user.
  *
  * Returns 401 for:
  * - Missing Authorization header
@@ -69,20 +81,23 @@ async function requireAuth(req, res, next) {
       });
     }
 
-    // Validate token via Clerk
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-    });
+    // Validate token via Supabase auth
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data || !data.user) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired token'
+      });
+    }
 
     // Attach user to request for downstream handlers
-    // payload.sub is the Clerk user ID
-    req.user = { id: payload.sub };
+    req.user = data.user;
     next();
   } catch (err) {
-    logger.warn('Token validation failed', { error: err.message });
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'Invalid or expired token'
+      message: 'Token validation failed'
     });
   }
 }

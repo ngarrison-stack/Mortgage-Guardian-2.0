@@ -1,3 +1,4 @@
+const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const documentService = require('./documentService');
 const claudeService = require('./claudeService');
@@ -21,7 +22,7 @@ const logger = createLogger('document-pipeline');
  *
  * Persistence:
  *   - In-memory Map is the primary store for active pipelines (fast).
- *   - PostgreSQL pipeline_state table is the recovery mechanism for server restarts.
+ *   - Supabase pipeline_state table is the recovery mechanism for server restarts.
  *   - DB persistence is best-effort — pipeline never blocks on DB failures.
  */
 
@@ -46,14 +47,16 @@ const STATE_TRANSITIONS = {
   [PIPELINE_STATES.REVIEW]: PIPELINE_STATES.COMPLETE
 };
 
-// Lazy-loaded db module — only initialized when DATABASE_URL is set
-let _db = null;
-function getDb() {
-  if (_db) return _db;
-  if (!process.env.DATABASE_URL) return null;
-  _db = require('../db');
-  logger.info('Database client initialized for pipeline state persistence');
-  return _db;
+// Initialize Supabase client for pipeline state persistence
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  logger.info('Supabase client initialized for pipeline state persistence');
+} else {
+  logger.warn('Supabase not configured - pipeline state will be in-memory only');
 }
 
 class DocumentPipelineService {
@@ -137,39 +140,36 @@ class DocumentPipelineService {
    * @param {Object} pipeline - Pipeline state object
    */
   async _persistPipeline(pipeline) {
-    const db = getDb();
-    if (!db) return;
+    if (!supabase) return;
 
     try {
-      await db.query(
-        `INSERT INTO pipeline_state (document_id, user_id, document_type, file_name, status, steps, extracted_text, classification_results, analysis_results, case_id, error, retry_count, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-         ON CONFLICT (document_id) DO UPDATE SET
-           status = EXCLUDED.status,
-           steps = EXCLUDED.steps,
-           extracted_text = EXCLUDED.extracted_text,
-           classification_results = EXCLUDED.classification_results,
-           analysis_results = EXCLUDED.analysis_results,
-           case_id = EXCLUDED.case_id,
-           error = EXCLUDED.error,
-           retry_count = EXCLUDED.retry_count,
-           updated_at = NOW()`,
-        [
-          pipeline.documentId,
-          pipeline.userId,
-          pipeline.documentType,
-          pipeline.fileName || null,
-          pipeline.status,
-          JSON.stringify(pipeline.steps),
-          pipeline.extractedText,
-          pipeline.classificationResults ? JSON.stringify(pipeline.classificationResults) : null,
-          pipeline.analysisResults ? JSON.stringify(pipeline.analysisResults) : null,
-          pipeline.caseId,
-          pipeline.error ? JSON.stringify(pipeline.error) : null,
-          pipeline.retryCount,
-          pipeline.createdAt
-        ]
-      );
+      const row = {
+        document_id: pipeline.documentId,
+        user_id: pipeline.userId,
+        document_type: pipeline.documentType,
+        file_name: pipeline.fileName || null,
+        status: pipeline.status,
+        steps: pipeline.steps,
+        extracted_text: pipeline.extractedText,
+        classification_results: pipeline.classificationResults,
+        analysis_results: pipeline.analysisResults,
+        case_id: pipeline.caseId,
+        error: pipeline.error,
+        retry_count: pipeline.retryCount,
+        created_at: pipeline.createdAt,
+        updated_at: pipeline.updatedAt
+      };
+
+      const { error } = await supabase
+        .from('pipeline_state')
+        .upsert(row, { onConflict: 'document_id' });
+
+      if (error) {
+        logger.warn('Failed to persist pipeline state', {
+          documentId: pipeline.documentId,
+          error: error.message
+        });
+      }
     } catch (err) {
       logger.warn('Pipeline state persistence error', {
         documentId: pipeline.documentId,
@@ -192,17 +192,16 @@ class DocumentPipelineService {
     if (cached) return cached;
 
     // Try database fallback
-    const db = getDb();
-    if (!db) return null;
+    if (!supabase) return null;
 
     try {
-      const result = await db.query(
-        `SELECT * FROM pipeline_state WHERE document_id = $1`,
-        [documentId]
-      );
+      const { data, error } = await supabase
+        .from('pipeline_state')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
 
-      const data = result.rows[0];
-      if (!data) return null;
+      if (error || !data) return null;
 
       // Convert DB row to pipeline object
       const pipeline = {

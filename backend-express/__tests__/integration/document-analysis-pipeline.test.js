@@ -14,13 +14,15 @@
 // MOCKS — set up before any module imports
 // ============================================================
 
+const { createMockSupabaseClient } = require('../mocks/mockSupabaseClient');
 const mockClaudeService = require('../mocks/mockClaudeService');
 const request = require('supertest');
 
-// Mock @clerk/backend before any module loads it
-const mockVerifyToken = jest.fn();
-jest.mock('@clerk/backend', () => ({
-  verifyToken: mockVerifyToken
+const mockClient = createMockSupabaseClient();
+
+// Mock @supabase/supabase-js before any module loads it
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockClient)
 }));
 
 // Mock claudeService for pipeline backward-compat (import still exists)
@@ -159,8 +161,8 @@ function setupAnthropicMocks(overrides = {}) {
 // ============================================================
 
 // Set env vars so modules initialize properly
-process.env.CLERK_SECRET_KEY = 'test-clerk-secret';
-
+process.env.SUPABASE_URL = 'https://mock.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
 process.env.ANTHROPIC_API_KEY = 'test-key';
 process.env.NODE_ENV = 'production';
 process.env.VERCEL = '1';
@@ -204,8 +206,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockVerifyToken.mockReset();
-  mockVerifyToken.mockResolvedValue({ sub: 'mock-user-id-12345' });
+  mockClient.reset();
   mockClaudeService.reset();
   mockAnthropicCreate.mockReset();
   jest.clearAllMocks();

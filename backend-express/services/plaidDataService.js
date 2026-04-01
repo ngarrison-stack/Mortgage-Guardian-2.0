@@ -1,14 +1,17 @@
+const { createClient } = require('@supabase/supabase-js');
 const { createLogger } = require('../utils/logger');
 const logger = createLogger('plaid-data');
 
-// Lazy-loaded db module — only initialized when DATABASE_URL is set
-let _db = null;
-function getDb() {
-  if (_db) return _db;
-  if (!process.env.DATABASE_URL) return null;
-  _db = require('../db');
-  logger.info('Database client initialized for Plaid data');
-  return _db;
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  logger.info('Supabase client initialized for Plaid data');
+} else {
+  logger.warn('Supabase not configured - Plaid data will use in-memory storage');
 }
 
 class PlaidDataService {
@@ -23,38 +26,31 @@ class PlaidDataService {
    * Store or update a Plaid item in the database
    */
   async upsertPlaidItem({ itemId, userId, accessToken, status, institutionId, error }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockUpsertItem({ itemId, userId, accessToken, status, institutionId, error });
     }
 
     try {
-      const db = getDb();
-      const now = new Date().toISOString();
-      const result = await db.query(
-        `INSERT INTO plaid_items (item_id, user_id, access_token, status, institution_id, error, last_webhook_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (item_id) DO UPDATE SET
-           user_id = EXCLUDED.user_id,
-           access_token = EXCLUDED.access_token,
-           status = EXCLUDED.status,
-           institution_id = EXCLUDED.institution_id,
-           error = EXCLUDED.error,
-           last_webhook_at = EXCLUDED.last_webhook_at,
-           updated_at = EXCLUDED.updated_at
-         RETURNING *`,
-        [
-          itemId,
-          userId,
-          accessToken,
-          status || 'active',
-          institutionId,
-          error ? JSON.stringify(error) : null,
-          now,
-          now
-        ]
-      );
+      const { data, error: dbError } = await supabase
+        .from('plaid_items')
+        .upsert({
+          item_id: itemId,
+          user_id: userId,
+          access_token: accessToken,
+          status: status || 'active',
+          institution_id: institutionId,
+          error: error ? JSON.stringify(error) : null,
+          last_webhook_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'item_id'
+        });
 
-      return { success: true, data: result.rows[0] };
+      if (dbError) {
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+
+      return { success: true, data };
     } catch (error) {
       logger.error('Error upserting Plaid item', { error: error.message, itemId });
       return { success: false, error: error.message };
@@ -65,98 +61,51 @@ class PlaidDataService {
    * Store transactions from Plaid webhook
    */
   async storeTransactions({ itemId, transactions, userId }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockStoreTransactions({ itemId, transactions, userId });
     }
 
     try {
-      const db = getDb();
-      const { pool } = db;
-      const now = new Date().toISOString();
+      // Prepare transactions for bulk insert
+      const transactionRecords = transactions.map(transaction => ({
+        transaction_id: transaction.transaction_id,
+        item_id: itemId,
+        user_id: userId,
+        account_id: transaction.account_id,
+        amount: transaction.amount,
+        iso_currency_code: transaction.iso_currency_code,
+        unofficial_currency_code: transaction.unofficial_currency_code,
+        category: transaction.category ? JSON.stringify(transaction.category) : null,
+        category_id: transaction.category_id,
+        transaction_type: transaction.transaction_type,
+        name: transaction.name,
+        merchant_name: transaction.merchant_name,
+        date: transaction.date,
+        authorized_date: transaction.authorized_date,
+        authorized_datetime: transaction.authorized_datetime,
+        datetime: transaction.datetime,
+        payment_channel: transaction.payment_channel,
+        location: transaction.location ? JSON.stringify(transaction.location) : null,
+        payment_meta: transaction.payment_meta ? JSON.stringify(transaction.payment_meta) : null,
+        account_owner: transaction.account_owner,
+        pending: transaction.pending,
+        pending_transaction_id: transaction.pending_transaction_id,
+        transaction_code: transaction.transaction_code,
+        created_at: new Date().toISOString()
+      }));
 
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
+      const { data, error } = await supabase
+        .from('plaid_transactions')
+        .upsert(transactionRecords, {
+          onConflict: 'transaction_id'
+        });
 
-        for (const transaction of transactions) {
-          await client.query(
-            `INSERT INTO plaid_transactions (
-              transaction_id, item_id, user_id, account_id, amount,
-              iso_currency_code, unofficial_currency_code, category, category_id,
-              transaction_type, name, merchant_name, date, authorized_date,
-              authorized_datetime, datetime, payment_channel, location,
-              payment_meta, account_owner, pending, pending_transaction_id,
-              transaction_code, created_at
-            ) VALUES (
-              $1, $2, $3, $4, $5,
-              $6, $7, $8, $9,
-              $10, $11, $12, $13, $14,
-              $15, $16, $17, $18,
-              $19, $20, $21, $22,
-              $23, $24
-            )
-            ON CONFLICT (transaction_id) DO UPDATE SET
-              item_id = EXCLUDED.item_id,
-              user_id = EXCLUDED.user_id,
-              account_id = EXCLUDED.account_id,
-              amount = EXCLUDED.amount,
-              iso_currency_code = EXCLUDED.iso_currency_code,
-              unofficial_currency_code = EXCLUDED.unofficial_currency_code,
-              category = EXCLUDED.category,
-              category_id = EXCLUDED.category_id,
-              transaction_type = EXCLUDED.transaction_type,
-              name = EXCLUDED.name,
-              merchant_name = EXCLUDED.merchant_name,
-              date = EXCLUDED.date,
-              authorized_date = EXCLUDED.authorized_date,
-              authorized_datetime = EXCLUDED.authorized_datetime,
-              datetime = EXCLUDED.datetime,
-              payment_channel = EXCLUDED.payment_channel,
-              location = EXCLUDED.location,
-              payment_meta = EXCLUDED.payment_meta,
-              account_owner = EXCLUDED.account_owner,
-              pending = EXCLUDED.pending,
-              pending_transaction_id = EXCLUDED.pending_transaction_id,
-              transaction_code = EXCLUDED.transaction_code`,
-            [
-              transaction.transaction_id,
-              itemId,
-              userId,
-              transaction.account_id,
-              transaction.amount,
-              transaction.iso_currency_code,
-              transaction.unofficial_currency_code,
-              transaction.category ? JSON.stringify(transaction.category) : null,
-              transaction.category_id,
-              transaction.transaction_type,
-              transaction.name,
-              transaction.merchant_name,
-              transaction.date,
-              transaction.authorized_date,
-              transaction.authorized_datetime,
-              transaction.datetime,
-              transaction.payment_channel,
-              transaction.location ? JSON.stringify(transaction.location) : null,
-              transaction.payment_meta ? JSON.stringify(transaction.payment_meta) : null,
-              transaction.account_owner,
-              transaction.pending,
-              transaction.pending_transaction_id,
-              transaction.transaction_code,
-              now
-            ]
-          );
-        }
-
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
       logger.info('Transactions stored', { count: transactions.length, itemId });
-      return { success: true, count: transactions.length };
+      return { success: true, count: transactions.length, data };
     } catch (error) {
       logger.error('Error storing transactions', { error: error.message, itemId });
       return { success: false, error: error.message };
@@ -167,19 +116,22 @@ class PlaidDataService {
    * Remove transactions from database
    */
   async removeTransactions({ transactionIds }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockRemoveTransactions({ transactionIds });
     }
 
     try {
-      const db = getDb();
-      await db.query(
-        `DELETE FROM plaid_transactions WHERE transaction_id = ANY($1::text[])`,
-        [transactionIds]
-      );
+      const { data, error } = await supabase
+        .from('plaid_transactions')
+        .delete()
+        .in('transaction_id', transactionIds);
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
 
       logger.info('Transactions removed', { count: transactionIds.length });
-      return { success: true, count: transactionIds.length };
+      return { success: true, count: transactionIds.length, data };
     } catch (error) {
       logger.error('Error removing transactions', { error: error.message });
       return { success: false, error: error.message };
@@ -190,29 +142,29 @@ class PlaidDataService {
    * Update item status (for errors, warnings, etc.)
    */
   async updateItemStatus({ itemId, status, error = null, requiresAction = false }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockUpdateItemStatus({ itemId, status, error, requiresAction });
     }
 
     try {
-      const db = getDb();
-      const now = new Date().toISOString();
-      const result = await db.query(
-        `UPDATE plaid_items
-         SET status = $1, error = $2, requires_user_action = $3, updated_at = $4
-         WHERE item_id = $5
-         RETURNING *`,
-        [
-          status,
-          error ? JSON.stringify(error) : null,
-          requiresAction,
-          now,
-          itemId
-        ]
-      );
+      const updateData = {
+        status,
+        error: error ? JSON.stringify(error) : null,
+        requires_user_action: requiresAction,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error: dbError } = await supabase
+        .from('plaid_items')
+        .update(updateData)
+        .eq('item_id', itemId);
+
+      if (dbError) {
+        throw new Error(`Database error: ${dbError.message}`);
+      }
 
       logger.info('Item status updated', { itemId, status });
-      return { success: true, data: result.rows[0] };
+      return { success: true, data };
     } catch (error) {
       logger.error('Error updating item status', { error: error.message, itemId });
       return { success: false, error: error.message };
@@ -223,73 +175,40 @@ class PlaidDataService {
    * Store or update accounts information
    */
   async upsertAccounts({ itemId, accounts, userId }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockUpsertAccounts({ itemId, accounts, userId });
     }
 
     try {
-      const db = getDb();
-      const { pool } = db;
-      const now = new Date().toISOString();
+      const accountRecords = accounts.map(account => ({
+        account_id: account.account_id,
+        item_id: itemId,
+        user_id: userId,
+        name: account.name,
+        official_name: account.official_name,
+        type: account.type,
+        subtype: account.subtype,
+        mask: account.mask,
+        current_balance: account.balances?.current,
+        available_balance: account.balances?.available,
+        limit: account.balances?.limit,
+        iso_currency_code: account.balances?.iso_currency_code,
+        unofficial_currency_code: account.balances?.unofficial_currency_code,
+        updated_at: new Date().toISOString()
+      }));
 
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
+      const { data, error } = await supabase
+        .from('plaid_accounts')
+        .upsert(accountRecords, {
+          onConflict: 'account_id'
+        });
 
-        for (const account of accounts) {
-          await client.query(
-            `INSERT INTO plaid_accounts (
-              account_id, item_id, user_id, name, official_name,
-              type, subtype, mask, current_balance, available_balance,
-              "limit", iso_currency_code, unofficial_currency_code, updated_at
-            ) VALUES (
-              $1, $2, $3, $4, $5,
-              $6, $7, $8, $9, $10,
-              $11, $12, $13, $14
-            )
-            ON CONFLICT (account_id) DO UPDATE SET
-              item_id = EXCLUDED.item_id,
-              user_id = EXCLUDED.user_id,
-              name = EXCLUDED.name,
-              official_name = EXCLUDED.official_name,
-              type = EXCLUDED.type,
-              subtype = EXCLUDED.subtype,
-              mask = EXCLUDED.mask,
-              current_balance = EXCLUDED.current_balance,
-              available_balance = EXCLUDED.available_balance,
-              "limit" = EXCLUDED."limit",
-              iso_currency_code = EXCLUDED.iso_currency_code,
-              unofficial_currency_code = EXCLUDED.unofficial_currency_code,
-              updated_at = EXCLUDED.updated_at`,
-            [
-              account.account_id,
-              itemId,
-              userId,
-              account.name,
-              account.official_name,
-              account.type,
-              account.subtype,
-              account.mask,
-              account.balances?.current,
-              account.balances?.available,
-              account.balances?.limit,
-              account.balances?.iso_currency_code,
-              account.balances?.unofficial_currency_code,
-              now
-            ]
-          );
-        }
-
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
       logger.info('Accounts updated', { count: accounts.length, itemId });
-      return { success: true, count: accounts.length };
+      return { success: true, count: accounts.length, data };
     } catch (error) {
       logger.error('Error upserting accounts', { error: error.message, itemId });
       return { success: false, error: error.message };
@@ -300,20 +219,19 @@ class PlaidDataService {
    * Get item by ID
    */
   async getItem(itemId) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       return this.mockGetItem(itemId);
     }
 
     try {
-      const db = getDb();
-      const result = await db.query(
-        `SELECT * FROM plaid_items WHERE item_id = $1`,
-        [itemId]
-      );
+      const { data, error } = await supabase
+        .from('plaid_items')
+        .select('*')
+        .eq('item_id', itemId)
+        .single();
 
-      const data = result.rows[0];
-      if (!data) {
-        return { success: false, error: 'Item not found' };
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
       }
 
       return { success: true, data };
@@ -327,23 +245,30 @@ class PlaidDataService {
    * Create notification for user action required
    */
   async createNotification({ userId, itemId, type, message, priority = 'medium' }) {
-    if (!process.env.DATABASE_URL) {
+    if (!supabase) {
       logger.info('Mock notification', { priority, message, userId });
       return { success: true, mock: true };
     }
 
     try {
-      const db = getDb();
-      const now = new Date().toISOString();
-      const result = await db.query(
-        `INSERT INTO notifications (user_id, item_id, type, message, priority, read, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING *`,
-        [userId, itemId, type, message, priority, false, now]
-      );
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          item_id: itemId,
+          type,
+          message,
+          priority,
+          read: false,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
 
       logger.info('Notification created', { priority, userId });
-      return { success: true, data: result.rows[0] };
+      return { success: true, data };
     } catch (error) {
       logger.error('Error creating notification', { error: error.message, userId });
       return { success: false, error: error.message };
