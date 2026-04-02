@@ -2,19 +2,35 @@ name: iOS CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - '*.xcodeproj/**'
+      - '*.xcworkspace/**'
+      - '**/*.swift'
+      - '**/*.xib'
+      - '**/*.storyboard'
+      - '**/Package.resolved'
+      - '.github/workflows/ci.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - '*.xcodeproj/**'
+      - '*.xcworkspace/**'
+      - '**/*.swift'
+      - '**/*.xib'
+      - '**/*.storyboard'
+      - '**/Package.resolved'
+      - '.github/workflows/ci.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ios-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     name: Build and Test
     runs-on: macos-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,33 +40,41 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Build for iOS
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project MortgageGuardian.xcodeproj \
+            -scheme MortgageGuardian
+
+      - name: Build for iOS Simulator
         run: |
           xcodebuild clean build \
             -project MortgageGuardian.xcodeproj \
             -scheme MortgageGuardian \
             -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=iPhone 15,OS=17.0" \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Run tests
-        run: |
-          xcodebuild test \
-            -project MortgageGuardian.xcodeproj \
-            -scheme MortgageGuardian \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=iPhone 15,OS=17.0" \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+      # Tests are skipped until test targets are added to the scheme.
+      # Uncomment when MortgageGuardianTests target exists:
+      # - name: Run tests
+      #   run: |
+      #     xcodebuild test \
+      #       -project MortgageGuardian.xcodeproj \
+      #       -scheme MortgageGuardian \
+      #       -sdk iphonesimulator \
+      #       -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
+      #       CODE_SIGN_IDENTITY="" \
+      #       CODE_SIGNING_REQUIRED=NO \
+      #       CODE_SIGNING_ALLOWED=NO
 
-      - name: Upload test results
-        if: always()
+      - name: Upload build artifacts
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: build-logs
           path: |
-            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.xcactivitylog
             ~/Library/Logs/DiagnosticReports/*.crash
