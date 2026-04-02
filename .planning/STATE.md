@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 23 of 31 (CI/CD Pipeline)
-Plan: 1 of 3 in current phase
-Status: Plan 23-01 complete — ready to execute Plan 23-02
-Last activity: 2026-04-02 - Completed Plan 23-01 (Backend CI Workflow)
+Plan: 2 of 3 in current phase
+Status: Plan 23-02 complete — ready to execute Plan 23-03
+Last activity: 2026-04-02 - Completed Plan 23-02 (Frontend CI Workflow)
 
 Progress: ██░░░░░░░░░░░░░░░░░░ 10%
 
@@ -48,6 +48,7 @@ v5.0 Phase 22-01: Public schema empty in remote Supabase — migration files (00
 v5.0 Phase 22-02: Baseline built from migration files + bootstrap tables (documents, users not in any migration). Reserved word "limit" quoted.
 v5.0 Phase 22-03: Baseline verified complete — 9 tables, 29 RLS policies, 23 indexes, 5 triggers. No gaps found.
 v5.0 Phase 23-01: Archived aspirational CI/CD workflow, created working backend-ci.yml, added ESLint 8.x to backend-express. Pre-existing RLS test failure noted.
+v5.0 Phase 23-02: Created frontend-ci.yml with lint + build. Clerk validates key format at build time — used synthetic format-valid key. Added NEXT_PUBLIC_API_URL/APP_URL placeholders.
 
 ### Deferred Issues
 
@@ -75,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Plan 23-01 complete — ready to execute Plan 23-02 (Frontend CI Workflow)
+Stopped at: Plan 23-02 complete — ready to execute Plan 23-03 (PR Quality Gates & iOS Cleanup)
 Resume file: None
