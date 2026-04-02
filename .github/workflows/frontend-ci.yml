@@ -19,7 +19,7 @@ jobs:
       # CI-only placeholder values — these are not real keys.
       # The build needs NEXT_PUBLIC_ vars to be present at compile time
       # even though their values are not used in CI.
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2ktcGxhY2Vob2xkZXItMDAuY2xlcmsuYWNjb3VudHMuZGV2JA=="
       NEXT_PUBLIC_API_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3001"
 
