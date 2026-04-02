@@ -1,0 +1,21 @@
+{
+  "env": {
+    "node": true,
+    "es2024": true,
+    "jest": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2024,
+    "sourceType": "commonjs"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "no-undef": "warn",
+    "no-inner-declarations": "warn",
+    "no-control-regex": "warn",
+    "no-useless-escape": "warn"
+  },
+  "ignorePatterns": ["node_modules", "coverage", "dist", "__tests__/mocks"]
+}
