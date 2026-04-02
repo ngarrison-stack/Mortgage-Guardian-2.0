@@ -23,7 +23,7 @@ describe('Migration 004 — RLS Policy Structure', () => {
   beforeAll(() => {
     const migrationPath = path.join(
       __dirname,
-      '..', '..', 'migrations', '004_document_rls_policies.sql'
+      '..', '..', 'migrations', '_archived', '004_document_rls_policies.sql'
     );
     migrationSql = fs.readFileSync(migrationPath, 'utf-8');
     // Strip SQL single-line comments for accurate counting of active SQL tokens
