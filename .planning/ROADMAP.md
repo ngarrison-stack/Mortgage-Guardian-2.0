@@ -92,7 +92,7 @@ Plans:
 **Plans**: 3
 
 Plans:
-- [ ] 23-01: Backend CI Workflow (archive aspirational workflow, ESLint config, backend-ci.yml)
+- [x] 23-01: Backend CI Workflow (archive aspirational workflow, ESLint config, backend-ci.yml) — 2026-04-02
 - [ ] 23-02: Frontend CI Workflow (frontend-ci.yml with build + lint)
 - [ ] 23-03: PR Quality Gates & iOS Cleanup (branch protection docs, iOS CI fix, verify on GitHub)
 
@@ -269,7 +269,7 @@ Plans:
 | 20. Pipeline Accuracy | v4.0 | 5/5 | Complete | 2026-03-18 |
 | 21. Report Generation & Integration Fixes | v4.0 | 5/5 | Complete | 2026-03-30 |
 | 22. Database Migration Framework | v5.0 | 3/3 | Complete | 2026-04-02 |
-| 23. CI/CD Pipeline | v5.0 | 0/3 | Planned | - |
+| 23. CI/CD Pipeline | v5.0 | 1/3 | In Progress | - |
 | 24. Test Coverage Hardening | v5.0 | 0/? | Not started | - |
 | 25. Environment & Secrets Management | v5.0 | 0/? | Not started | - |
 | 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |

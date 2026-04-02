@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 23 of 31 (CI/CD Pipeline)
-Plan: 0 of ? in current phase
-Status: Phase 22 complete — ready to plan Phase 23
-Last activity: 2026-04-02 - Completed Phase 22 (Database Migration Framework)
+Plan: 1 of 3 in current phase
+Status: Plan 23-01 complete — ready to execute Plan 23-02
+Last activity: 2026-04-02 - Completed Plan 23-01 (Backend CI Workflow)
 
 Progress: ██░░░░░░░░░░░░░░░░░░ 10%
 
@@ -47,6 +47,7 @@ All v4.0 decisions documented in phase summaries (Phases 18-21).
 v5.0 Phase 22-01: Public schema empty in remote Supabase — migration files (001-005) are authoritative schema source.
 v5.0 Phase 22-02: Baseline built from migration files + bootstrap tables (documents, users not in any migration). Reserved word "limit" quoted.
 v5.0 Phase 22-03: Baseline verified complete — 9 tables, 29 RLS policies, 23 indexes, 5 triggers. No gaps found.
+v5.0 Phase 23-01: Archived aspirational CI/CD workflow, created working backend-ci.yml, added ESLint 8.x to backend-express. Pre-existing RLS test failure noted.
 
 ### Deferred Issues
 
@@ -74,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 22 complete — ready to plan Phase 23 (CI/CD Pipeline)
+Stopped at: Plan 23-01 complete — ready to execute Plan 23-02 (Frontend CI Workflow)
 Resume file: None
