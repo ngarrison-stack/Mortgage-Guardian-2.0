@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const { createLogger, morganStream } = require('./utils/logger');
+const { validateEnvironment } = require('./utils/envValidator');
 const logger = createLogger('server');
 
 // Process-level error handlers — must be registered early, before any async work
@@ -187,49 +188,6 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
-
-// ============================================
-// ENVIRONMENT VALIDATION
-// ============================================
-
-function validateEnvironment() {
-  if (process.env.NODE_ENV === 'test') {
-    return; // Skip validation in test environment
-  }
-
-  const required = {
-    'SUPABASE_URL': 'Supabase database connection',
-    'SUPABASE_ANON_KEY': 'Supabase anonymous key for auth',
-  };
-
-  const recommended = {
-    'ANTHROPIC_API_KEY': 'Claude AI document analysis',
-    'PLAID_CLIENT_ID': 'Plaid banking integration',
-    'PLAID_SECRET': 'Plaid banking integration',
-  };
-
-  const missing = [];
-  const warnings = [];
-
-  for (const [key, desc] of Object.entries(required)) {
-    if (!process.env[key]) missing.push(`${key} (${desc})`);
-  }
-
-  for (const [key, desc] of Object.entries(recommended)) {
-    if (!process.env[key]) warnings.push(`${key} (${desc})`);
-  }
-
-  if (warnings.length > 0) {
-    logger.warn('Missing recommended environment variables', { missing: warnings });
-  }
-
-  if (missing.length > 0) {
-    logger.error('Missing required environment variables', { missing });
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
-  }
-
-  logger.info('Environment validation passed');
-}
 
 // ============================================
 // START SERVER (only when run directly)
