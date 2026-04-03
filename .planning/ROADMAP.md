@@ -119,7 +119,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+- [x] 25-01: Env Validation & Config Management (envValidator.js, .env.example files, server.js integration) — 2026-04-03
 
 #### Phase 26: Container & Deploy Infrastructure
 
@@ -275,7 +275,7 @@ Plans:
 | 22. Database Migration Framework | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 23. CI/CD Pipeline | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 24. Test Coverage Hardening | v5.0 | 5/5 | Complete | 2026-04-03 |
-| 25. Environment & Secrets Management | v5.0 | 0/? | Not started | - |
+| 25. Environment & Secrets Management | v5.0 | 1/? | In progress | - |
 | 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |
 | 27. Monitoring & Observability | v5.0 | 0/? | Not started | - |
 | 28. Performance & Load Testing | v5.0 | 0/? | Not started | - |
