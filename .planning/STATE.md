@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 23: CI/CD Pipeline
+**Current focus:** v5.0 Production Readiness — Phase 23 complete, ready for Phase 24
 
 ## Current Position
 
-Phase: 23 of 31 (CI/CD Pipeline)
-Plan: 2 of 3 in current phase
-Status: Plan 23-02 complete — ready to execute Plan 23-03
-Last activity: 2026-04-02 - Completed Plan 23-02 (Frontend CI Workflow)
+Phase: 23 of 31 (CI/CD Pipeline) — COMPLETE
+Plan: 3 of 3 in current phase — ALL COMPLETE
+Status: Phase 23 complete — ready to plan Phase 24
+Last activity: 2026-04-02 - Completed Plan 23-03 (PR Quality Gates & iOS Cleanup)
 
-Progress: ██░░░░░░░░░░░░░░░░░░ 10%
+Progress: ███░░░░░░░░░░░░░░░░░ 15%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ v5.0 Phase 22-02: Baseline built from migration files + bootstrap tables (docume
 v5.0 Phase 22-03: Baseline verified complete — 9 tables, 29 RLS policies, 23 indexes, 5 triggers. No gaps found.
 v5.0 Phase 23-01: Archived aspirational CI/CD workflow, created working backend-ci.yml, added ESLint 8.x to backend-express. Pre-existing RLS test failure noted.
 v5.0 Phase 23-02: Created frontend-ci.yml with lint + build. Clerk validates key format at build time — used synthetic format-valid key. Added NEXT_PUBLIC_API_URL/APP_URL placeholders.
+v5.0 Phase 23-03: Updated iOS CI with path filters and OS=latest. Branch protection documented. GitHub Actions billing lock prevents runs — workflows structurally correct.
 
 ### Deferred Issues
 
@@ -76,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Plan 23-02 complete — ready to execute Plan 23-03 (PR Quality Gates & iOS Cleanup)
+Stopped at: Phase 23 complete — ready to plan Phase 24 (Test Coverage Hardening)
 Resume file: None
