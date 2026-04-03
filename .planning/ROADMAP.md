@@ -116,10 +116,11 @@ Plans:
 **Depends on**: Phase 24
 **Research**: Likely (secrets management tooling, rotation strategies)
 **Research topics**: Secrets management approaches for Railway/Vercel, env validation libraries, rotation patterns
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
 - [x] 25-01: Env Validation & Config Management (envValidator.js, .env.example files, server.js integration) — 2026-04-03
+- [x] 25-02: Frontend Env Validation & Documentation (frontend env.ts, ENV-GUIDE.md) — 2026-04-03
 
 #### Phase 26: Container & Deploy Infrastructure
 
@@ -275,7 +276,7 @@ Plans:
 | 22. Database Migration Framework | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 23. CI/CD Pipeline | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 24. Test Coverage Hardening | v5.0 | 5/5 | Complete | 2026-04-03 |
-| 25. Environment & Secrets Management | v5.0 | 1/? | In progress | - |
+| 25. Environment & Secrets Management | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |
 | 27. Monitoring & Observability | v5.0 | 0/? | Not started | - |
 | 28. Performance & Load Testing | v5.0 | 0/? | Not started | - |
