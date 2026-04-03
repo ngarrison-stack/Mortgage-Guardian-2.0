@@ -604,6 +604,23 @@ describe('ConfidenceScoringService', () => {
       }
     });
 
+    it('should handle all-null layers (no data)', () => {
+      const result = service.calculateConfidence({
+        documentAnalyses: null,
+        forensicReport: null,
+        complianceReport: null
+      });
+      expect(result.overall).toBe(100);
+    });
+
+    it('should handle completely missing aggregatedData fields', () => {
+      const result = service.calculateConfidence({});
+      expect(result.overall).toBe(100);
+      expect(result.breakdown.documentAnalysis).toBe(100);
+      expect(result.breakdown.forensicAnalysis).toBeNull();
+      expect(result.breakdown.complianceAnalysis).toBeNull();
+    });
+
     it('should be deterministic (same input = same output)', () => {
       const data = makeMixedAggregatedData();
       const result1 = service.calculateConfidence(data);
@@ -820,6 +837,121 @@ describe('ConfidenceScoringService', () => {
       }
     });
 
+    it('should use fallback IDs and severity when fields are missing', () => {
+      const data = {
+        documentAnalyses: [{
+          documentId: 'doc-001',
+          anomalies: [{ description: 'Missing id and severity' }] // no id, no severity
+        }],
+        forensicReport: {
+          discrepancies: [{
+            type: 'amount_mismatch',
+            description: 'No id, no severity, no documentA/B'
+            // missing id, severity, documentA, documentB
+          }],
+          timeline: {
+            violations: [{
+              description: 'Missing id, severity, relatedDocuments'
+              // missing id, severity, relatedDocuments
+            }]
+          },
+          paymentVerification: {
+            unmatchedDocumentPayments: [
+              { amount: 100 } // missing id, documentId, transactionId
+            ],
+            feeAnalysis: {
+              irregularities: [
+                { amount: 50 } // missing id, documentId
+              ]
+            }
+          }
+        },
+        complianceReport: {
+          violations: [{
+            statuteId: 'respa',
+            description: 'No id, severity, statuteName, sourceDocumentIds'
+            // missing id, severity, statuteName, sourceDocumentIds
+          }],
+          stateViolations: [{
+            statuteId: 'ca_hbor',
+            description: 'No id, severity, statuteName, jurisdiction, sourceDocumentIds'
+            // missing id, severity, statuteName, jurisdiction, sourceDocumentIds
+          }]
+        }
+      };
+
+      const links = service.buildEvidenceLinks(data);
+
+      // Should have links for all types with fallback values
+      expect(links.length).toBeGreaterThanOrEqual(6);
+
+      // Anomaly fallbacks
+      const anomalyLink = links.find(l => l.findingType === 'anomaly');
+      expect(anomalyLink.findingId).toContain('anomaly-');
+      expect(anomalyLink.severity).toBe('medium');
+
+      // Discrepancy fallbacks
+      const discLink = links.find(l => l.findingType === 'discrepancy');
+      expect(discLink.findingId).toContain('discrepancy-');
+      expect(discLink.sourceDocumentIds).toEqual(['unknown']);
+      expect(discLink.severity).toBe('medium');
+
+      // Timeline fallbacks
+      const tlLink = links.find(l => l.findingType === 'timelineViolation');
+      expect(tlLink.findingId).toContain('timeline-violation-');
+      expect(tlLink.sourceDocumentIds).toEqual(['unknown']);
+      expect(tlLink.severity).toBe('medium');
+
+      // Payment issue fallbacks
+      const pmLinks = links.filter(l => l.findingType === 'paymentIssue');
+      expect(pmLinks.length).toBe(2);
+      // Unmatched payment without documentId/transactionId
+      expect(pmLinks[0].findingId).toContain('payment-issue-');
+      expect(pmLinks[0].sourceDocumentIds).toEqual(['unmatched-payment']);
+      // Fee irregularity without documentId
+      expect(pmLinks[1].findingId).toContain('fee-irregularity-');
+      expect(pmLinks[1].sourceDocumentIds).toEqual(['fee-analysis']);
+
+      // Federal violation fallbacks
+      const fedLink = links.find(l => l.findingType === 'federalViolation');
+      expect(fedLink.findingId).toContain('federal-violation-');
+      expect(fedLink.severity).toBe('medium');
+      expect(fedLink.sourceDocumentIds).toEqual(['compliance-analysis']);
+
+      // State violation fallbacks
+      const stateLink = links.find(l => l.findingType === 'stateViolation');
+      expect(stateLink.findingId).toContain('state-violation-');
+      expect(stateLink.severity).toBe('medium');
+      expect(stateLink.sourceDocumentIds).toEqual(['compliance-analysis']);
+    });
+
+    it('should handle buildEvidenceLinks with no arguments (defaults)', () => {
+      const links = service.buildEvidenceLinks({});
+      expect(links).toEqual([]);
+    });
+
+    it('should handle fee irregularity with documentId', () => {
+      const data = {
+        documentAnalyses: [],
+        forensicReport: {
+          discrepancies: [],
+          timeline: { violations: [] },
+          paymentVerification: {
+            unmatchedDocumentPayments: [],
+            feeAnalysis: {
+              irregularities: [
+                { id: 'fee-1', documentId: 'doc-fee-1' }
+              ]
+            }
+          }
+        },
+        complianceReport: null
+      };
+      const links = service.buildEvidenceLinks(data);
+      expect(links).toHaveLength(1);
+      expect(links[0].sourceDocumentIds).toEqual(['doc-fee-1']);
+    });
+
     it('should handle null forensic and compliance reports', () => {
       const data = {
         documentAnalyses: [
@@ -985,6 +1117,104 @@ describe('ConfidenceScoringService', () => {
       const result = service.calculateConfidence(data);
       expect(result.overall).toBeGreaterThanOrEqual(95);
       expect(result.overall).toBeLessThanOrEqual(100);
+    });
+
+    it('handles docs with missing completenessScore (defaults to 0)', () => {
+      const docs = [{ anomalies: [] }]; // no completenessScore
+      const score = service.documentAnalysisScore(docs);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it('handles docs with missing anomalies array (defaults to [])', () => {
+      const docs = [{ completenessScore: 80 }]; // no anomalies key
+      const score = service.documentAnalysisScore(docs);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles anomaly with unknown severity (default penalty)', () => {
+      const docs = [{
+        completenessScore: 80,
+        anomalies: [{ severity: 'unknown_severity' }]
+      }];
+      const score = service.documentAnalysisScore(docs);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles forensic report with missing discrepancies and timeline', () => {
+      const report = {}; // no discrepancies, no timeline, no paymentVerification
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it('handles forensic discrepancy with unknown severity', () => {
+      const report = {
+        discrepancies: [{ severity: 'weird' }],
+        timeline: { violations: [] },
+        paymentVerification: { unmatchedDocumentPayments: [], feeAnalysis: { irregularities: [] } }
+      };
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles forensic timeline violations with unknown severity', () => {
+      const report = {
+        discrepancies: [],
+        timeline: { violations: [{ severity: 'bizarre' }] },
+        paymentVerification: { unmatchedDocumentPayments: [], feeAnalysis: { irregularities: [] } }
+      };
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles forensic report with no timeline property', () => {
+      const report = {
+        discrepancies: [],
+        paymentVerification: { unmatchedDocumentPayments: [], feeAnalysis: { irregularities: [] } }
+      };
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it('handles forensic paymentVerification with non-array unmatchedDocumentPayments', () => {
+      const report = {
+        discrepancies: [],
+        timeline: { violations: [] },
+        paymentVerification: {
+          unmatchedDocumentPayments: 'not-an-array',
+          feeAnalysis: { irregularities: [] }
+        }
+      };
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles forensic paymentVerification without feeAnalysis', () => {
+      const report = {
+        discrepancies: [],
+        timeline: { violations: [] },
+        paymentVerification: {
+          unmatchedDocumentPayments: []
+        }
+      };
+      const score = service.forensicAnalysisScore(report);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it('handles compliance violations with missing severity', () => {
+      const report = {
+        violations: [{ id: 'v1' }], // no severity
+        stateViolations: []
+      };
+      const score = service.complianceAnalysisScore(report);
+      expect(score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('handles compliance report missing violations arrays', () => {
+      const report = {}; // no violations, no stateViolations
+      const score = service.complianceAnalysisScore(report);
+      expect(score).toBeLessThanOrEqual(100);
     });
 
     it('floor drag activates at 35 (not 45)', () => {
