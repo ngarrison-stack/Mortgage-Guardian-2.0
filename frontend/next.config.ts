@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 // Import that module in your app entry point to trigger validation on startup.
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+
   async rewrites() {
     return [
       {
