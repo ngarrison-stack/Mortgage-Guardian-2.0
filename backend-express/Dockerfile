@@ -1,20 +1,40 @@
-# Use official Node.js runtime as base image
-FROM node:20-alpine
+# Stage 1: Install production dependencies
+FROM node:20-alpine AS deps
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install --production
+RUN npm ci --omit=dev
 
-# Copy application files
-COPY . .
+# Stage 2: Production runtime
+FROM node:20-alpine
 
-# Expose port (Railway will override with $PORT)
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+
+COPY server.js ./
+COPY routes/ ./routes/
+COPY services/ ./services/
+COPY middleware/ ./middleware/
+COPY schemas/ ./schemas/
+COPY utils/ ./utils/
+COPY config/ ./config/
+COPY migrations/ ./migrations/
+COPY api/ ./api/
+COPY package.json ./
+
+ENV NODE_ENV=production
+
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+USER appuser
+
+CMD ["node", "server.js"]
