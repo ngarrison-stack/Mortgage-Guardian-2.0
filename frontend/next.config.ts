@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+// Environment validation is handled by src/lib/env.ts at import time.
+// Import that module in your app entry point to trigger validation on startup.
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
