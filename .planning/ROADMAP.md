@@ -101,10 +101,14 @@ Plans:
 **Goal**: Close branch coverage gap to 90% target across all critical paths
 **Depends on**: Phase 23
 **Research**: Unlikely (internal testing patterns established in v2.0-v4.0)
-**Plans**: TBD
+**Plans**: 5
 
 Plans:
-- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+- [ ] 24-01: Plaid Routes Coverage (plaid-routes.test.js — 9.8% → 85%+)
+- [ ] 24-02: Claude & Documents Routes Coverage (claude.js 58% → 90%, documents.js 60% → 85%)
+- [ ] 24-03: Compliance Services Coverage (complianceAnalysisService 63% → 85%, complianceRuleEngine branches 66% → 80%)
+- [ ] 24-04: Pipeline & Cross-Reference Coverage (documentPipelineService 85% → 90%, plaidCrossReferenceService branches 63% → 80%)
+- [ ] 24-05: Remaining Gaps & Global Verification (logger, financialSecurity, verify 90% global target)
 
 #### Phase 25: Environment & Secrets Management
 
