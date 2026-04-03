@@ -1393,6 +1393,35 @@ describe('POST /v1/plaid/webhook', () => {
     expect(res.body.handled).toBe(false);
   });
 
+  // --- TRANSACTIONS_REMOVED handler exception ---
+  it('returns handled=false when removeTransactions throws exception', async () => {
+    mockRemoveTransactions.mockRejectedValue(new Error('DB connection lost'));
+
+    const res = await sendWebhook({
+      webhook_type: 'TRANSACTIONS',
+      webhook_code: 'TRANSACTIONS_REMOVED',
+      item_id: 'item-wh-001',
+      removed_transactions: ['txn-001']
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.handled).toBe(false);
+    expect(res.body.error).toBe('DB connection lost');
+  });
+
+  // --- Outer catch: malformed body ---
+  it('returns 200 with error on malformed webhook body', async () => {
+    const raw = 'not-valid-json';
+    const res = await request(webhookApp)
+      .post('/v1/plaid/webhook')
+      .set('Content-Type', 'application/json')
+      .send(raw);
+
+    expect(res.status).toBe(200);
+    expect(res.body.acknowledged).toBe(true);
+    expect(res.body.error).toBeDefined();
+  });
+
   // --- Does not require auth (public path) ---
   it('does not require Authorization header', async () => {
     const res = await sendWebhook({
