@@ -107,8 +107,8 @@ Plans:
 - [x] 24-01: Plaid Routes Coverage (plaid-routes.test.js — 9.8% → 99.1%) — 2026-04-02
 - [x] 24-02: Claude & Documents Routes Coverage (claude.js 58% → 100%, documents.js 60% → 98%) — 2026-04-02
 - [x] 24-03: Compliance Services Coverage (complianceAnalysisService 63% → 99.5%, complianceRuleEngine branches 66% → 85%) — 2026-04-03
-- [ ] 24-04: Pipeline & Cross-Reference Coverage (documentPipelineService 85% → 90%, plaidCrossReferenceService branches 63% → 80%)
-- [ ] 24-05: Remaining Gaps & Global Verification (logger, financialSecurity, verify 90% global target)
+- [x] 24-04: Pipeline & Cross-Reference Coverage (documentPipelineService 85% → 90%, plaidCrossReferenceService branches 63% → 80%) — 2026-04-03
+- [x] 24-05: Remaining Gaps & Global Verification (logger, financialSecurity, verify 90% global target) — 2026-04-03
 
 #### Phase 25: Environment & Secrets Management
 
@@ -274,7 +274,7 @@ Plans:
 | 21. Report Generation & Integration Fixes | v4.0 | 5/5 | Complete | 2026-03-30 |
 | 22. Database Migration Framework | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 23. CI/CD Pipeline | v5.0 | 3/3 | Complete | 2026-04-02 |
-| 24. Test Coverage Hardening | v5.0 | 3/5 | In progress | - |
+| 24. Test Coverage Hardening | v5.0 | 5/5 | Complete | 2026-04-03 |
 | 25. Environment & Secrets Management | v5.0 | 0/? | Not started | - |
 | 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |
 | 27. Monitoring & Observability | v5.0 | 0/? | Not started | - |
