@@ -131,7 +131,7 @@ Plans:
 **Plans**: 2
 
 Plans:
-- [ ] 26-01: Production Dockerfiles (backend + frontend multi-stage builds, .dockerignore, non-root user)
+- [x] 26-01: Production Dockerfiles (backend + frontend multi-stage builds, .dockerignore, non-root user) — 2026-04-03
 - [ ] 26-02: Docker Compose & Deployment Guide (local dev docker-compose, DEPLOY.md)
 
 #### Phase 27: Monitoring & Observability
