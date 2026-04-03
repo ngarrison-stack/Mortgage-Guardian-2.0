@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 24 of 31 (Test Coverage Hardening) — IN PROGRESS
-Plan: 1 of 5 in current phase — 1 COMPLETE
-Status: Plan 24-01 complete — ready to plan Phase 24-02
-Last activity: 2026-04-02 - Completed Plan 24-01 (Plaid Routes Coverage)
+Plan: 2 of 5 in current phase — 2 COMPLETE
+Status: Plan 24-02 complete — ready to execute Plan 24-03
+Last activity: 2026-04-02 - Completed Plan 24-02 (Claude & Documents Routes Coverage)
 
 Progress: ███░░░░░░░░░░░░░░░░░ 16%
 
@@ -51,6 +51,7 @@ v5.0 Phase 23-01: Archived aspirational CI/CD workflow, created working backend-
 v5.0 Phase 23-02: Created frontend-ci.yml with lint + build. Clerk validates key format at build time — used synthetic format-valid key. Added NEXT_PUBLIC_API_URL/APP_URL placeholders.
 v5.0 Phase 23-03: Updated iOS CI with path filters and OS=latest. Branch protection documented. GitHub Actions billing lock prevents runs — workflows structurally correct.
 v5.0 Phase 24-01: Added 100 tests for routes/plaid.js — coverage from 9.8% to 99.1% statements, 93.67% branches. Webhook test uses isolated Express app due to express.json/express.raw conflict. 1375 total tests passing.
+v5.0 Phase 24-02: Added 34 tests for claude.js (→100%) and documents.js (→98.16%). 1411 total tests passing.
 
 ### Deferred Issues
 
@@ -78,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 24, plan 01 complete — ready to execute plan 24-02
+Stopped at: Phase 24, plan 02 complete — ready to execute plan 24-03
 Resume file: None
