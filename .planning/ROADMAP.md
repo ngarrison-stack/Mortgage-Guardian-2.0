@@ -128,10 +128,11 @@ Plans:
 **Depends on**: Phase 25
 **Research**: Likely (Docker production optimization, hosting platform specifics)
 **Research topics**: Docker multi-stage builds for Node.js, Railway/Vercel production configs, container security scanning
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 26-01: TBD (run /gsd:plan-phase 26 to break down)
+- [ ] 26-01: Production Dockerfiles (backend + frontend multi-stage builds, .dockerignore, non-root user)
+- [ ] 26-02: Docker Compose & Deployment Guide (local dev docker-compose, DEPLOY.md)
 
 #### Phase 27: Monitoring & Observability
 
