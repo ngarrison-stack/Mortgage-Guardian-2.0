@@ -46,3 +46,6 @@ build/
 
 # Railway
 .railway/
+
+# Load test results
+loadtest/results/

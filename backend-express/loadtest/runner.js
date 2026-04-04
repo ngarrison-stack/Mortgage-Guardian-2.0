@@ -97,9 +97,34 @@ function padRight(str, len) {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.includes('--help') || args.includes('-h') || args.length === 0) {
+  if (args.includes('--help') || args.includes('-h')) {
     printHelp();
     process.exit(0);
+  }
+
+  // Default to running all suites when no arguments provided
+  if (args.length === 0) {
+    console.log('No --suite specified — running all suites by default.');
+    const allSuitePath = path.join(SUITES_DIR, 'all.js');
+    if (!fs.existsSync(allSuitePath)) {
+      console.error('Error: all.js suite not found. Use --suite to specify a suite.');
+      process.exit(1);
+    }
+    try {
+      const allModule = require(allSuitePath);
+      const results = await allModule.run();
+      if (Array.isArray(results) && results.length > 0) {
+        const hasFailure = printSummaryTable(results);
+        process.exit(hasFailure ? 1 : 0);
+      } else {
+        console.log('\nNo results collected.');
+        process.exit(1);
+      }
+    } catch (err) {
+      console.error('Error running all suites:', err.message);
+      process.exit(1);
+    }
+    return;
   }
 
   const suiteIdx = args.indexOf('--suite');
