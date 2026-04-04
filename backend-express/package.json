@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@sentry/node": "^10.47.0",
     "@supabase/supabase-js": "^2.80.0",
     "argon2": "^0.44.0",
     "compression": "^1.7.4",

@@ -77,7 +77,10 @@ function buildSchema(isProduction) {
     KMS_SIGNING_KEY_ID: Joi.string().optional().allow(''),
     ELASTICSEARCH_URL: Joi.string().optional().allow(''),
     ELASTICSEARCH_USER: Joi.string().optional().allow(''),
-    ELASTICSEARCH_PASSWORD: Joi.string().optional().allow('')
+    ELASTICSEARCH_PASSWORD: Joi.string().optional().allow(''),
+
+    // ── Error Tracking (production-only) ─────────────────────
+    SENTRY_DSN: Joi.string().uri().optional()
   }).options({ allowUnknown: true, stripUnknown: false });
 
   return schema;
@@ -186,7 +189,10 @@ function validateEnvironment() {
     kmsSigningKeyId: value.KMS_SIGNING_KEY_ID || '',
     elasticsearchUrl: value.ELASTICSEARCH_URL || '',
     elasticsearchUser: value.ELASTICSEARCH_USER || '',
-    elasticsearchPassword: value.ELASTICSEARCH_PASSWORD || ''
+    elasticsearchPassword: value.ELASTICSEARCH_PASSWORD || '',
+
+    // Error Tracking
+    sentryDsn: value.SENTRY_DSN || ''
   });
 
   logger.info('Environment validation passed');

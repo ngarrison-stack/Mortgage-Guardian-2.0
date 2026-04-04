@@ -8,6 +8,7 @@ require('dotenv').config();
 
 const { createLogger, morganStream } = require('./utils/logger');
 const { validateEnvironment } = require('./utils/envValidator');
+const { initSentry, sentryErrorHandler, addSentryContext } = require('./utils/sentry');
 const logger = createLogger('server');
 
 // Process-level error handlers — must be registered early, before any async work
@@ -50,6 +51,9 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Sentry early — before routes, after app creation
+initSentry(app);
 
 // ============================================
 // MIDDLEWARE
@@ -176,8 +180,12 @@ app.use((req, res) => {
   });
 });
 
+// Sentry error handler — must be after routes, before custom error handler
+app.use(sentryErrorHandler());
+
 // Error handler
 app.use((err, req, res, next) => {
+  addSentryContext(req);
   const errorLogger = req.logger || logger;
   errorLogger.error('Unhandled error', { error: err.message, stack: err.stack, method: req.method, path: req.path });
 
