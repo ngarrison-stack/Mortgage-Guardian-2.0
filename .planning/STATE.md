@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 27 in progress (Plan 27-01 complete)
+**Current focus:** v5.0 Production Readiness — Phase 27 complete, ready for Phase 28
 
 ## Current Position
 
-Phase: 27 of 31 (Monitoring & Observability) — IN PROGRESS
-Plan: 1 of 2 in current phase — Plan 27-01 complete
-Status: Plan 27-01 complete — ready for Plan 27-02 (Sentry Error Tracking)
-Last activity: 2026-04-03 - Completed Plan 27-01 (Enhanced Health Checks & Request Metrics)
+Phase: 27 of 31 (Monitoring & Observability) — COMPLETE
+Plan: 2 of 2 in current phase — Phase 27 complete
+Status: Phase 27 complete — ready for Phase 28 (Performance & Load Testing)
+Last activity: 2026-04-04 - Completed Plan 27-02 (Sentry Error Tracking Integration)
 
-Progress: █████░░░░░░░░░░░░░░░ 25%
+Progress: ██████░░░░░░░░░░░░░░ 30%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ v5.0 Phase 25-02: Frontend env validation (env.ts) with typed singleton export. 
 v5.0 Phase 26-01: Multi-stage Dockerfiles for backend (421MB) and frontend (274MB standalone). Upgraded @clerk/nextjs 6.34.5→6.39.1 for Next.js 16 compat. Non-root user, healthcheck, .dockerignore.
 v5.0 Phase 26-02: Docker Compose (backend/frontend/redis) with service_healthy dependency. DEPLOY.md covering Docker Compose, local dev, Railway, Vercel, generic Docker host. Phase 26 complete.
 v5.0 Phase 27-01: Enhanced /health with readiness checks, /health/live liveness probe, /health/ready readiness probe. Ring-buffer metrics middleware with p50/p95/p99 response times, /metrics endpoint.
+v5.0 Phase 27-02: Backend @sentry/node with expressIntegration, frontend @sentry/nextjs with global error boundary. Both optional — graceful no-op when DSN not set. No PII captured. Phase 27 complete.
 
 ### Deferred Issues
 
@@ -86,6 +87,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-03
-Stopped at: Plan 27-01 complete — ready for Plan 27-02 (Sentry Error Tracking)
+Last session: 2026-04-04
+Stopped at: Phase 27 complete — ready for Phase 28 (Performance & Load Testing)
 Resume file: None
