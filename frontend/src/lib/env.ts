@@ -93,6 +93,9 @@ function validateEnv() {
   const enableAiAnalysis =
     (process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS?.trim() || 'false') === 'true';
 
+  // -- Optional: Sentry -----------------------------------------------------
+  const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim() || '';
+
   return Object.freeze({
     // Clerk
     clerkPublishableKey,
@@ -108,6 +111,9 @@ function validateEnv() {
     // Feature flags
     enablePlaid,
     enableAiAnalysis,
+
+    // Error tracking (optional)
+    sentryDsn,
   });
 }
 

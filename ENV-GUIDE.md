@@ -63,6 +63,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 | `ELASTICSEARCH_URL` | No | -- | Elasticsearch cluster URL | Infrastructure | N/A |
 | `ELASTICSEARCH_USER` | No | -- | Elasticsearch username | Infrastructure | On rotation |
 | `ELASTICSEARCH_PASSWORD` | No | -- | Elasticsearch password | Infrastructure | On rotation |
+| `SENTRY_DSN` | Prod only | -- | Sentry DSN for error tracking and performance monitoring. App runs fine without it | [Sentry Dashboard](https://sentry.io) > Project Settings > Client Keys | On project recreation |
 
 ---
 
@@ -77,6 +78,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 | `NEXT_PUBLIC_APP_NAME` | No | `Mortgage Guardian` | Application display name | N/A | N/A |
 | `NEXT_PUBLIC_ENABLE_PLAID` | No | `false` | Enable Plaid banking integration UI | N/A | N/A |
 | `NEXT_PUBLIC_ENABLE_AI_ANALYSIS` | No | `false` | Enable AI document analysis UI | N/A | N/A |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | -- | Sentry DSN for frontend error tracking. App runs fine without it | [Sentry Dashboard](https://sentry.io) > Project Settings > Client Keys | On project recreation |
 
 ---
 
@@ -99,6 +101,7 @@ Which variables are needed per environment. Legend: **R** = Required, **O** = Op
 | `PLAID_WEBHOOK_VERIFICATION_KEY` | -- | -- | O | R |
 | `ALLOWED_ORIGINS` | O (`*`) | -- | R (explicit) | R (explicit) |
 | `REDIS_*` | O | -- | R | R |
+| `SENTRY_DSN` | -- | -- | O | O |
 | **Frontend** | | | | |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | R | R (synthetic `pk_test_*`) | R | R |
 | `CLERK_SECRET_KEY` | R | R (synthetic `sk_test_*`) | R | R |
@@ -106,6 +109,7 @@ Which variables are needed per environment. Legend: **R** = Required, **O** = Op
 | `NEXT_PUBLIC_APP_URL` | O | O | R | R |
 | `NEXT_PUBLIC_ENABLE_PLAID` | O | O | R | R |
 | `NEXT_PUBLIC_ENABLE_AI_ANALYSIS` | O | O | R | R |
+| `NEXT_PUBLIC_SENTRY_DSN` | -- | -- | O | O |
 
 > **CI note (Phase 23-02 decision):** Clerk keys in CI use synthetic format-valid values (`pk_test_ci_placeholder`, `sk_test_ci_placeholder`). They pass format validation but are not real keys.
 
@@ -217,4 +221,4 @@ openssl rand -base64 32
 
 ---
 
-*Last updated: 2026-04-03 (Phase 25-02)*
+*Last updated: 2026-04-04 (Phase 27-02)*
