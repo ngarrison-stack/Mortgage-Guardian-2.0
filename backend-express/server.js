@@ -30,6 +30,7 @@ process.on('unhandledRejection', (reason) => {
 
 // Import middleware
 const requestId = require('./middleware/requestId');
+const metricsMiddleware = require('./middleware/metrics');
 const { requireAuth } = require('./middleware/auth');
 
 // Import routes
@@ -88,6 +89,9 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // HTTP request logging via Winston
 app.use(morgan('combined', { stream: morganStream }));
+
+// Request metrics collection (after morgan, before routes)
+app.use(metricsMiddleware);
 
 // Rate limiting - protect against abuse
 const limiter = rateLimit({
