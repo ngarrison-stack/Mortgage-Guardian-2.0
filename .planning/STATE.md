@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 27 of 31 (Monitoring & Observability) — COMPLETE
-Plan: 2 of 2 in current phase — Phase 27 complete
-Status: Phase 27 complete — ready for Phase 28 (Performance & Load Testing)
-Last activity: 2026-04-04 - Completed Plan 27-02 (Sentry Error Tracking Integration)
+Phase: 28 of 31 (Performance & Load Testing) — IN PROGRESS
+Plan: 1 of ? in current phase — Plan 28-01 complete
+Status: Plan 28-01 complete — load test tooling installed, health baselines ready
+Last activity: 2026-04-04 - Completed Plan 28-01 (Load Testing Tooling & Health Baselines)
 
 Progress: ██████░░░░░░░░░░░░░░ 30%
 
@@ -61,6 +61,7 @@ v5.0 Phase 26-01: Multi-stage Dockerfiles for backend (421MB) and frontend (274M
 v5.0 Phase 26-02: Docker Compose (backend/frontend/redis) with service_healthy dependency. DEPLOY.md covering Docker Compose, local dev, Railway, Vercel, generic Docker host. Phase 26 complete.
 v5.0 Phase 27-01: Enhanced /health with readiness checks, /health/live liveness probe, /health/ready readiness probe. Ring-buffer metrics middleware with p50/p95/p99 response times, /metrics endpoint.
 v5.0 Phase 27-02: Backend @sentry/node with expressIntegration, frontend @sentry/nextjs with global error boundary. Both optional — graceful no-op when DSN not set. No PII captured. Phase 27 complete.
+v5.0 Phase 28-01: autocannon load test infrastructure with CLI runner (--suite health/api/stress/all) and health endpoint baseline suite (/health/live, /health/ready, /metrics). Pass/fail thresholds: p99 > 1000ms or error rate > 1%.
 
 ### Deferred Issues
 
@@ -88,5 +89,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 27 complete — ready for Phase 28 (Performance & Load Testing)
+Stopped at: Plan 28-01 complete — ready for Plan 28-02 (if exists) or next phase
 Resume file: None

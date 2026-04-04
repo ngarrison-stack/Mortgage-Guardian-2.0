@@ -154,7 +154,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 28-01: TBD (run /gsd:plan-phase 28 to break down)
+- [x] 28-01: Load Testing Tooling & Health Baselines (autocannon, CLI runner, health suite) — 2026-04-04
 
 #### Phase 29: Security Audit & Compliance Review
 
@@ -280,7 +280,7 @@ Plans:
 | 25. Environment & Secrets Management | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 26. Container & Deploy Infrastructure | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 27. Monitoring & Observability | v5.0 | 2/2 | Complete | 2026-04-04 |
-| 28. Performance & Load Testing | v5.0 | 0/? | Not started | - |
+| 28. Performance & Load Testing | v5.0 | 1/? | In progress | - |
 | 29. Security Audit & Compliance Review | v5.0 | 0/? | Not started | - |
 | 30. Production Deployment Dry Run | v5.0 | 0/? | Not started | - |
 | 31. Operations Runbooks | v5.0 | 0/? | Not started | - |
