@@ -132,7 +132,7 @@ Plans:
 
 Plans:
 - [x] 26-01: Production Dockerfiles (backend + frontend multi-stage builds, .dockerignore, non-root user) — 2026-04-03
-- [ ] 26-02: Docker Compose & Deployment Guide (local dev docker-compose, DEPLOY.md)
+- [x] 26-02: Docker Compose & Deployment Guide (local dev docker-compose, DEPLOY.md) — 2026-04-03
 
 #### Phase 27: Monitoring & Observability
 
@@ -278,7 +278,7 @@ Plans:
 | 23. CI/CD Pipeline | v5.0 | 3/3 | Complete | 2026-04-02 |
 | 24. Test Coverage Hardening | v5.0 | 5/5 | Complete | 2026-04-03 |
 | 25. Environment & Secrets Management | v5.0 | 2/2 | Complete | 2026-04-03 |
-| 26. Container & Deploy Infrastructure | v5.0 | 0/? | Not started | - |
+| 26. Container & Deploy Infrastructure | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 27. Monitoring & Observability | v5.0 | 0/? | Not started | - |
 | 28. Performance & Load Testing | v5.0 | 0/? | Not started | - |
 | 29. Security Audit & Compliance Review | v5.0 | 0/? | Not started | - |

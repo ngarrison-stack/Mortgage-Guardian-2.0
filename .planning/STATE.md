@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 26 in progress (plan 1/2 complete)
+**Current focus:** v5.0 Production Readiness — Phase 26 complete, ready for Phase 27
 
 ## Current Position
 
-Phase: 26 of 31 (Container & Deploy Infrastructure) — IN PROGRESS
-Plan: 1 of 2 in current phase — Plan 26-01 complete, ready for 26-02
-Status: Plan 26-01 (Production Dockerfiles) complete — ready for Plan 26-02
-Last activity: 2026-04-03 - Completed Plan 26-01 (Production Dockerfiles)
+Phase: 26 of 31 (Container & Deploy Infrastructure) — COMPLETE
+Plan: 2 of 2 in current phase — Phase 26 complete
+Status: Phase 26 complete — ready for Phase 27 (Monitoring & Observability)
+Last activity: 2026-04-03 - Completed Plan 26-02 (Docker Compose & Deployment Guide)
 
-Progress: ████░░░░░░░░░░░░░░░░ 22%
+Progress: █████░░░░░░░░░░░░░░░ 25%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ v5.0 Phase 24-05: Added 32 tests for logger, financialSecurity, and confidenceSc
 v5.0 Phase 25-01: Created Joi-based envValidator with 4-tier variable classification (required/feature/optional/production-only). Replaced inline validateEnvironment() in server.js. Comprehensive .env.example files. 1636 total tests passing.
 v5.0 Phase 25-02: Frontend env validation (env.ts) with typed singleton export. ENV-GUIDE.md unified documentation. No Zod added — simple runtime checks. Phase 25 complete.
 v5.0 Phase 26-01: Multi-stage Dockerfiles for backend (421MB) and frontend (274MB standalone). Upgraded @clerk/nextjs 6.34.5→6.39.1 for Next.js 16 compat. Non-root user, healthcheck, .dockerignore.
+v5.0 Phase 26-02: Docker Compose (backend/frontend/redis) with service_healthy dependency. DEPLOY.md covering Docker Compose, local dev, Railway, Vercel, generic Docker host. Phase 26 complete.
 
 ### Deferred Issues
 
@@ -85,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Plan 26-01 complete — ready for Plan 26-02 (Docker Compose & Deployment Guide)
+Stopped at: Phase 26 complete — ready for Phase 27 (Monitoring & Observability)
 Resume file: None
