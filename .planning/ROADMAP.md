@@ -136,14 +136,14 @@ Plans:
 
 #### Phase 27: Monitoring & Observability
 
-**Goal**: Health check endpoints, error tracking integration, alerting, and operational dashboards
+**Goal**: Enhanced health probes (live/ready), request metrics, and Sentry error tracking for backend and frontend
 **Depends on**: Phase 26
-**Research**: Likely (error tracking services, APM tools)
-**Research topics**: Sentry/Datadog integration, structured log aggregation, uptime monitoring services
-**Plans**: TBD
+**Research**: Level 0 — established Node.js/Express patterns, no new architectural decisions
+**Plans**: 2
 
 Plans:
-- [ ] 27-01: TBD (run /gsd:plan-phase 27 to break down)
+- [ ] 27-01: Enhanced Health Checks & Request Metrics (liveness/readiness probes, response time percentiles, /metrics endpoint)
+- [ ] 27-02: Sentry Error Tracking Integration (backend @sentry/node, frontend @sentry/nextjs, global error boundary)
 
 #### Phase 28: Performance & Load Testing
 
