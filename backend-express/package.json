@@ -11,7 +11,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:verbose": "jest --verbose"
+    "test:verbose": "jest --verbose",
+    "loadtest": "node loadtest/runner.js",
+    "loadtest:health": "node loadtest/runner.js --suite health"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -43,6 +45,7 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.14",
+    "autocannon": "^8.0.0",
     "eslint": "^8.57.1",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
