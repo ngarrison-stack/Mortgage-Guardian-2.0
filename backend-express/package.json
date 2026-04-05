@@ -13,7 +13,10 @@
     "test:coverage": "jest --coverage",
     "test:verbose": "jest --verbose",
     "loadtest": "node loadtest/runner.js",
-    "loadtest:health": "node loadtest/runner.js --suite health"
+    "loadtest:health": "node loadtest/runner.js --suite health",
+    "loadtest:api": "node loadtest/runner.js --suite api",
+    "loadtest:stress": "node loadtest/runner.js --suite stress",
+    "loadtest:memory": "node loadtest/runner.js --suite memory"
   },
   "engines": {
     "node": ">=20.0.0",
