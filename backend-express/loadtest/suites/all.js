@@ -6,6 +6,7 @@ const path = require('path');
 const healthSuite = require('./health');
 const apiSuite = require('./api');
 const stressSuite = require('./stress');
+const memorySuite = require('./memory');
 
 const RESULTS_DIR = path.join(__dirname, '..', 'results');
 
@@ -72,6 +73,12 @@ async function run() {
   const stressResults = await stressSuite.run();
   allResults.push(...stressResults);
 
+  // ── memory ─────────────────────────────────────────────────────────────────
+  console.log('\nRunning suite: memory');
+  console.log('='.repeat(40));
+  const memoryResults = await memorySuite.run();
+  allResults.push(...memoryResults);
+
   // ── write JSON baseline ──────────────────────────────────────────────────────
   try {
     fs.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -85,6 +92,7 @@ async function run() {
         health: serializeSuiteResults(healthResults),
         api: serializeSuiteResults(apiResults),
         stress: serializeSuiteResults(stressResults),
+        memory: serializeSuiteResults(memoryResults),
       },
     };
 

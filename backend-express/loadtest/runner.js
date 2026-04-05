@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const SUITES_DIR = path.join(__dirname, 'suites');
-const VALID_SUITES = ['health', 'api', 'stress', 'all'];
+const VALID_SUITES = ['health', 'api', 'stress', 'memory', 'all'];
 
 function printHelp() {
   console.log(`
@@ -22,6 +22,7 @@ Suites:
   health    Health/readiness endpoint baselines
   api       API endpoint load tests
   stress    High-concurrency stress tests
+  memory    Memory profiling under sustained load
   all       Run all available suites
 
 Examples:

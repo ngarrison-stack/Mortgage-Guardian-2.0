@@ -97,6 +97,11 @@ function getMetrics() {
       p50: parseFloat(percentile(times, 50).toFixed(2)),
       p95: parseFloat(percentile(times, 95).toFixed(2)),
       p99: parseFloat(percentile(times, 99).toFixed(2))
+    },
+    memory: {
+      rss: process.memoryUsage().rss,
+      heapUsed: process.memoryUsage().heapUsed,
+      heapTotal: process.memoryUsage().heapTotal
     }
   };
 }
