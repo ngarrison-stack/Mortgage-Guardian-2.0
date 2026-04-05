@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 27 complete, ready for Phase 28
+**Current focus:** v5.0 Production Readiness — Phase 28 complete, ready for Phase 29
 
 ## Current Position
 
-Phase: 28 of 31 (Performance & Load Testing) — IN PROGRESS
-Plan: 2 of ? in current phase — Plan 28-02 complete
-Status: Plan 28-02 complete — API + stress load test suites implemented, JSON baselines ready
-Last activity: 2026-04-04 - Completed Plan 28-02 (API Load Test Suites)
+Phase: 28 of 31 (Performance & Load Testing) — COMPLETE
+Plan: 3 of 3 in current phase — Phase 28 complete
+Status: Phase 28 complete — load testing infrastructure, API/stress/memory suites, performance baselines
+Last activity: 2026-04-04 - Completed Plan 28-03 (Memory Profiling & Performance Baseline)
 
-Progress: ██████░░░░░░░░░░░░░░ 30%
+Progress: ██████████████████░░ 90%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ v5.0 Phase 27-01: Enhanced /health with readiness checks, /health/live liveness 
 v5.0 Phase 27-02: Backend @sentry/node with expressIntegration, frontend @sentry/nextjs with global error boundary. Both optional — graceful no-op when DSN not set. No PII captured. Phase 27 complete.
 v5.0 Phase 28-01: autocannon load test infrastructure with CLI runner (--suite health/api/stress/all) and health endpoint baseline suite (/health/live, /health/ready, /metrics). Pass/fail thresholds: p99 > 1000ms or error rate > 1%.
 v5.0 Phase 28-02: Unauthenticated baseline pattern for auth-gated API load tests (measures 401 routing overhead). Stress suite returns stage results as named entries. JSON baselines written to loadtest/results/ (gitignored).
+v5.0 Phase 28-03: Memory profiling via /metrics polling during load. Added memory data to existing /metrics endpoint. Performance baseline doc with targets table. Phase 28 complete.
 
 ### Deferred Issues
 
@@ -90,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Plan 28-02 complete — ready for Plan 28-03 (if exists) or next phase
+Stopped at: Phase 28 complete — ready for Phase 29
 Resume file: None

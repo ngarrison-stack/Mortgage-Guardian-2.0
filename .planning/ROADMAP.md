@@ -151,10 +151,12 @@ Plans:
 **Depends on**: Phase 27
 **Research**: Likely (load testing tools, benchmarking approaches)
 **Research topics**: Artillery/k6 for API load testing, performance profiling Node.js, response time baseline establishment
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
 - [x] 28-01: Load Testing Tooling & Health Baselines (autocannon, CLI runner, health suite) — 2026-04-04
+- [x] 28-02: API & Stress Load Test Suites (unauthenticated baselines, stress ramp-up, JSON baselines) — 2026-04-04
+- [x] 28-03: Memory Profiling & Performance Baseline (memory suite, /metrics memory data, PERFORMANCE-BASELINE.md) — 2026-04-04
 
 #### Phase 29: Security Audit & Compliance Review
 
@@ -280,7 +282,7 @@ Plans:
 | 25. Environment & Secrets Management | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 26. Container & Deploy Infrastructure | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 27. Monitoring & Observability | v5.0 | 2/2 | Complete | 2026-04-04 |
-| 28. Performance & Load Testing | v5.0 | 1/? | In progress | - |
+| 28. Performance & Load Testing | v5.0 | 3/3 | Complete | 2026-04-04 |
 | 29. Security Audit & Compliance Review | v5.0 | 0/? | Not started | - |
 | 30. Production Deployment Dry Run | v5.0 | 0/? | Not started | - |
 | 31. Operations Runbooks | v5.0 | 0/? | Not started | - |
