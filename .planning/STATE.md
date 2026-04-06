@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 28 complete, ready for Phase 29
+**Current focus:** v5.0 Production Readiness — Phase 29 COMPLETE, ready for Phase 30
 
 ## Current Position
 
-Phase: 29 of 31 (Security Audit & Compliance Review) — Plan 29-02 complete
-Plan: 2 of 3 in current phase
-Status: OWASP Top 10 audit complete — ready for 29-03 (Security Hardening & Audit Documentation)
-Last activity: 2026-04-06 - Completed Plan 29-02 (OWASP Code Audit & Vulnerability Fixes)
+Phase: 29 of 31 (Security Audit & Compliance Review) — COMPLETE
+Plan: 3 of 3 in current phase (all complete)
+Status: Phase 29 complete — ready for Phase 30 (Production Deployment Dry Run)
+Last activity: 2026-04-06 - Completed Plan 29-03 (Security Hardening & Audit Documentation)
 
 Progress: ██████████████████░░ 93%
 
@@ -66,6 +66,7 @@ v5.0 Phase 28-02: Unauthenticated baseline pattern for auth-gated API load tests
 v5.0 Phase 28-03: Memory profiling via /metrics polling during load. Added memory data to existing /metrics endpoint. Performance baseline doc with targets table. Phase 28 complete.
 v5.0 Phase 29-01: Restored 14 files corrupted by OAuth token overwrite (commit 1148a7c). Fixed 7 npm audit vulns (backend + frontend). Downgraded file-type v21→v16 for CJS/Jest compat. 1 accepted moderate vuln (ASF parser, irrelevant to allowed file types). 1636 tests passing.
 v5.0 Phase 29-02: OWASP Top 10 audit — all 10 categories pass. Fixed 404 route enumeration and /api-docs exposure in production. No other code vulnerabilities found. 3 accepted risks documented (CORS config, LLM prompt injection, theoretical PII logging).
+v5.0 Phase 29-03: Security hardening — Helmet 8.x defaults verified (HSTS 1yr, CSP, no-referrer). Frontend headers already in place. SECURITY-AUDIT.md created with full audit report. Phase 29 complete.
 
 ### Deferred Issues
 
@@ -93,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-06
-Stopped at: Plan 29-02 complete — ready for 29-03 (Security Hardening & Audit Documentation)
+Stopped at: Phase 29 complete — ready for Phase 30 (Production Deployment Dry Run)
 Resume file: None
