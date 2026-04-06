@@ -115,16 +115,19 @@ app.use('/v1/', requireAuth);
 // ============================================
 
 // API Documentation (no auth, no rate limit)
-try {
-  const openapiPath = path.join(__dirname, 'docs', 'openapi.yaml');
-  const openapiDoc = yaml.load(fs.readFileSync(openapiPath, 'utf8'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
-    customSiteTitle: 'Mortgage Guardian API',
-    customCss: '.swagger-ui .topbar { display: none }'
-  }));
-  logger.info('API documentation available at /api-docs');
-} catch (err) {
-  logger.warn('Failed to load OpenAPI spec — /api-docs will not be available', { error: err.message });
+// Security: Disable in production to prevent information disclosure (OWASP A05)
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    const openapiPath = path.join(__dirname, 'docs', 'openapi.yaml');
+    const openapiDoc = yaml.load(fs.readFileSync(openapiPath, 'utf8'));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+      customSiteTitle: 'Mortgage Guardian API',
+      customCss: '.swagger-ui .topbar { display: none }'
+    }));
+    logger.info('API documentation available at /api-docs');
+  } catch (err) {
+    logger.warn('Failed to load OpenAPI spec — /api-docs will not be available', { error: err.message });
+  }
 }
 
 // Health check (no rate limit)
@@ -139,7 +142,16 @@ app.use('/v1', reportRoutes);
 app.use('/v1/cases', caseRoutes);
 
 // 404 handler
+// Security: In production, return minimal info to prevent API surface enumeration (OWASP A05)
+// In development, include route list and request details for developer experience
 app.use((req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({
+      error: 'Not Found',
+      message: 'Route not found'
+    });
+  }
+
   res.status(404).json({
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`,
