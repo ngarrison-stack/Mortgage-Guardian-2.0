@@ -59,7 +59,13 @@ initSentry(app);
 // MIDDLEWARE
 // ============================================
 
-// Security headers
+// Security headers — Helmet 8.x defaults provide:
+//   HSTS: max-age=31536000 (1 year), includeSubDomains
+//   CSP: default-src 'none' (appropriate for API-only server; /api-docs is dev-only)
+//   Referrer-Policy: no-referrer
+//   X-Content-Type-Options: nosniff
+//   X-Frame-Options: SAMEORIGIN
+//   Removes X-Powered-By header
 app.use(helmet());
 
 // Request ID — assign unique ID for log correlation (before all other middleware)
@@ -69,6 +75,9 @@ app.use(requestId);
 app.use(compression());
 
 // CORS - Allow iOS app to connect
+// PRODUCTION: Set ALLOWED_ORIGINS to explicit comma-separated origins (e.g., "https://app.example.com,https://admin.example.com").
+// Wildcard (*) is acceptable for development but must not be used in production — it echoes
+// back any Origin header, effectively bypassing same-origin restrictions.
 // When credentials: true, origin cannot be '*' (CORS spec violation — browsers reject silently).
 // Using origin: true echoes back the request's Origin header, which is spec-compliant.
 const corsOrigin = process.env.ALLOWED_ORIGINS === '*'
