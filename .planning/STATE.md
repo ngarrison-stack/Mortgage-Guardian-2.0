@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 29 of 31 (Security Audit & Compliance Review) — Plan 29-01 complete
-Plan: 1 of TBD in current phase
-Status: Dependency cleanup and file restoration complete — ready for OWASP audit
-Last activity: 2026-04-06 - Completed Plan 29-01 (Dependency Cleanup & File Restoration)
+Phase: 29 of 31 (Security Audit & Compliance Review) — Plan 29-02 complete
+Plan: 2 of 3 in current phase
+Status: OWASP Top 10 audit complete — ready for 29-03 (Security Hardening & Audit Documentation)
+Last activity: 2026-04-06 - Completed Plan 29-02 (OWASP Code Audit & Vulnerability Fixes)
 
 Progress: ██████████████████░░ 93%
 
@@ -65,6 +65,7 @@ v5.0 Phase 28-01: autocannon load test infrastructure with CLI runner (--suite h
 v5.0 Phase 28-02: Unauthenticated baseline pattern for auth-gated API load tests (measures 401 routing overhead). Stress suite returns stage results as named entries. JSON baselines written to loadtest/results/ (gitignored).
 v5.0 Phase 28-03: Memory profiling via /metrics polling during load. Added memory data to existing /metrics endpoint. Performance baseline doc with targets table. Phase 28 complete.
 v5.0 Phase 29-01: Restored 14 files corrupted by OAuth token overwrite (commit 1148a7c). Fixed 7 npm audit vulns (backend + frontend). Downgraded file-type v21→v16 for CJS/Jest compat. 1 accepted moderate vuln (ASF parser, irrelevant to allowed file types). 1636 tests passing.
+v5.0 Phase 29-02: OWASP Top 10 audit — all 10 categories pass. Fixed 404 route enumeration and /api-docs exposure in production. No other code vulnerabilities found. 3 accepted risks documented (CORS config, LLM prompt injection, theoretical PII logging).
 
 ### Deferred Issues
 
@@ -92,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-06
-Stopped at: Plan 29-01 complete — ready for 29-02 (OWASP audit)
+Stopped at: Plan 29-02 complete — ready for 29-03 (Security Hardening & Audit Documentation)
 Resume file: None

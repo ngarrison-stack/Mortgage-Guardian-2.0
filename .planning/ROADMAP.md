@@ -167,7 +167,7 @@ Plans:
 
 Plans:
 - [x] 29-01: Dependency Cleanup & File Restoration (restore 14 corrupted files, fix 7 npm audit vulns, downgrade file-type to CJS v16) — 2026-04-06
-- [ ] 29-02: OWASP Code Audit & Vulnerability Fixes (information disclosure, CORS enforcement, PII logging, webhook verification, systematic OWASP Top 10 review)
+- [x] 29-02: OWASP Code Audit & Vulnerability Fixes (404 route enumeration fix, /api-docs production restriction, OWASP Top 10 systematic audit — all categories pass) — 2026-04-06
 - [ ] 29-03: Security Hardening & Audit Documentation (Helmet/headers review, frontend security headers, SECURITY-AUDIT.md)
 
 #### Phase 30: Production Deployment Dry Run
@@ -285,7 +285,7 @@ Plans:
 | 26. Container & Deploy Infrastructure | v5.0 | 2/2 | Complete | 2026-04-03 |
 | 27. Monitoring & Observability | v5.0 | 2/2 | Complete | 2026-04-04 |
 | 28. Performance & Load Testing | v5.0 | 3/3 | Complete | 2026-04-04 |
-| 29. Security Audit & Compliance Review | v5.0 | 0/? | Not started | - |
+| 29. Security Audit & Compliance Review | v5.0 | 2/3 | In Progress | - |
 | 30. Production Deployment Dry Run | v5.0 | 0/? | Not started | - |
 | 31. Operations Runbooks | v5.0 | 0/? | Not started | - |
 
