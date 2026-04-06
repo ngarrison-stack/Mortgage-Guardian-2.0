@@ -163,11 +163,12 @@ Plans:
 **Goal**: Final OWASP top-10 review, dependency audit, and security compliance verification
 **Depends on**: Phase 28
 **Research**: Unlikely (OWASP patterns established, security hardening done in v2.0)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
 - [x] 29-01: Dependency Cleanup & File Restoration (restore 14 corrupted files, fix 7 npm audit vulns, downgrade file-type to CJS v16) — 2026-04-06
-- [ ] 29-02: TBD (OWASP code audit)
+- [ ] 29-02: OWASP Code Audit & Vulnerability Fixes (information disclosure, CORS enforcement, PII logging, webhook verification, systematic OWASP Top 10 review)
+- [ ] 29-03: Security Hardening & Audit Documentation (Helmet/headers review, frontend security headers, SECURITY-AUDIT.md)
 
 #### Phase 30: Production Deployment Dry Run
 
