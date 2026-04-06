@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 28 of 31 (Performance & Load Testing) — COMPLETE
-Plan: 3 of 3 in current phase — Phase 28 complete
-Status: Phase 28 complete — load testing infrastructure, API/stress/memory suites, performance baselines
-Last activity: 2026-04-04 - Completed Plan 28-03 (Memory Profiling & Performance Baseline)
+Phase: 29 of 31 (Security Audit & Compliance Review) — Plan 29-01 complete
+Plan: 1 of TBD in current phase
+Status: Dependency cleanup and file restoration complete — ready for OWASP audit
+Last activity: 2026-04-06 - Completed Plan 29-01 (Dependency Cleanup & File Restoration)
 
-Progress: ██████████████████░░ 90%
+Progress: ██████████████████░░ 93%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ v5.0 Phase 27-02: Backend @sentry/node with expressIntegration, frontend @sentry
 v5.0 Phase 28-01: autocannon load test infrastructure with CLI runner (--suite health/api/stress/all) and health endpoint baseline suite (/health/live, /health/ready, /metrics). Pass/fail thresholds: p99 > 1000ms or error rate > 1%.
 v5.0 Phase 28-02: Unauthenticated baseline pattern for auth-gated API load tests (measures 401 routing overhead). Stress suite returns stage results as named entries. JSON baselines written to loadtest/results/ (gitignored).
 v5.0 Phase 28-03: Memory profiling via /metrics polling during load. Added memory data to existing /metrics endpoint. Performance baseline doc with targets table. Phase 28 complete.
+v5.0 Phase 29-01: Restored 14 files corrupted by OAuth token overwrite (commit 1148a7c). Fixed 7 npm audit vulns (backend + frontend). Downgraded file-type v21→v16 for CJS/Jest compat. 1 accepted moderate vuln (ASF parser, irrelevant to allowed file types). 1636 tests passing.
 
 ### Deferred Issues
 
@@ -90,6 +91,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-04
-Stopped at: Phase 28 complete — ready for Phase 29
+Last session: 2026-04-06
+Stopped at: Plan 29-01 complete — ready for 29-02 (OWASP audit)
 Resume file: None

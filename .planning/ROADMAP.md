@@ -166,7 +166,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 29-01: TBD (run /gsd:plan-phase 29 to break down)
+- [x] 29-01: Dependency Cleanup & File Restoration (restore 14 corrupted files, fix 7 npm audit vulns, downgrade file-type to CJS v16) — 2026-04-06
+- [ ] 29-02: TBD (OWASP code audit)
 
 #### Phase 30: Production Deployment Dry Run
 
