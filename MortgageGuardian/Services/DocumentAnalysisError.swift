@@ -205,20 +205,22 @@ enum DocumentAnalysisError: Error, LocalizedError, Equatable {
             return analysisError
         }
 
-        if let backendError = error as? AWSBackendClient.BackendError {
-            switch backendError {
+        if let apiError = error as? APIError {
+            switch apiError {
             case .networkError:
                 return .networkUnavailable
             case .authenticationRequired:
                 return .awsAuthenticationFailed
             case .serverError(let code, let message):
                 return .awsServiceError(code: code, message: message)
-            case .invalidResponse, .noData:
+            case .invalidResponse:
                 return .invalidAPIResponse
             case .encodingError, .decodingError:
                 return .invalidAPIResponse
             case .invalidURL:
                 return .invalidConfiguration(reason: "Invalid API URL")
+            case .httpError(let code):
+                return .awsServiceError(code: code, message: "HTTP error")
             }
         }
 

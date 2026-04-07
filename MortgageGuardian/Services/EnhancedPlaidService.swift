@@ -75,7 +75,7 @@ public final class EnhancedPlaidService: ObservableObject {
     // MARK: - Private Properties
 
     private let logger = Logger(subsystem: "MortgageGuardian", category: "EnhancedPlaidService")
-    private let apiClient = AWSBackendClient.shared
+    private let apiClient = APIClient.shared
     private let securityService = SecurityService.shared
     private let notificationService = NotificationService.shared
 
