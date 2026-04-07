@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — SHIPPED 2026-04-07
+**Current focus:** v6.0 iOS App Completion
 ## Current Position
 
-Phase: 31 of 31 (Operations Runbooks) — COMPLETE. v5.0 SHIPPED.
-Plan: 2 of 2 — all complete
-Status: v5.0 Production Readiness milestone SHIPPED
-Last activity: 2026-04-07 - Completed Plan 31-02 (Troubleshooting Guide & v5.0 Milestone Closure)
+Phase: 32 of 40 (Express Backend API Client Migration)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-07 - Milestone v6.0 created
 
-Progress: ████████████████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -84,7 +84,7 @@ None.
 - Production deployment dry run (tooling)
 - Codify Supabase database migrations (database)
 
-### Blockers/Concerns
+### Blockers/Concerns Carried Forward
 
 None.
 
@@ -94,9 +94,10 @@ None.
 - Milestone v3.0 shipped: 2026-03-15 (Phases 10-17, 42 plans)
 - Milestone v4.0 shipped: 2026-03-30 (Phases 18-21, 20 plans) — Bug Fix & Stability Sprint
 - Milestone v5.0 shipped: 2026-04-07 (Phases 22-31, 24 plans) — Production Readiness
+- Milestone v6.0 created: 2026-04-07 — iOS App Completion, 9 phases (Phase 32-40)
 
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: v5.0 milestone complete, no further phases planned
+Stopped at: Milestone v6.0 initialization
 Resume file: None

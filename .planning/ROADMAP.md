@@ -10,6 +10,7 @@ Mortgage Guardian 2.0 roadmap tracking milestones from MVP hardening through for
 - ✅ [v3.0 Forensic Analysis Engine](milestones/v3.0-ROADMAP.md) (Phases 10-17, 42 plans) — SHIPPED 2026-03-15
 - ✅ [v4.0 Bug Fix & Stability Sprint](milestones/v4.0-ROADMAP.md) (Phases 18-21, 20 plans) — SHIPPED 2026-03-30
 - ✅ **v5.0 Production Readiness** (Phases 22-31, 24 plans) — SHIPPED 2026-04-07
+- 🚧 **v6.0 iOS App Completion** — Phases 32-40 (in progress)
 
 ## Completed Milestones
 
@@ -214,6 +215,114 @@ Plans:
 
 ---
 
+### 🚧 v6.0 iOS App Completion (In Progress)
+
+**Milestone Goal:** Transform the iOS app from a sophisticated prototype with 60+ TODOs into an App Store-ready product backed by the Express API — single backend for web + mobile.
+
+**Constraints:**
+- iOS app must point at Express backend (not AWS Lambda)
+- App Store ready at end of milestone — TestFlight submission at minimum
+- Deployment target: iOS 17.6
+- Must maintain existing test suite (26+ test files)
+- Clerk authentication must work with Express backend JWT tokens
+- 123 existing Swift files — build on existing architecture, don't rewrite
+
+#### Phase 32: Express Backend API Client Migration
+
+**Goal**: Rewrite APIClient.swift and remove AWS Lambda dependency — all iOS API calls point at Express backend
+**Depends on**: v5.0 milestone complete
+**Research**: Unlikely (internal patterns, rewriting existing Swift networking code)
+**Plans**: TBD
+
+Plans:
+- [ ] 32-01: TBD (run /gsd:plan-phase 32 to break down)
+
+#### Phase 33: Authentication Flow Completion
+
+**Goal**: Wire Clerk iOS SDK authentication through Express backend JWT auth — login → token → authenticated API calls
+**Depends on**: Phase 32
+**Research**: Likely (Clerk iOS SDK ↔ Express JWT integration)
+**Research topics**: Clerk iOS SDK token management, Express JWT verification of Clerk tokens, session handling patterns
+**Plans**: TBD
+
+Plans:
+- [ ] 33-01: TBD
+
+#### Phase 34: Document Upload & Processing Pipeline
+
+**Goal**: Complete document capture → upload → OCR → AI analysis flow using Express endpoints
+**Depends on**: Phase 33
+**Research**: Unlikely (existing Express endpoints, internal wiring)
+**Plans**: TBD
+
+Plans:
+- [ ] 34-01: TBD
+
+#### Phase 35: Analysis & Findings UI Completion
+
+**Goal**: Fill in stubbed analysis features — date range picker, PDF/image export, chart export, evidence viewer
+**Depends on**: Phase 34
+**Research**: Unlikely (internal SwiftUI patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 35-01: TBD
+
+#### Phase 36: Plaid Bank Integration Rewiring
+
+**Goal**: Connect iOS Plaid Link SDK to Express Plaid endpoints for bank account verification
+**Depends on**: Phase 33
+**Research**: Likely (Plaid Link iOS SDK → Express endpoint integration)
+**Research topics**: Plaid Link iOS SDK current API, token exchange flow via Express, webhook handling
+**Plans**: TBD
+
+Plans:
+- [ ] 36-01: TBD
+
+#### Phase 37: Letter Generation & Export Features
+
+**Goal**: Complete dispute letter generation, PDF export, bulk letters, and sharing functionality
+**Depends on**: Phase 35
+**Research**: Unlikely (existing backend letter generation service, internal patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 37-01: TBD
+
+#### Phase 38: Settings, Account Management & Persistence
+
+**Goal**: Complete all settings TODOs — Plaid connection, document retention, passcode, delete account, help/about, AppState persistence
+**Depends on**: Phase 36
+**Research**: Unlikely (internal patterns, standard iOS settings)
+**Plans**: TBD
+
+Plans:
+- [ ] 38-01: TBD
+
+#### Phase 39: UI/UX Polish & App Store Assets
+
+**Goal**: Visual refinement, navigation fixes, error/loading/empty states, app icons, screenshots, App Store metadata, accessibility
+**Depends on**: Phase 38
+**Research**: Likely (App Store requirements, accessibility standards)
+**Research topics**: Current App Store metadata requirements, iOS accessibility audit checklist, screenshot specifications
+**Plans**: TBD
+
+Plans:
+- [ ] 39-01: TBD
+
+#### Phase 40: End-to-End Testing & TestFlight Prep
+
+**Goal**: Full flow testing (upload → analyze → report → letter), iOS test suite completion, TestFlight build and submission
+**Depends on**: Phase 39
+**Research**: Likely (TestFlight submission process, CI for iOS builds)
+**Research topics**: TestFlight submission requirements, Xcode Cloud or GitHub Actions for iOS CI, App Store review guidelines
+**Plans**: TBD
+
+Plans:
+- [ ] 40-01: TBD
+
+---
+
 ### v4.0 Bug Fix & Stability Sprint — SHIPPED 2026-03-30
 
 **Milestone Goal:** Comprehensive bug fixing across backend, frontend, and analysis pipeline to improve reliability, accuracy, and usability. Bug fixes only — no new features.
@@ -311,4 +420,14 @@ Plans:
 | 30. Production Deployment Dry Run | v5.0 | 2/2 | Complete | 2026-04-07 |
 | 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
-**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | 24 plans across 10 phases (v5.0) — ALL COMPLETE
+| 32. Express Backend API Client Migration | v6.0 | 0/? | Not started | - |
+| 33. Authentication Flow Completion | v6.0 | 0/? | Not started | - |
+| 34. Document Upload & Processing Pipeline | v6.0 | 0/? | Not started | - |
+| 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
+| 36. Plaid Bank Integration Rewiring | v6.0 | 0/? | Not started | - |
+| 37. Letter Generation & Export Features | v6.0 | 0/? | Not started | - |
+| 38. Settings, Account Management & Persistence | v6.0 | 0/? | Not started | - |
+| 39. UI/UX Polish & App Store Assets | v6.0 | 0/? | Not started | - |
+| 40. End-to-End Testing & TestFlight Prep | v6.0 | 0/? | Not started | - |
+
+**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | 24 plans across 10 phases (v5.0) — ALL COMPLETE | v6.0 in progress
