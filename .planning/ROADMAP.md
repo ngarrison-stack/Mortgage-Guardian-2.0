@@ -175,10 +175,11 @@ Plans:
 **Goal**: Deploy to staging environment, run end-to-end smoke tests, validate full pipeline
 **Depends on**: Phase 29
 **Research**: Unlikely (internal deployment steps, existing infrastructure)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 30-01: TBD (run /gsd:plan-phase 30 to break down)
+- [ ] 30-01: Docker Build Validation & Deployment Tooling (build images, validation script, rollback docs)
+- [ ] 30-02: Local Deployment Validation & CI Verification (run validation, verify CI pipelines)
 
 #### Phase 31: Operations Runbooks
 
