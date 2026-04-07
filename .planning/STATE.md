@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 30 COMPLETE, ready for Phase 31
+**Current focus:** v5.0 Production Readiness — Phase 31 Plan 01 COMPLETE
 ## Current Position
 
-Phase: 30 of 31 (Production Deployment Dry Run) — COMPLETE
-Plan: 2 of 2 in current phase (all complete)
-Status: Phase 30 complete — ready for Phase 31 (Operations Runbooks)
-Last activity: 2026-04-07 - Completed Plan 30-02 (Local Deployment Validation & CI Verification)
+Phase: 31 of 31 (Operations Runbooks) — Plan 01 COMPLETE
+Plan: 1 of 2 in current phase
+Status: Phase 31 Plan 01 complete — ready for Plan 31-02
+Last activity: 2026-04-07 - Completed Plan 31-01 (Incident Response Runbook & Monitoring Guide)
 
-Progress: ███████████████████░ 97%
+Progress: ███████████████████░ 98%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ v5.0 Phase 29-02: OWASP Top 10 audit — all 10 categories pass. Fixed 404 route
 v5.0 Phase 29-03: Security hardening — Helmet 8.x defaults verified (HSTS 1yr, CSP, no-referrer). Frontend headers already in place. SECURITY-AUDIT.md created with full audit report. Phase 29 complete.
 v5.0 Phase 30-01: Docker build validated (backend 479MB, frontend 276MB). Deployment validation script (health/security/API/env checks). Rollback procedures and pre-deployment checklist in DEPLOY.md.
 v5.0 Phase 30-02: Deployment validation executed — 7 pass, 2 warn, 1 fail (expected without Supabase). CI pipelines verified correct (Node 20, npm ci, proper triggers). GitHub Actions billing lock remains. Phase 30 complete.
+v5.0 Phase 31-01: RUNBOOK.md with P1-P4 severity levels, 7 incident playbooks, rollback decision matrix, post-mortem template. MONITORING.md with health/metrics/Sentry/logging guides and alert thresholds. Referenced existing docs rather than duplicating.
 
 ### Deferred Issues
 
@@ -95,5 +96,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Phase 30 complete — ready for Phase 31 (Operations Runbooks)
+Stopped at: Phase 31 Plan 01 complete — ready for Plan 31-02
 Resume file: None

@@ -189,7 +189,7 @@ Plans:
 **Plans**: 2
 
 Plans:
-- [ ] 31-01: Incident Response Runbook & Monitoring Guide (RUNBOOK.md, MONITORING.md)
+- [x] 31-01: Incident Response Runbook & Monitoring Guide (RUNBOOK.md, MONITORING.md) — 2026-04-07
 - [ ] 31-02: Troubleshooting Guide & v5.0 Milestone Closure (TROUBLESHOOTING.md, README index, close v5.0)
 
 ---
@@ -289,6 +289,6 @@ Plans:
 | 28. Performance & Load Testing | v5.0 | 3/3 | Complete | 2026-04-04 |
 | 29. Security Audit & Compliance Review | v5.0 | 3/3 | Complete | 2026-04-06 |
 | 30. Production Deployment Dry Run | v5.0 | 2/2 | Complete | 2026-04-07 |
-| 31. Operations Runbooks | v5.0 | 0/? | Not started | - |
+| 31. Operations Runbooks | v5.0 | 1/2 | In progress | - |
 
 **Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | v5.0 in progress
