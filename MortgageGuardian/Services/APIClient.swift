@@ -58,15 +58,15 @@ class APIClient {
     private let maxDelay: TimeInterval = 30.0
     private let retryableStatusCodes: Set<Int> = [429, 500, 502, 503, 504]
 
-    private lazy var urlSession: URLSession = {
+    private let urlSession: URLSession
+
+    private init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 60.0
         config.timeoutIntervalForResource = 300.0
         config.waitsForConnectivity = true
-        return URLSession(configuration: config)
-    }()
-
-    private init() {}
+        self.urlSession = URLSession(configuration: config)
+    }
 
     func setAuthToken(_ token: String) {
         self.authToken = token
