@@ -9,7 +9,7 @@ Mortgage Guardian 2.0 roadmap tracking milestones from MVP hardening through for
 - ✅ [v2.0 Production Hardening](milestones/v2.0-ROADMAP.md) (Phases 1-9, 32 plans) — SHIPPED 2026-02-26
 - ✅ [v3.0 Forensic Analysis Engine](milestones/v3.0-ROADMAP.md) (Phases 10-17, 42 plans) — SHIPPED 2026-03-15
 - ✅ [v4.0 Bug Fix & Stability Sprint](milestones/v4.0-ROADMAP.md) (Phases 18-21, 20 plans) — SHIPPED 2026-03-30
-- 🚧 **v5.0 Production Readiness** — Phases 22-31 (in progress)
+- ✅ **v5.0 Production Readiness** (Phases 22-31, 24 plans) — SHIPPED 2026-04-07
 
 ## Completed Milestones
 
@@ -68,9 +68,29 @@ Comprehensive bug fixing across backend, frontend, and analysis pipeline to impr
 
 </details>
 
-### 🚧 v5.0 Production Readiness (In Progress)
+<details>
+<summary>v5.0 Production Readiness (Phases 22-31) — SHIPPED 2026-04-07</summary>
 
-**Milestone Goal:** Get Mortgage Guardian 2.0 production-ready with codified database migrations, CI/CD automation, test coverage hardening, monitoring, security audit, and a validated deployment pipeline.
+Get Mortgage Guardian 2.0 production-ready with codified database migrations, CI/CD automation, test coverage hardening, monitoring, security audit, and a validated deployment pipeline.
+
+- [x] **Phase 22: Database Migration Framework** — 3/3 plans — 2026-04-02
+- [x] **Phase 23: CI/CD Pipeline** — 3/3 plans — 2026-04-02
+- [x] **Phase 24: Test Coverage Hardening** — 5/5 plans — 2026-04-03
+- [x] **Phase 25: Environment & Secrets Management** — 2/2 plans — 2026-04-03
+- [x] **Phase 26: Container & Deploy Infrastructure** — 2/2 plans — 2026-04-03
+- [x] **Phase 27: Monitoring & Observability** — 2/2 plans — 2026-04-04
+- [x] **Phase 28: Performance & Load Testing** — 3/3 plans — 2026-04-04
+- [x] **Phase 29: Security Audit & Compliance Review** — 3/3 plans — 2026-04-06
+- [x] **Phase 30: Production Deployment Dry Run** — 2/2 plans — 2026-04-07
+- [x] **Phase 31: Operations Runbooks** — 2/2 plans — 2026-04-07
+
+**Key results:** Database migration framework (Supabase CLI, baseline verified), CI/CD pipelines (backend + frontend workflows), test coverage hardening (97% statements, 85% branches, 1610+ tests), environment validation (4-tier env classification), Docker containerization (multi-stage builds, compose), monitoring (health probes, metrics, Sentry), load testing (autocannon baselines), security audit (OWASP Top 10 pass, dependency cleanup), deployment validation (scripts, rollback docs), operations runbooks (incident response, monitoring, troubleshooting).
+
+Full details: Phases 22-31 plans in `.planning/phases/`
+
+</details>
+
+### v5.0 Production Readiness — SHIPPED 2026-04-07
 
 #### Phase 22: Database Migration Framework
 
@@ -190,7 +210,7 @@ Plans:
 
 Plans:
 - [x] 31-01: Incident Response Runbook & Monitoring Guide (RUNBOOK.md, MONITORING.md) — 2026-04-07
-- [ ] 31-02: Troubleshooting Guide & v5.0 Milestone Closure (TROUBLESHOOTING.md, README index, close v5.0)
+- [x] 31-02: Troubleshooting Guide & v5.0 Milestone Closure (TROUBLESHOOTING.md, README index, close v5.0) — 2026-04-07
 
 ---
 
@@ -289,6 +309,6 @@ Plans:
 | 28. Performance & Load Testing | v5.0 | 3/3 | Complete | 2026-04-04 |
 | 29. Security Audit & Compliance Review | v5.0 | 3/3 | Complete | 2026-04-06 |
 | 30. Production Deployment Dry Run | v5.0 | 2/2 | Complete | 2026-04-07 |
-| 31. Operations Runbooks | v5.0 | 1/2 | In progress | - |
+| 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
-**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | v5.0 in progress
+**Total Plans:** 32 plans across 9 phases (v2.0) — ALL COMPLETE | 42 plans across 8 phases (v3.0) — ALL COMPLETE | 20 plans across 4 phases (v4.0) — ALL COMPLETE | 24 plans across 10 phases (v5.0) — ALL COMPLETE
