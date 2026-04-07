@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The platform must reliably and securely analyze mortgage documents to detect servicing errors with high confidence, cross-verify against actual bank transaction data, and protect sensitive financial information throughout the process.
-**Current focus:** v5.0 Production Readiness — Phase 31 Plan 01 COMPLETE
+**Current focus:** v5.0 Production Readiness — SHIPPED 2026-04-07
 ## Current Position
 
-Phase: 31 of 31 (Operations Runbooks) — Plan 01 COMPLETE
-Plan: 1 of 2 in current phase
-Status: Phase 31 Plan 01 complete — ready for Plan 31-02
-Last activity: 2026-04-07 - Completed Plan 31-01 (Incident Response Runbook & Monitoring Guide)
+Phase: 31 of 31 (Operations Runbooks) — COMPLETE. v5.0 SHIPPED.
+Plan: 2 of 2 — all complete
+Status: v5.0 Production Readiness milestone SHIPPED
+Last activity: 2026-04-07 - Completed Plan 31-02 (Troubleshooting Guide & v5.0 Milestone Closure)
 
-Progress: ███████████████████░ 98%
+Progress: ████████████████████ 100%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ v5.0 Phase 29-03: Security hardening — Helmet 8.x defaults verified (HSTS 1yr,
 v5.0 Phase 30-01: Docker build validated (backend 479MB, frontend 276MB). Deployment validation script (health/security/API/env checks). Rollback procedures and pre-deployment checklist in DEPLOY.md.
 v5.0 Phase 30-02: Deployment validation executed — 7 pass, 2 warn, 1 fail (expected without Supabase). CI pipelines verified correct (Node 20, npm ci, proper triggers). GitHub Actions billing lock remains. Phase 30 complete.
 v5.0 Phase 31-01: RUNBOOK.md with P1-P4 severity levels, 7 incident playbooks, rollback decision matrix, post-mortem template. MONITORING.md with health/metrics/Sentry/logging guides and alert thresholds. Referenced existing docs rather than duplicating.
+v5.0 Phase 31-02: TROUBLESHOOTING.md with 15+ issues across 5 categories. README operations documentation index. v5.0 milestone closed — 10 phases, 24 plans shipped.
 
 ### Deferred Issues
 
@@ -92,9 +93,10 @@ None.
 - Milestone v2.0 shipped: 2026-02-26 (Phases 1-9, 32 plans)
 - Milestone v3.0 shipped: 2026-03-15 (Phases 10-17, 42 plans)
 - Milestone v4.0 shipped: 2026-03-30 (Phases 18-21, 20 plans) — Bug Fix & Stability Sprint
+- Milestone v5.0 shipped: 2026-04-07 (Phases 22-31, 24 plans) — Production Readiness
 
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Phase 31 Plan 01 complete — ready for Plan 31-02
+Stopped at: v5.0 milestone complete, no further phases planned
 Resume file: None
