@@ -90,7 +90,7 @@ enum DocumentAnalysisError: Error, LocalizedError, Equatable {
         case .awsCredentialsNotConfigured:
             return "AWS credentials are not configured. Please set up your credentials in Settings"
         case .textractNotConfigured:
-            return "AWS Textract is not configured. Please complete the setup in Settings"
+            return "Document processing service is not configured. Please complete the setup in Settings"
         case .invalidConfiguration(let reason):
             return "Invalid configuration: \(reason)"
 
@@ -221,23 +221,6 @@ enum DocumentAnalysisError: Error, LocalizedError, Equatable {
                 return .invalidConfiguration(reason: "Invalid API URL")
             case .httpError(let code):
                 return .awsServiceError(code: code, message: "HTTP error")
-            }
-        }
-
-        if let textractError = error as? AWSTextractService.TextractError {
-            switch textractError {
-            case .missingCredentials:
-                return .awsCredentialsNotConfigured
-            case .invalidAWSCredentials:
-                return .awsAuthenticationFailed
-            case .networkError:
-                return .networkUnavailable
-            case .invalidResponse:
-                return .invalidAPIResponse
-            case .encodingFailed:
-                return .imageConversionFailed
-            case .signatureError:
-                return .awsAuthenticationFailed
             }
         }
 

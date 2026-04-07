@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage("includePMI") private var includePMI: Bool = true
     @AppStorage("includePropertyTax") private var includePropertyTax: Bool = true
     @AppStorage("includeHomeInsurance") private var includeHomeInsurance: Bool = true
-    @State private var showingTextractConfig = false
+    @State private var showingBackendConfig = false
     
     var body: some View {
         NavigationView {
@@ -40,8 +40,8 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    NavigationRow(title: "AWS Textract Setup", icon: "doc.text.magnifyingglass") {
-                        showingTextractConfig = true
+                    NavigationRow(title: "Backend Connection", icon: "server.rack") {
+                        showingBackendConfig = true
                     }
 
                     NavigationRow(title: "Rate History", icon: "chart.line.uptrend.xyaxis") {
@@ -90,8 +90,10 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
-            .sheet(isPresented: $showingTextractConfig) {
-                TextractConfigurationView()
+            .sheet(isPresented: $showingBackendConfig) {
+                // TODO: Backend connection configuration view
+                Text("Backend: \(APIConfiguration.baseURL)")
+                    .padding()
             }
         }
     }

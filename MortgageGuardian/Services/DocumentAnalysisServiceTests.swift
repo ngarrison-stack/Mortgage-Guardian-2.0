@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 import OSLog
 
-/// Test utilities for DocumentAnalysisService AWS integration
+/// Test utilities for DocumentAnalysisService Backend integration
 @MainActor
 class DocumentAnalysisServiceTests: ObservableObject {
     private let logger = Logger(subsystem: "com.mortgageguardian.tests", category: "DocumentAnalysisTests")
@@ -24,10 +24,10 @@ class DocumentAnalysisServiceTests: ObservableObject {
         isRunningTests = true
         testResults.removeAll()
 
-        logger.info("Starting AWS integration tests")
+        logger.info("Starting Backend integration tests")
 
-        // Test AWS backend availability
-        await testAWSBackendAvailability()
+        // Test Backend backend availability
+        await testBackendAvailability()
 
         // Test image validation
         await testImageValidation()
@@ -39,27 +39,27 @@ class DocumentAnalysisServiceTests: ObservableObject {
         await testErrorHandling()
 
         isRunningTests = false
-        logger.info("Completed AWS integration tests")
+        logger.info("Completed Backend integration tests")
     }
 
-    /// Test AWS backend availability
-    private func testAWSBackendAvailability() async {
+    /// Test Backend backend availability
+    private func testBackendAvailability() async {
         let startTime = CFAbsoluteTimeGetCurrent()
 
         do {
-            let isAvailable = await documentAnalysisService.isAWSBackendAvailable()
+            let isAvailable = await documentAnalysisService.isBackendAvailable()
             let duration = CFAbsoluteTimeGetCurrent() - startTime
 
             let result = TestResult(
-                testName: "AWS Backend Availability",
+                testName: "Backend Backend Availability",
                 success: isAvailable,
-                message: isAvailable ? "AWS backend is available" : "AWS backend is not available",
+                message: isAvailable ? "Backend backend is available" : "Backend backend is not available",
                 duration: duration,
                 timestamp: Date()
             )
             testResults.append(result)
 
-            logger.info("AWS Backend Availability Test: \(isAvailable ? "PASS" : "FAIL")")
+            logger.info("Backend Backend Availability Test: \(isAvailable ? "PASS" : "FAIL")")
         }
     }
 
@@ -307,7 +307,7 @@ struct DocumentAnalysisTestView: View {
                     }
                 }
             }
-            .navigationTitle("AWS Integration Tests")
+            .navigationTitle("Backend Integration Tests")
         }
     }
 }

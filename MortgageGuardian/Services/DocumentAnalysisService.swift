@@ -330,17 +330,17 @@ class DocumentAnalysisService {
             do {
                 logger.info("Starting cloud-based document analysis for type: \(expectedType.rawValue)")
 
-                // Check AWS backend availability before proceeding
-                let isBackendAvailable = await isAWSBackendAvailable()
+                // Check Express backend availability before proceeding
+                let isBackendAvailable = await isBackendAvailable()
                 if !isBackendAvailable {
-                    logger.warning("AWS backend is not available, attempting fallback")
+                    logger.warning("Express backend is not available, attempting fallback")
                     throw DocumentAnalysisError.awsBackendUnavailable
                 }
 
-                return try await analyzeDocumentWithAWSBackend(image, expectedType: expectedType, startTime: startTime)
+                return try await analyzeDocumentWithBackend(image, expectedType: expectedType, startTime: startTime)
             } catch {
                 let analysisError = DocumentAnalysisError.from(error)
-                logger.warning("AWS backend analysis failed: \(analysisError.localizedDescription)")
+                logger.warning("Express backend analysis failed: \(analysisError.localizedDescription)")
 
                 // Only fallback if error suggests it might help and fallback is enabled
                 if enableFallbackProcessing && analysisError.shouldFallbackToLocal {
@@ -366,7 +366,7 @@ class DocumentAnalysisService {
     }
 
     /// Express backend document analysis with Claude AI
-    private func analyzeDocumentWithAWSBackend(_ image: CGImage, expectedType: DocumentType, startTime: CFAbsoluteTime) async throws -> DocumentAnalysisResult {
+    private func analyzeDocumentWithBackend(_ image: CGImage, expectedType: DocumentType, startTime: CFAbsoluteTime) async throws -> DocumentAnalysisResult {
         // Validate image before processing
         try validateImage(image)
 
@@ -430,7 +430,7 @@ class DocumentAnalysisService {
         // Validate image before processing
         try validateImage(image)
 
-        // Use local Vision framework for OCR (AWS backend handles its own OCR)
+        // Use local Vision framework for OCR (Express backend handles its own OCR)
         var rawText = ""
         var observations: [VNRecognizedTextObservation] = []
 
@@ -653,8 +653,8 @@ class DocumentAnalysisService {
         let awsBackendAvailable: Bool?
     }
 
-    /// Check if AWS backend is available with lightweight health check
-    func isAWSBackendAvailable() async -> Bool {
+    /// Check if Express backend is available with lightweight health check
+    func isBackendAvailable() async -> Bool {
         do {
             // Use a lightweight health check endpoint instead of full analysis
             let url = URL(string: "\(APIConfiguration.baseURL)/health")!
@@ -666,15 +666,15 @@ class DocumentAnalysisService {
 
             if let httpResponse = response as? HTTPURLResponse {
                 let isAvailable = (200...299).contains(httpResponse.statusCode)
-                logger.info("AWS backend availability check: \(isAvailable ? "available" : "unavailable") (status: \(httpResponse.statusCode))")
+                logger.info("Express backend availability check: \(isAvailable ? "available" : "unavailable") (status: \(httpResponse.statusCode))")
                 return isAvailable
             } else {
-                logger.warning("AWS backend availability check failed: invalid response type")
+                logger.warning("Express backend availability check failed: invalid response type")
                 return false
             }
         } catch {
             let analysisError = DocumentAnalysisError.from(error)
-            logger.warning("AWS backend availability check failed: \(analysisError.localizedDescription)")
+            logger.warning("Express backend availability check failed: \(analysisError.localizedDescription)")
 
             // Log specific error types for debugging
             switch analysisError {
@@ -683,7 +683,7 @@ class DocumentAnalysisService {
             case .awsAuthenticationFailed:
                 logger.debug("AWS authentication failed during availability check")
             case .awsBackendUnavailable:
-                logger.debug("AWS backend service unavailable")
+                logger.debug("Express backend service unavailable")
             default:
                 logger.debug("Availability check failed with error: \(analysisError)")
             }
