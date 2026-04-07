@@ -273,4 +273,22 @@ extension APIClient {
             responseType: DocumentStatusResponse.self
         )
     }
+
+    // MARK: Health Check
+
+    func checkHealth() async throws -> HealthResponse {
+        return try await request(
+            endpoint: "/health",
+            method: .GET,
+            responseType: HealthResponse.self
+        )
+    }
+}
+
+// MARK: - Health Response
+
+struct HealthResponse: Decodable {
+    let status: String
+    let version: String?
+    let uptime: Double?
 }
