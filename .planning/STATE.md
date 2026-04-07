@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 32 of 40 (Express Backend API Client Migration)
-Plan: 02 of 04 complete
+Plan: 03 of 04 complete
 Status: Executing phase
-Last activity: 2026-04-07 - Plan 32-02 complete (Express-compatible API methods)
+Last activity: 2026-04-07 - Plan 32-03 complete (consumer migration)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -72,6 +72,7 @@ v5.0 Phase 31-01: RUNBOOK.md with P1-P4 severity levels, 7 incident playbooks, r
 v5.0 Phase 31-02: TROUBLESHOOTING.md with 15+ issues across 5 categories. README operations documentation index. v5.0 milestone closed — 10 phases, 24 plans shipped.
 v6.0 Phase 32-01: APIConfiguration.swift with environment enum (#if DEBUG), APIClient rewritten with retry logic from AWSBackendClient, @Observable, expanded APIError. Lazy var incompatible with @Observable — used init().
 v6.0 Phase 32-02: APIClient+Documents.swift (8 methods) and APIClient+Plaid.swift (4 methods) with Express-aligned Codable models. New ExpressDocument type to avoid breaking views.
+v6.0 Phase 32-03: All consumers migrated from AWSBackendClient to APIClient. DocumentAnalysisService sends OCR text (not image) to Express Claude. Health URLs use APIConfiguration.baseURL.
 
 ### Deferred Issues
 
@@ -101,5 +102,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Plan 32-02 complete, ready for 32-03
+Stopped at: Plan 32-03 complete, ready for 32-04
 Resume file: None

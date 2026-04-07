@@ -237,7 +237,7 @@ Plans:
 Plans:
 - [x] 32-01: Backend URL Configuration & APIClient Consolidation (APIConfiguration.swift, rewrite APIClient with retry logic) — 2026-04-07
 - [x] 32-02: Express-Compatible API Methods (APIClient+Documents.swift, APIClient+Plaid.swift with typed methods) — 2026-04-07
-- [ ] 32-03: Consumer Migration (DocumentManager, DocumentAnalysisService, EnhancedPlaidService → APIClient)
+- [x] 32-03: Consumer Migration (DocumentManager, DocumentAnalysisService, EnhancedPlaidService → APIClient) — 2026-04-07
 - [ ] 32-04: AWS Cleanup & Build Verification (delete AWSBackendClient, purge AWS refs, Xcode build)
 
 #### Phase 33: Authentication Flow Completion
@@ -423,7 +423,7 @@ Plans:
 | 30. Production Deployment Dry Run | v5.0 | 2/2 | Complete | 2026-04-07 |
 | 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
-| 32. Express Backend API Client Migration | v6.0 | 2/4 | In progress | - |
+| 32. Express Backend API Client Migration | v6.0 | 3/4 | In progress | - |
 | 33. Authentication Flow Completion | v6.0 | 0/? | Not started | - |
 | 34. Document Upload & Processing Pipeline | v6.0 | 0/? | Not started | - |
 | 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
