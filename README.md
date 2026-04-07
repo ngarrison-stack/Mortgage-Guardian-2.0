@@ -212,6 +212,20 @@
 
 ---
 
+## 📖 Operations & Documentation
+
+| Document | Description |
+|----------|-------------|
+| [DEPLOY.md](DEPLOY.md) | Deployment guide — Docker, Railway, Vercel, rollback procedures |
+| [ENV-GUIDE.md](ENV-GUIDE.md) | Environment variable reference — all services, rotation strategy |
+| [MONITORING.md](MONITORING.md) | Health checks, metrics, Sentry error tracking, log analysis |
+| [RUNBOOK.md](RUNBOOK.md) | Incident response — severity levels, playbooks, post-mortem template |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions — build, auth, integration, runtime |
+| [SECURITY-AUDIT.md](SECURITY-AUDIT.md) | Security audit report — OWASP Top 10 assessment |
+| [TESTING_GUIDE.md](TESTING_GUIDE.md) | Test suite documentation — coverage targets, running tests |
+
+---
+
 ## 📞 Support & Contact
 
 For technical support, feature requests, or general inquiries:
