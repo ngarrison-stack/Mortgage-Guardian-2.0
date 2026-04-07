@@ -76,60 +76,45 @@ class DocumentManager: ObservableObject {
             throw DocumentError.compressionFailed
         }
 
-        // Create multipart form data
-        var request = URLRequest(url: URL(string: "\(APIClient.shared.baseURL)/documents/upload")!)
-        request.httpMethod = "POST"
+        // Upload via APIClient with base64 content
+        let base64Content = imageData.base64EncodedString()
+        let documentId = UUID().uuidString
+        let fileName = "document.jpg"
 
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let response = try await APIClient.shared.uploadDocument(
+            documentId: documentId,
+            fileName: fileName,
+            documentType: "mortgage_document",
+            content: base64Content,
+            metadata: ocrText != nil ? [
+                "ocr_text": AnyCodable(ocrText!),
+                "ocr_confidence": AnyCodable(ocrConfidence ?? 0),
+                "ocr_method": AnyCodable(ocrMethod)
+            ] : nil
+        )
 
-        if let token = await getAuthToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        var body = Data()
-
-        // Add file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"document.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n".data(using: .utf8)!)
-
-        // Add OCR data if available
-        if let ocrText = ocrText {
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"ocr_text\"\r\n\r\n".data(using: .utf8)!)
-            body.append(ocrText.data(using: .utf8)!)
-            body.append("\r\n".data(using: .utf8)!)
-
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"ocr_confidence\"\r\n\r\n".data(using: .utf8)!)
-            body.append("\(ocrConfidence ?? 0)".data(using: .utf8)!)
-            body.append("\r\n".data(using: .utf8)!)
-
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"ocr_method\"\r\n\r\n".data(using: .utf8)!)
-            body.append(ocrMethod.data(using: .utf8)!)
-            body.append("\r\n".data(using: .utf8)!)
-        }
-
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-        request.httpBody = body
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let result = try JSONDecoder().decode(DocumentUploadResult.self, from: data)
-
-        return result
+        return DocumentUploadResult(
+            success: response.success,
+            document: DocumentInfo(
+                id: response.documentId ?? documentId,
+                filename: fileName,
+                status: "uploaded"
+            )
+        )
     }
 
     func fetchDocuments() async throws {
-        let response: DocumentListResponse = try await APIClient.shared.request(
-            endpoint: "/documents",
-            responseType: DocumentListResponse.self
-        )
-        self.documents = response.documents
+        let response = try await APIClient.shared.fetchDocuments()
+        self.documents = response.documents.map { doc in
+            Document(
+                id: doc.id ?? doc.documentId ?? "",
+                filename: doc.fileName ?? "",
+                file_size: 0,
+                ocr_confidence: nil,
+                created_at: doc.createdAt ?? "",
+                updated_at: doc.updatedAt ?? ""
+            )
+        }
     }
 
     func askQuestion(documentId: String, question: String) async throws -> String {
@@ -154,9 +139,6 @@ class DocumentManager: ObservableObject {
         return response.answer
     }
 
-    private func getAuthToken() async -> String? {
-        try? await Clerk.shared.session?.getToken()?.jwt
-    }
 }
 
 // Models
@@ -183,10 +165,6 @@ struct Document: Decodable, Identifiable {
     let ocr_confidence: Float?
     let created_at: String
     let updated_at: String
-}
-
-struct DocumentListResponse: Decodable {
-    let documents: [Document]
 }
 
 enum DocumentError: Error {

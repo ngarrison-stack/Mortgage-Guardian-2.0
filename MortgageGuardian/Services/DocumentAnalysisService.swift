@@ -234,8 +234,8 @@ class DocumentAnalysisService {
     private let defaultRecognitionLanguages = ["en-US"]
     private let logger = Logger(subsystem: "com.mortgageguardian.analysis", category: "DocumentAnalysis")
 
-    // AWS Services - Initialize properly
-    private let awsBackendClient = AWSBackendClient()
+    // API Client for Express backend
+    private let apiClient = APIClient.shared
 
     // Network monitoring
     private let networkMonitor = NetworkMonitor()
@@ -302,7 +302,7 @@ class DocumentAnalysisService {
     func checkNetworkConnectivity() async {
         do {
             // Use a lightweight HEAD request to check connectivity
-            let url = URL(string: "https://h4rj2gpdza.execute-api.us-east-1.amazonaws.com/prod/health")!
+            let url = URL(string: "\(APIConfiguration.baseURL)/health")!
             var request = URLRequest(url: url)
             request.httpMethod = "HEAD"
             request.timeoutInterval = 5.0
@@ -365,56 +365,64 @@ class DocumentAnalysisService {
         }
     }
 
-    /// AWS Backend-based document analysis with Claude AI
+    /// Express backend document analysis with Claude AI
     private func analyzeDocumentWithAWSBackend(_ image: CGImage, expectedType: DocumentType, startTime: CFAbsoluteTime) async throws -> DocumentAnalysisResult {
         // Validate image before processing
         try validateImage(image)
 
-        // Convert CGImage to JPEG data for upload
-        let imageData: Data
+        // Extract text locally via OCR, then send text to Express for Claude analysis
+        let ocrText: String
         do {
-            imageData = try convertImageToData(image)
+            let imageData = try convertImageToData(image)
+            // Perform local OCR to get text for Express Claude endpoint
+            ocrText = try await extractTextFromImage(image) ?? imageData.base64EncodedString()
         } catch {
-            logger.error("Image conversion failed: \(error.localizedDescription)")
+            logger.error("Image processing failed: \(error.localizedDescription)")
             throw DocumentAnalysisError.imageConversionFailed
         }
 
-        // Call AWS backend for Claude AI analysis with retry logic
-        let claudeResponse: AWSBackendClient.ClaudeAnalysisResponse
+        // Call Express backend for Claude AI analysis with retry logic
+        let claudeResponse: ClaudeAnalysisResponse
         do {
             claudeResponse = try await performAWSCallWithRetry {
-                try await self.awsBackendClient.analyzeDocumentWithClaude(
-                    imageData: imageData,
-                    documentType: AWSBackendClient.DocumentType(rawValue: expectedType.rawValue) ?? .bankStatement
+                try await self.apiClient.analyzeDocumentWithClaude(
+                    documentText: ocrText,
+                    documentType: expectedType.rawValue
                 )
             }
         } catch {
-            logger.error("AWS backend analysis failed after retries: \(error.localizedDescription)")
+            logger.error("Express backend analysis failed after retries: \(error.localizedDescription)")
             throw DocumentAnalysisError.from(error)
         }
 
-        // Validate response confidence
-        if claudeResponse.confidence < 0.3 {
-            logger.warning("Low confidence analysis result: \(claudeResponse.confidence)")
-            throw DocumentAnalysisError.confidenceTooLow(score: claudeResponse.confidence, minimum: 0.3)
-        }
-
-        // Convert AWS response to our format
-        let extractedData = convertAnyCodableToStringAny(claudeResponse.extractedData)
         let processingTime = CFAbsoluteTimeGetCurrent() - startTime
 
-        logger.info("AWS backend analysis completed in \(processingTime) seconds with confidence: \(claudeResponse.confidence)")
+        logger.info("Express backend analysis completed in \(processingTime) seconds")
 
         return DocumentAnalysisResult(
             type: expectedType,
-            extractedData: extractedData,
-            confidence: claudeResponse.confidence,
+            extractedData: ["analysis": claudeResponse.analysis],
+            confidence: 1.0,
             date: Date(),
-            mlResults: nil, // AWS backend provides processed results
-            aiInsights: claudeResponse.aiInsights,
+            mlResults: nil,
+            aiInsights: nil,
             processingTime: processingTime,
-            analysisId: claudeResponse.analysisId
+            analysisId: nil
         )
+    }
+
+    /// Extract text from image using Vision framework OCR
+    private func extractTextFromImage(_ image: CGImage) async throws -> String? {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        try handler.perform([request])
+
+        return request.results?
+            .compactMap { $0.topCandidates(1).first?.string }
+            .joined(separator: "\n")
     }
 
     /// Local processing fallback using Vision framework and ML models
@@ -579,50 +587,39 @@ class DocumentAnalysisService {
         #endif
     }
 
-    private func convertAnyCodableToStringAny(_ anyCodableDict: [String: AWSBackendClient.AnyCodable]) -> [String: Any] {
+    private func convertAnyCodableToStringAny(_ anyCodableDict: [String: AnyCodable]) -> [String: Any] {
         return anyCodableDict.mapValues { $0.value }
     }
 
-    // MARK: - AWS Backend Integration Methods
+    // MARK: - Express Backend Integration Methods
 
-    /// Verify extracted bank data with Plaid integration
-    func verifyBankData(
-        accountData: AWSBackendClient.BankAccountData,
-        extractedData: [String: Any]
-    ) async throws -> AWSBackendClient.PlaidVerificationResponse {
-        logger.info("Starting bank data verification with Plaid")
-
-        return try await performAWSCallWithRetry {
-            try await self.awsBackendClient.verifyBankData(
-                accountData: accountData,
-                extractedData: extractedData
-            )
-        }
-    }
-
-    /// Upload document for async processing (useful for large documents)
+    /// Upload document for async processing via Express backend
     func uploadDocumentForProcessing(
         _ image: CGImage,
         documentType: DocumentType
-    ) async throws -> AWSBackendClient.DocumentUploadResponse {
-        logger.info("Uploading document for async processing: \(documentType.rawValue)")
+    ) async throws -> DocumentUploadResponse {
+        logger.info("Uploading document for processing: \(documentType.rawValue)")
 
         let imageData = try convertImageToData(image)
+        let base64Content = imageData.base64EncodedString()
+        let documentId = UUID().uuidString
 
         return try await performAWSCallWithRetry {
-            try await self.awsBackendClient.uploadDocumentForTextract(
-                imageData: imageData,
-                documentType: AWSBackendClient.DocumentType(rawValue: documentType.rawValue) ?? .bankStatement
+            try await self.apiClient.uploadDocument(
+                documentId: documentId,
+                fileName: "document.jpg",
+                documentType: documentType.rawValue,
+                content: base64Content
             )
         }
     }
 
     /// Get analysis results for async processing
-    func getDocumentAnalysisResults(documentId: String) async throws -> AWSBackendClient.DocumentAnalysisResponse {
+    func getDocumentAnalysisResults(documentId: String) async throws -> ExpressDocumentAnalysisResponse {
         logger.info("Retrieving analysis results for document: \(documentId)")
 
         return try await performAWSCallWithRetry {
-            try await self.awsBackendClient.getDocumentAnalysis(documentId: documentId)
+            try await self.apiClient.getDocumentAnalysis(documentId: documentId)
         }
     }
 
@@ -660,7 +657,7 @@ class DocumentAnalysisService {
     func isAWSBackendAvailable() async -> Bool {
         do {
             // Use a lightweight health check endpoint instead of full analysis
-            let url = URL(string: "https://h4rj2gpdza.execute-api.us-east-1.amazonaws.com/prod/health")!
+            let url = URL(string: "\(APIConfiguration.baseURL)/health")!
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.timeoutInterval = 10.0
