@@ -232,10 +232,13 @@ Plans:
 **Goal**: Rewrite APIClient.swift and remove AWS Lambda dependency — all iOS API calls point at Express backend
 **Depends on**: v5.0 milestone complete
 **Research**: Unlikely (internal patterns, rewriting existing Swift networking code)
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 32-01: TBD (run /gsd:plan-phase 32 to break down)
+- [ ] 32-01: Backend URL Configuration & APIClient Consolidation (APIConfiguration.swift, rewrite APIClient with retry logic)
+- [ ] 32-02: Express-Compatible API Methods (APIClient+Documents.swift, APIClient+Plaid.swift with typed methods)
+- [ ] 32-03: Consumer Migration (DocumentManager, DocumentAnalysisService, EnhancedPlaidService → APIClient)
+- [ ] 32-04: AWS Cleanup & Build Verification (delete AWSBackendClient, purge AWS refs, Xcode build)
 
 #### Phase 33: Authentication Flow Completion
 
@@ -420,7 +423,7 @@ Plans:
 | 30. Production Deployment Dry Run | v5.0 | 2/2 | Complete | 2026-04-07 |
 | 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
-| 32. Express Backend API Client Migration | v6.0 | 0/? | Not started | - |
+| 32. Express Backend API Client Migration | v6.0 | 0/4 | Not started | - |
 | 33. Authentication Flow Completion | v6.0 | 0/? | Not started | - |
 | 34. Document Upload & Processing Pipeline | v6.0 | 0/? | Not started | - |
 | 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
