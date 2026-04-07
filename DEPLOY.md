@@ -149,6 +149,91 @@ Critical variables:
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Frontend | Clerk authentication (build-time) |
 | `CLERK_SECRET_KEY` | Frontend | Clerk authentication (runtime) |
 
+## Pre-Deployment Checklist
+
+Before deploying to any environment, verify:
+
+- [ ] All tests pass: `cd backend-express && npm test`
+- [ ] Backend lints cleanly: `cd backend-express && npm run lint` (if configured)
+- [ ] Frontend builds: `cd frontend && npm run build`
+- [ ] Environment variables are set for the target environment (see [ENV-GUIDE.md](./ENV-GUIDE.md))
+- [ ] No secrets or `.env` files are committed: `git diff --cached --name-only | grep -i env`
+- [ ] Docker images build: `docker compose build` or `bash scripts/validate-build.sh`
+- [ ] Database migrations are applied (if applicable)
+- [ ] Tag the release: `git tag -a v<version> -m "Release v<version>"`
+- [ ] Note the current deployed commit hash for rollback: `git rev-parse HEAD`
+
+## Rollback Procedures
+
+### Docker Compose Rollback
+
+```bash
+# 1. Stop current deployment
+docker compose down
+
+# 2. Check out the previous known-good commit
+git checkout <previous-commit-hash>
+
+# 3. Rebuild and restart
+docker compose up --build -d
+
+# 4. Verify health
+bash scripts/validate-deployment.sh http://localhost:3000
+```
+
+### Railway Rollback
+
+Railway keeps deployment history in the dashboard.
+
+1. Open the Railway dashboard for the affected service.
+2. Navigate to **Deployments** and find the last successful deployment.
+3. Click **Redeploy** on that deployment.
+4. Alternatively, from the CLI:
+
+```bash
+# Roll back to a previous commit
+git checkout <previous-commit-hash>
+cd backend-express   # or frontend
+railway up
+```
+
+5. Verify with `bash scripts/validate-deployment.sh <railway-url>`.
+
+### Vercel Rollback
+
+Vercel supports instant rollback from the dashboard.
+
+1. Open the Vercel dashboard for the affected project.
+2. Navigate to **Deployments**.
+3. Find the last successful production deployment and click **Promote to Production** (three-dot menu).
+4. Alternatively, redeploy from a known-good commit:
+
+```bash
+git checkout <previous-commit-hash>
+cd backend-express   # or frontend
+vercel --prod
+```
+
+### Generic Docker Rollback
+
+```bash
+# 1. List available image tags/digests
+docker images mg-backend --format "{{.ID}} {{.CreatedAt}} {{.Tag}}"
+
+# 2. Stop and remove the current container
+docker stop mg-backend && docker rm mg-backend
+
+# 3. Run the previous image
+docker run -d --name mg-backend -p 3000:3000 --env-file backend-express/.env mg-backend:<previous-tag>
+
+# Or rebuild from a known-good commit
+git checkout <previous-commit-hash>
+docker build -t mg-backend:rollback ./backend-express
+docker run -d --name mg-backend -p 3000:3000 --env-file backend-express/.env mg-backend:rollback
+```
+
+> **Tip:** Always verify rollback success by running `bash scripts/validate-deployment.sh <url>`.
+
 ## Troubleshooting
 
 **Port conflicts:** If ports 3000 or 3001 are in use, stop the conflicting process or change the port mapping in `docker-compose.yml` (e.g., `"3002:3000"`).
