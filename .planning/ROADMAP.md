@@ -186,10 +186,11 @@ Plans:
 **Goal**: Incident response procedures, deployment guides, and troubleshooting documentation
 **Depends on**: Phase 30
 **Research**: Unlikely (internal documentation)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 31-01: TBD (run /gsd:plan-phase 31 to break down)
+- [ ] 31-01: Incident Response Runbook & Monitoring Guide (RUNBOOK.md, MONITORING.md)
+- [ ] 31-02: Troubleshooting Guide & v5.0 Milestone Closure (TROUBLESHOOTING.md, README index, close v5.0)
 
 ---
 
