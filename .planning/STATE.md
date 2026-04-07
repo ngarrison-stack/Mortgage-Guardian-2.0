@@ -9,11 +9,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 32 of 40 (Express Backend API Client Migration)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-07 - Milestone v6.0 created
+Plan: 01 of 04 complete
+Status: Executing phase
+Last activity: 2026-04-07 - Plan 32-01 complete (APIConfiguration + APIClient consolidation)
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ 11%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ v5.0 Phase 30-01: Docker build validated (backend 479MB, frontend 276MB). Deploy
 v5.0 Phase 30-02: Deployment validation executed — 7 pass, 2 warn, 1 fail (expected without Supabase). CI pipelines verified correct (Node 20, npm ci, proper triggers). GitHub Actions billing lock remains. Phase 30 complete.
 v5.0 Phase 31-01: RUNBOOK.md with P1-P4 severity levels, 7 incident playbooks, rollback decision matrix, post-mortem template. MONITORING.md with health/metrics/Sentry/logging guides and alert thresholds. Referenced existing docs rather than duplicating.
 v5.0 Phase 31-02: TROUBLESHOOTING.md with 15+ issues across 5 categories. README operations documentation index. v5.0 milestone closed — 10 phases, 24 plans shipped.
+v6.0 Phase 32-01: APIConfiguration.swift with environment enum (#if DEBUG), APIClient rewritten with retry logic from AWSBackendClient, @Observable, expanded APIError. Lazy var incompatible with @Observable — used init().
 
 ### Deferred Issues
 
@@ -99,5 +100,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Milestone v6.0 initialization
+Stopped at: Plan 32-01 complete, ready for 32-02
 Resume file: None
