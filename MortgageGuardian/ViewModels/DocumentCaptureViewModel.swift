@@ -30,6 +30,13 @@ class DocumentCaptureViewModel: ObservableObject {
         case failed(Error)
     }
 
+    enum UploadProgress {
+        case idle
+        case uploading
+        case uploaded(serverDocumentId: String)
+        case uploadFailed(Error)
+    }
+
     enum CaptureError: LocalizedError {
         case cameraNotAvailable
         case cameraPermissionDenied
@@ -82,6 +89,7 @@ class DocumentCaptureViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
+    @Published var uploadProgress: UploadProgress = .idle
     @Published var processingState: ProcessingState = .idle
     @Published var capturedDocuments: [CapturedDocument] = []
     @Published var selectedDocument: CapturedDocument?
@@ -520,7 +528,7 @@ class DocumentCaptureViewModel: ObservableObject {
                 throw CaptureError.invalidImageData
             }
 
-            // Process with DocumentProcessor
+            // Process with DocumentProcessor (local OCR via Vision Framework)
             let processedDocument = try await documentProcessor.processDocument(
                 from: imageData,
                 fileName: document.fileName
@@ -534,10 +542,54 @@ class DocumentCaptureViewModel: ObservableObject {
 
             logger.info("Document processing completed for: \(document.fileName)")
 
+            // Upload to Express backend
+            await uploadDocumentToBackend(
+                processedDocument: processedDocument,
+                imageData: imageData
+            )
+
         } catch {
             processingState = .failed(error)
             errorMessage = error.localizedDescription
             logger.error("Document processing failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Uploads a locally processed document to the Express backend.
+    private func uploadDocumentToBackend(
+        processedDocument: MortgageDocument,
+        imageData: Data
+    ) async {
+        let documentId = UUID().uuidString
+        let base64Content = imageData.base64EncodedString()
+        let documentType = processedDocument.documentType.rawValue
+
+        uploadProgress = .uploading
+        processingMessage = "Uploading document to server..."
+
+        do {
+            let metadata: [String: AnyCodable] = [
+                "ocr_text": AnyCodable(processedDocument.originalText),
+                "ocr_method": AnyCodable("vision_framework")
+            ]
+
+            let response = try await APIClient.shared.uploadDocument(
+                documentId: documentId,
+                fileName: processedDocument.fileName,
+                documentType: documentType,
+                content: base64Content,
+                metadata: metadata
+            )
+
+            let serverDocumentId = response.documentId ?? documentId
+            uploadProgress = .uploaded(serverDocumentId: serverDocumentId)
+            processingMessage = "Document uploaded successfully"
+
+            logger.info("Document uploaded to backend: \(serverDocumentId)")
+
+        } catch {
+            uploadProgress = .uploadFailed(error)
+            logger.error("Document upload failed: \(error.localizedDescription)")
         }
     }
 
@@ -569,6 +621,18 @@ class DocumentCaptureViewModel: ObservableObject {
             batchProcessingEnabled = false
 
             logger.info("Batch processing completed for \(processedDocuments.count) documents")
+
+            // Upload each processed document to backend
+            for (index, processedDocument) in processedDocuments.enumerated() {
+                // Find matching image data from the original batch
+                if index < documentsToProcess.count {
+                    let imageData = documentsToProcess[index].data
+                    await uploadDocumentToBackend(
+                        processedDocument: processedDocument,
+                        imageData: imageData
+                    )
+                }
+            }
 
         } catch {
             processingState = .failed(error)
