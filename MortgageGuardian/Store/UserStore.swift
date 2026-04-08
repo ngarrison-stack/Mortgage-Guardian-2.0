@@ -31,6 +31,15 @@ class UserStore: ObservableObject {
         objectWillChange.send()
     }
 
+    /// Delete a document from the backend (if server-synced) then remove locally.
+    func deleteDocumentFromBackend(_ document: MortgageDocument) async throws {
+        if let serverId = document.serverDocumentId {
+            try await APIClient.shared.deleteDocument(documentId: serverId)
+        }
+        // Remove locally after successful backend delete (or if local-only)
+        removeDocument(document)
+    }
+
     func documentsForType(_ type: MortgageDocument.DocumentType) -> [MortgageDocument] {
         return documents.filter { $0.documentType == type }
     }
@@ -102,14 +111,29 @@ class UserStore: ObservableObject {
     }
 
     // MARK: - Data Refresh
-    func refreshData() {
+
+    /// Fetches documents from the Express backend and merges with local-only documents.
+    @MainActor
+    func fetchDocumentsFromBackend() async {
         isLoading = true
         errorMessage = nil
+        do {
+            let response = try await APIClient.shared.fetchDocuments()
+            let backendDocuments = response.documents.compactMap { MortgageDocument(from: $0) }
+            // Merge: backend is source of truth, keep local-only docs that haven't been uploaded yet
+            let localOnlyDocs = documents.filter { $0.serverDocumentId == nil }
+            documents = backendDocuments + localOnlyDocs
+            isLoading = false
+        } catch {
+            isLoading = false
+            errorMessage = "Couldn't load documents from server"
+            // Keep existing local documents as fallback
+        }
+    }
 
-        // Simulate network call
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.isLoading = false
-            // In a real app, this would fetch fresh data from the server
+    func refreshData() {
+        Task {
+            await fetchDocumentsFromBackend()
         }
     }
 
