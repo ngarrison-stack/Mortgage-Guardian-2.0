@@ -578,6 +578,37 @@ class DocumentCaptureViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Backend Upload
+
+    /// Upload the processed document to the Express backend for server-side analysis.
+    func uploadDocumentToBackend(_ document: MortgageDocument) async {
+        processingMessage = "Uploading to server..."
+
+        do {
+            try await APIClient.shared.processDocument(
+                documentId: document.serverDocumentId ?? document.id.uuidString,
+                documentText: document.originalText.isEmpty ? nil : document.originalText,
+                documentType: document.documentType.rawValue
+            )
+            processingMessage = "Upload complete"
+            logger.info("Document uploaded to backend: \(document.fileName)")
+        } catch {
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .networkError:
+                    processingMessage = "No internet connection. Document saved locally."
+                case .authenticationError:
+                    processingMessage = "Session expired. Please sign in again."
+                default:
+                    processingMessage = "Upload failed. Please try again."
+                }
+            } else {
+                processingMessage = "Upload failed. Please try again."
+            }
+            logger.error("Document upload failed: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Image Enhancement
 
     private func enhanceImageForOCR(_ image: UIImage) async -> UIImage? {
