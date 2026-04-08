@@ -8,23 +8,23 @@ struct MortgageAnalyzerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authManager.isSignedIn {
-                MainTabView()
-                    .environmentObject(authManager)
-                    .environmentObject(documentManager)
-            } else {
-                LoginView()
-                    .environmentObject(authManager)
+            Group {
+                if authManager.isLoading {
+                    ProgressView("Loading...")
+                } else if authManager.isSignedIn {
+                    MainTabView()
+                        .environmentObject(authManager)
+                        .environmentObject(documentManager)
+                } else {
+                    LoginView()
+                        .environmentObject(authManager)
+                }
             }
-        }
-    }
-
-    private func setupCrashProtection() {
-        // Pre-initialize critical services to catch crashes early
-        Task {
-            // Validate that required frameworks are available
-            _ = plaidLinkService.accountCount
-            // _ = userStore.hasConnectedAccounts // Commented out - not in project
+            .onAppear {
+                APIClient.shared.onAuthenticationRequired = { [weak authManager] in
+                    await authManager?.handleAuthenticationRequired()
+                }
+            }
         }
     }
 }

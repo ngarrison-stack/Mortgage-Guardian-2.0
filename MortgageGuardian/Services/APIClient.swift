@@ -58,6 +58,8 @@ class APIClient {
     private let maxDelay: TimeInterval = 30.0
     private let retryableStatusCodes: Set<Int> = [429, 500, 502, 503, 504]
 
+    var onAuthenticationRequired: (() async -> Void)?
+
     private let urlSession: URLSession
 
     private init() {
@@ -141,6 +143,7 @@ class APIClient {
                 break
             case 401:
                 logger.error("Authentication required - token may be expired")
+                await onAuthenticationRequired?()
                 throw APIError.authenticationRequired
             default:
                 let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
