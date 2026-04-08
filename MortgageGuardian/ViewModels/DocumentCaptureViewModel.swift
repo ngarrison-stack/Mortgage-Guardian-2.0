@@ -583,9 +583,21 @@ class DocumentCaptureViewModel: ObservableObject {
 
             let serverDocumentId = response.documentId ?? documentId
             uploadProgress = .uploaded(serverDocumentId: serverDocumentId)
-            processingMessage = "Document uploaded successfully"
+            processingMessage = "Document uploaded — analysis in progress"
 
             logger.info("Document uploaded to backend: \(serverDocumentId)")
+
+            // Trigger backend processing pipeline (fire-and-forget)
+            do {
+                try await APIClient.shared.processDocument(
+                    documentId: serverDocumentId,
+                    documentText: processedDocument.originalText,
+                    documentType: documentType
+                )
+                logger.info("Backend processing triggered for: \(serverDocumentId)")
+            } catch {
+                logger.error("Backend processing trigger failed: \(error.localizedDescription)")
+            }
 
         } catch {
             uploadProgress = .uploadFailed(error)
