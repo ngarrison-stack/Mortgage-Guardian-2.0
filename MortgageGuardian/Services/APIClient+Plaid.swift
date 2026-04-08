@@ -27,7 +27,7 @@ struct PlaidExchangeTokenRequest: Encodable {
     }
 }
 
-struct PlaidAccountsRequest: Encodable {
+struct PlaidAPIAccountsRequest: Encodable {
     let accessToken: String
     let accountIds: [String]?
 
@@ -79,8 +79,8 @@ struct PlaidExchangeTokenResponse: Decodable {
     }
 }
 
-struct PlaidAccountsResponse: Decodable {
-    let accounts: [PlaidAccount]
+struct PlaidAPIAccountsResponse: Decodable {
+    let accounts: [PlaidAPIAccount]
     let item: PlaidItem?
     let requestId: String?
 
@@ -94,7 +94,7 @@ struct PlaidAccountsResponse: Decodable {
 struct PlaidTransactionsResponse: Decodable {
     let transactions: [PlaidTransaction]
     let totalTransactions: Int?
-    let accounts: [PlaidAccount]?
+    let accounts: [PlaidAPIAccount]?
     let requestId: String?
 
     enum CodingKeys: String, CodingKey {
@@ -107,7 +107,7 @@ struct PlaidTransactionsResponse: Decodable {
 
 // MARK: - Plaid Data Models
 
-struct PlaidAccount: Decodable {
+struct PlaidAPIAccount: Decodable {
     let accountId: String
     let name: String
     let officialName: String?
@@ -213,11 +213,11 @@ extension APIClient {
         )
     }
 
-    func getPlaidAccounts(
+    func getPlaidAPIAccounts(
         accessToken: String,
         accountIds: [String]? = nil
-    ) async throws -> PlaidAccountsResponse {
-        let requestBody = PlaidAccountsRequest(
+    ) async throws -> PlaidAPIAccountsResponse {
+        let requestBody = PlaidAPIAccountsRequest(
             accessToken: accessToken,
             accountIds: accountIds
         )
@@ -226,7 +226,7 @@ extension APIClient {
             endpoint: "/v1/plaid/accounts",
             method: .POST,
             body: body,
-            responseType: PlaidAccountsResponse.self
+            responseType: PlaidAPIAccountsResponse.self
         )
     }
 

@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		09DAEBCF30F627BE59733E9B /* SecureKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */; };
+		APIDOC_BUILD001 /* APIClient+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = APIDOC001 /* APIClient+Documents.swift */; };
+		APIPLAID_BUILD001 /* APIClient+Plaid.swift in Sources */ = {isa = PBXBuildFile; fileRef = APIPLAID001 /* APIClient+Plaid.swift */; };
+		ANYCODABLE_BUILD001 /* AnyCodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANYCODABLE001 /* AnyCodable.swift */; };
 		17194166DCB18B258065C268 /* PlaidAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0332F96FFE078D44705C0965 /* PlaidAccount.swift */; };
 		1D000001294B8F5A00C8A8A8 /* MortgageGuardianApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D000000294B8F5A00C8A8A8 /* MortgageGuardianApp.swift */; };
 		1D000003294B8F5A00C8A8A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D000002294B8F5A00C8A8A8 /* ContentView.swift */; };
@@ -40,6 +43,9 @@
 		API001 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		SIGNIN001 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		DOCMGR001 /* DocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentManager.swift; sourceTree = "<group>"; };
+		APIDOC001 /* APIClient+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIClient+Documents.swift"; sourceTree = "<group>"; };
+		APIPLAID001 /* APIClient+Plaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIClient+Plaid.swift"; sourceTree = "<group>"; };
+		ANYCODABLE001 /* AnyCodable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyCodable.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				0332F96FFE078D44705C0965 /* PlaidAccount.swift */,
+				ANYCODABLE001 /* AnyCodable.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -107,6 +114,8 @@
 			children = (
 				AUTH001 /* AuthManager.swift */,
 				API001 /* APIClient.swift */,
+				APIDOC001 /* APIClient+Documents.swift */,
+				APIPLAID001 /* APIClient+Plaid.swift */,
 				DOCMGR001 /* DocumentManager.swift */,
 				6AEEE4B45ACEA51A18398F19 /* PlaidLinkService.swift */,
 				DD7495A955FAFF22E8195003 /* SecureKeyManager.swift */,
@@ -221,6 +230,9 @@
 				17194166DCB18B258065C268 /* PlaidAccount.swift in Sources */,
 				362B240E8596615A7D85B65F /* APIConfiguration.swift in Sources */,
 				09DAEBCF30F627BE59733E9B /* SecureKeyManager.swift in Sources */,
+				APIDOC_BUILD001 /* APIClient+Documents.swift in Sources */,
+				APIPLAID_BUILD001 /* APIClient+Plaid.swift in Sources */,
+				ANYCODABLE_BUILD001 /* AnyCodable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

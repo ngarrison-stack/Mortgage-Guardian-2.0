@@ -28,7 +28,7 @@ public final class PlaidLinkService: ObservableObject {
 
     // API Configuration - Uses centralized API configuration
     private var apiBaseURL: String {
-        return APIConfiguration.baseURL + APIConfiguration.Endpoints.plaidBase
+        return APIConfiguration.baseURL + "/v1/plaid"
     }
 
     // Plaid Link Handler
