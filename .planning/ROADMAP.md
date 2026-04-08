@@ -260,7 +260,7 @@ Plans:
 **Plans**: 5
 
 Plans:
-- [ ] 34-01: Capture-to-Upload Pipeline (wire DocumentCaptureViewModel → APIClient upload → trigger backend pipeline)
+- [x] 34-01: Capture-to-Upload Pipeline (wire DocumentCaptureViewModel → APIClient upload → trigger backend pipeline) — 2026-04-07
 - [ ] 34-02: Backend Document List Sync (fetch documents from Express on DocumentsView appear, model bridging)
 - [ ] 34-03: Pipeline Status Polling & Progress UI (periodic status polling, progress indicators)
 - [ ] 34-04: Analysis Trigger & Results Display (wire analyze button, show findings from backend)
@@ -430,7 +430,7 @@ Plans:
 
 | 32. Express Backend API Client Migration | v6.0 | 4/4 | Complete | 2026-04-07 |
 | 33. Authentication Flow Completion | v6.0 | 3/3 | Complete | 2026-04-07 |
-| 34. Document Upload & Processing Pipeline | v6.0 | 0/5 | Not started | - |
+| 34. Document Upload & Processing Pipeline | v6.0 | 1/5 | In progress | - |
 | 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
 | 36. Plaid Bank Integration Rewiring | v6.0 | 0/? | Not started | - |
 | 37. Letter Generation & Export Features | v6.0 | 0/? | Not started | - |

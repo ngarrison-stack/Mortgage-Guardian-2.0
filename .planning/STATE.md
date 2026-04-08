@@ -8,10 +8,10 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 **Current focus:** v6.0 iOS App Completion
 ## Current Position
 
-Phase: 33 of 40 (Authentication Flow Completion)
-Plan: 03 of 03 complete
-Status: Phase 33 complete, ready for Phase 34
-Last activity: 2026-04-07 - Plan 33-03 complete (LoginView Polish & Bug Fixes)
+Phase: 34 of 40 (Document Upload & Processing Pipeline)
+Plan: 01 of 05 complete
+Status: Plan 34-01 complete, ready for Plan 34-02
+Last activity: 2026-04-07 - Plan 34-01 complete (Capture-to-Upload Pipeline)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -77,6 +77,7 @@ v6.0 Phase 32-04: Deleted 4 AWS files (2091 lines), extracted AnyCodable, fixed 
 v6.0 Phase 33-01: Dual-provider auth middleware — Clerk JWKS verification (jwks-rsa) tried first, Supabase fallback second. req.user includes provider field. __mocks__/jwks-rsa.js auto-mock prevents ESM/jose import failures. 26 auth tests, 1609 total passing.
 v6.0 Phase 33-02: AuthManager token lifecycle — 4-min periodic refresh, Clerk session restore on launch, handleAuthenticationRequired() for 401 re-auth. APIClient.onAuthenticationRequired callback. Three-state app launch (loading/auth/main). Removed setupCrashProtection().
 v6.0 Phase 33-03: LoginView polish — signUp calls prepareVerification, verifyEmail calls attemptVerification. Verification code entry UI. User-friendly error mapping. ProfileView fixed for Clerk.User properties. SignInView dead code deleted. Phase 33 complete.
+v6.0 Phase 34-01: DocumentCaptureViewModel wired to upload to Express after Vision OCR. UploadProgress enum, uploadDocumentToBackend() helper, fire-and-forget pipeline trigger. Graceful degradation — each stage failure independent.
 
 ### Deferred Issues
 
@@ -106,5 +107,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Phase 33 complete, ready for Phase 34
+Stopped at: Plan 34-01 complete, ready for Plan 34-02
 Resume file: None
