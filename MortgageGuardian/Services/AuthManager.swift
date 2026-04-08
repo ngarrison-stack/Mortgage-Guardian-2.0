@@ -74,20 +74,27 @@ class AuthManager: ObservableObject {
     }
 
     func signUp(email: String, password: String) async throws {
-        _ = try await SignUp.create(
+        let signUp = try await SignUp.create(
             strategy: .standard(emailAddress: email, password: password)
         )
-        print("Sign up created, email verification required")
+        try await signUp.prepareVerification(strategy: .emailCode)
+        print("Sign up created, verification email sent")
     }
 
     func verifyEmail(code: String) async throws {
-        guard let signUp = Clerk.shared.client?.signUp else { return }
+        guard let signUp = Clerk.shared.client?.signUp else {
+            throw NSError(domain: "AuthManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No pending sign-up found."])
+        }
+
+        try await signUp.attemptVerification(.emailCode(code: code))
 
         if signUp.status == .complete {
             self.user = Clerk.shared.user
             self.isSignedIn = true
             await refreshToken()
             startPeriodicTokenRefresh()
+        } else {
+            throw NSError(domain: "AuthManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Verification failed. Please try again."])
         }
     }
 

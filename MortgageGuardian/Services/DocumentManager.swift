@@ -2,7 +2,7 @@
 import Foundation
 import UIKit
 import Vision
-import Clerk
+
 
 @MainActor
 class DocumentManager: ObservableObject {

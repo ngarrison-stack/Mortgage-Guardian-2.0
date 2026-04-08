@@ -50,11 +50,11 @@ struct ProfileView: View {
 
             // User Info
             VStack(spacing: 4) {
-                Text(authManager.currentUser?.displayName ?? "User")
+                Text(authManager.user?.firstName ?? "User")
                     .font(.title2)
                     .fontWeight(.bold)
 
-                Text(authManager.currentUser?.email ?? "user@example.com")
+                Text(authManager.user?.primaryEmailAddress?.emailAddress ?? "")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -150,7 +150,9 @@ struct ProfileView: View {
     // MARK: - Sign Out Button
     private var signOutButton: some View {
         Button(action: {
-            authManager.signOut()
+            Task {
+                try? await authManager.signOut()
+            }
         }) {
             HStack {
                 Image(systemName: "arrow.right.square.fill")
