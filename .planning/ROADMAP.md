@@ -244,12 +244,13 @@ Plans:
 
 **Goal**: Wire Clerk iOS SDK authentication through Express backend JWT auth — login → token → authenticated API calls
 **Depends on**: Phase 32
-**Research**: Likely (Clerk iOS SDK ↔ Express JWT integration)
-**Research topics**: Clerk iOS SDK token management, Express JWT verification of Clerk tokens, session handling patterns
-**Plans**: TBD
+**Research**: Level 1 — Clerk JWKS pattern confirmed, jwks-rsa library identified
+**Plans**: 3
 
 Plans:
-- [ ] 33-01: TBD
+- [ ] 33-01: Clerk JWT Verification in Express Middleware (dual-provider auth: Clerk JWKS + Supabase fallback, tests)
+- [ ] 33-02: iOS Token Lifecycle & Session Persistence (AuthManager refresh, periodic refresh, 401 handling, app launch flow)
+- [ ] 33-03: LoginView Polish & Build Verification (error messages, sign-up flow, build check)
 
 #### Phase 34: Document Upload & Processing Pipeline
 
@@ -424,7 +425,7 @@ Plans:
 | 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
 | 32. Express Backend API Client Migration | v6.0 | 4/4 | Complete | 2026-04-07 |
-| 33. Authentication Flow Completion | v6.0 | 0/? | Not started | - |
+| 33. Authentication Flow Completion | v6.0 | 0/3 | Not started | - |
 | 34. Document Upload & Processing Pipeline | v6.0 | 0/? | Not started | - |
 | 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
 | 36. Plaid Bank Integration Rewiring | v6.0 | 0/? | Not started | - |
