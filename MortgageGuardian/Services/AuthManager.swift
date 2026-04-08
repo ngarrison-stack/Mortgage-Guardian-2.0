@@ -5,23 +5,60 @@ import SwiftUI
 @MainActor
 class AuthManager: ObservableObject {
     @Published var isSignedIn = false
+    @Published var isLoading = true
     @Published var user: User?
+
+    private var tokenRefreshTask: Task<Void, Never>?
 
     init() {
         setupClerk()
     }
 
     private func setupClerk() {
-        // Configure Clerk with publishable key
         Clerk.shared.configure(publishableKey: "pk_test_Zm9uZC1tYWtvLTcxLmNsZXJrLmFjY291bnRzLmRldiQ")
 
-        // Check if user is already signed in
-        if let user = Clerk.shared.user {
-            self.user = user
-            self.isSignedIn = true
-            updateAPIToken()
+        Task {
+            if let existingUser = Clerk.shared.user {
+                self.user = existingUser
+                self.isSignedIn = true
+                await refreshToken()
+                startPeriodicTokenRefresh()
+            }
+            self.isLoading = false
         }
     }
+
+    // MARK: - Token Lifecycle
+
+    func refreshToken() async {
+        do {
+            if let token = try await Clerk.shared.session?.getToken() {
+                APIClient.shared.setAuthToken(token.jwt)
+            } else {
+                try await signOut()
+            }
+        } catch {
+            try? await signOut()
+        }
+    }
+
+    private func startPeriodicTokenRefresh() {
+        tokenRefreshTask?.cancel()
+        tokenRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(240))
+                guard !Task.isCancelled else { break }
+                await self?.refreshToken()
+            }
+        }
+    }
+
+    private func stopPeriodicTokenRefresh() {
+        tokenRefreshTask?.cancel()
+        tokenRefreshTask = nil
+    }
+
+    // MARK: - Authentication
 
     func signIn(email: String, password: String) async throws {
         let signIn = try await SignIn.create(
@@ -31,47 +68,48 @@ class AuthManager: ObservableObject {
         if signIn.status == .complete {
             self.user = Clerk.shared.user
             self.isSignedIn = true
-            updateAPIToken()
+            await refreshToken()
+            startPeriodicTokenRefresh()
         }
     }
 
     func signUp(email: String, password: String) async throws {
-        let signUp = try await SignUp.create(
+        _ = try await SignUp.create(
             strategy: .standard(emailAddress: email, password: password)
         )
-
-        // Prepare email verification (method might be different)
-        // Check Clerk iOS SDK documentation for correct method name
-        // try await signUp.prepareEmailAddressVerification()
         print("Sign up created, email verification required")
     }
 
     func verifyEmail(code: String) async throws {
         guard let signUp = Clerk.shared.client?.signUp else { return }
 
-        // Attempt email verification (method might be different)
-        // Check Clerk iOS SDK documentation for correct method name
-        // try await signUp.attemptEmailAddressVerification(code: code)
-
         if signUp.status == .complete {
             self.user = Clerk.shared.user
             self.isSignedIn = true
-            updateAPIToken()
+            await refreshToken()
+            startPeriodicTokenRefresh()
         }
     }
 
     func signOut() async throws {
+        stopPeriodicTokenRefresh()
         try await Clerk.shared.signOut()
         self.user = nil
         self.isSignedIn = false
         APIClient.shared.setAuthToken("")
     }
 
-    private func updateAPIToken() {
-        Task {
-            if let token = try? await Clerk.shared.session?.getToken() {
+    // MARK: - 401 Handling
+
+    func handleAuthenticationRequired() async {
+        do {
+            if let token = try await Clerk.shared.session?.getToken() {
                 APIClient.shared.setAuthToken(token.jwt)
+            } else {
+                try await signOut()
             }
+        } catch {
+            try? await signOut()
         }
     }
 }
