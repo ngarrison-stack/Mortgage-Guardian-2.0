@@ -257,10 +257,14 @@ Plans:
 **Goal**: Complete document capture → upload → OCR → AI analysis flow using Express endpoints
 **Depends on**: Phase 33
 **Research**: Unlikely (existing Express endpoints, internal wiring)
-**Plans**: TBD
+**Plans**: 5
 
 Plans:
-- [ ] 34-01: TBD
+- [ ] 34-01: Capture-to-Upload Pipeline (wire DocumentCaptureViewModel → APIClient upload → trigger backend pipeline)
+- [ ] 34-02: Backend Document List Sync (fetch documents from Express on DocumentsView appear, model bridging)
+- [ ] 34-03: Pipeline Status Polling & Progress UI (periodic status polling, progress indicators)
+- [ ] 34-04: Analysis Trigger & Results Display (wire analyze button, show findings from backend)
+- [ ] 34-05: Delete Sync & Error Handling (backend delete, consistent error UX, retry)
 
 #### Phase 35: Analysis & Findings UI Completion
 
@@ -425,8 +429,8 @@ Plans:
 | 31. Operations Runbooks | v5.0 | 2/2 | Complete | 2026-04-07 |
 
 | 32. Express Backend API Client Migration | v6.0 | 4/4 | Complete | 2026-04-07 |
-| 33. Authentication Flow Completion | v6.0 | 2/3 | In progress | - |
-| 34. Document Upload & Processing Pipeline | v6.0 | 0/? | Not started | - |
+| 33. Authentication Flow Completion | v6.0 | 3/3 | Complete | 2026-04-07 |
+| 34. Document Upload & Processing Pipeline | v6.0 | 0/5 | Not started | - |
 | 35. Analysis & Findings UI Completion | v6.0 | 0/? | Not started | - |
 | 36. Plaid Bank Integration Rewiring | v6.0 | 0/? | Not started | - |
 | 37. Letter Generation & Export Features | v6.0 | 0/? | Not started | - |
