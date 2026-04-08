@@ -55,6 +55,19 @@ struct MortgageDocument: Identifiable, Codable {
         self.pipelineStatus = pipelineStatus
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        fileName = try container.decode(String.self, forKey: .fileName)
+        documentType = try container.decode(DocumentType.self, forKey: .documentType)
+        uploadDate = try container.decode(Date.self, forKey: .uploadDate)
+        originalText = try container.decode(String.self, forKey: .originalText)
+        extractedData = try container.decodeIfPresent(ExtractedData.self, forKey: .extractedData)
+        analysisResults = try container.decode([AuditResult].self, forKey: .analysisResults)
+        isAnalyzed = try container.decode(Bool.self, forKey: .isAnalyzed)
+        serverDocumentId = try container.decodeIfPresent(String.self, forKey: .serverDocumentId)
+        pipelineStatus = try container.decodeIfPresent(String.self, forKey: .pipelineStatus)
+    }
+
     enum DocumentType: String, CaseIterable, Codable {
         case mortgageStatement = "mortgage_statement"
         case escrowStatement = "escrow_statement"

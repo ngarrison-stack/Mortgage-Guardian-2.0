@@ -75,6 +75,10 @@ struct DocumentsView: View {
             }
             .task {
                 await userStore.fetchDocumentsFromBackend()
+                userStore.startPollingIfNeeded()
+            }
+            .onDisappear {
+                userStore.stopPolling()
             }
             .confirmationDialog(
                 "Delete Document?",
@@ -212,8 +216,11 @@ struct DocumentsView: View {
             ForEach(sortedGroups, id: \.key) { documentType, documents in
                 Section(header: DocumentTypeSectionHeader(documentType: documentType, count: documents.count)) {
                     ForEach(documents) { document in
-                        DocumentRow(document: document) {
-                            selectedDocument = document
+                        VStack(alignment: .leading, spacing: 4) {
+                            DocumentRow(document: document) {
+                                selectedDocument = document
+                            }
+                            pipelineStatusView(for: document)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Delete", role: .destructive) {
@@ -232,6 +239,53 @@ struct DocumentsView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
+    }
+
+    // MARK: - Pipeline Status Indicator
+
+    @ViewBuilder
+    private func pipelineStatusView(for document: MortgageDocument) -> some View {
+        if document.isAnalyzed && document.pipelineStatus != nil {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.caption)
+                Text("Analysis complete")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+        } else if let status = document.pipelineStatus,
+                  !["complete", "analyzed"].contains(status) {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .scaleEffect(0.7)
+                Text(pipelineStatusLabel(status))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .transition(.opacity)
+        }
+    }
+
+    private func pipelineStatusLabel(_ status: String) -> String {
+        switch status {
+        case "uploaded":
+            return "Queued for processing..."
+        case "ocr":
+            return "Extracting text..."
+        case "classifying":
+            return "Identifying document type..."
+        case "analyzing":
+            return "Analyzing for issues..."
+        case "analyzed":
+            return "Analysis complete"
+        case "review":
+            return "Ready for review"
+        case "complete":
+            return "Complete"
+        default:
+            return "Processing..."
+        }
     }
 
     // MARK: - Actions

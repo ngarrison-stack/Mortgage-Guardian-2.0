@@ -13,6 +13,7 @@ class UserStore: ObservableObject {
     @Published var errorMessage: String?
 
     private var cancellables = Set<AnyCancellable>()
+    private var pollingTask: Task<Void, Never>?
 
     init() {
         // Initialize with sample user for demo purposes
@@ -108,6 +109,68 @@ class UserStore: ObservableObject {
             user.isPlaidConnected = false
         }
         objectWillChange.send()
+    }
+
+    // MARK: - Pipeline Status Polling
+
+    /// Begins polling for in-pipeline document statuses every 5 seconds.
+    /// Only starts if there are documents actively in the pipeline.
+    func startPollingIfNeeded() {
+        let inPipelineDocs = documents.filter { doc in
+            doc.serverDocumentId != nil && !doc.isAnalyzed &&
+            doc.pipelineStatus != "complete" && doc.pipelineStatus != "analyzed"
+        }
+        guard !inPipelineDocs.isEmpty else {
+            stopPolling()
+            return
+        }
+        guard pollingTask == nil else { return }
+
+        pollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.pollDocumentStatuses()
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+            }
+        }
+    }
+
+    /// Cancels any active polling task.
+    func stopPolling() {
+        pollingTask?.cancel()
+        pollingTask = nil
+    }
+
+    /// Fetches the latest pipeline status for each in-pipeline document.
+    @MainActor
+    private func pollDocumentStatuses() async {
+        let inPipelineDocs = documents.filter { doc in
+            doc.serverDocumentId != nil && !doc.isAnalyzed &&
+            doc.pipelineStatus != "complete" && doc.pipelineStatus != "analyzed"
+        }
+
+        for doc in inPipelineDocs {
+            guard let serverId = doc.serverDocumentId else { continue }
+            do {
+                let status = try await APIClient.shared.getDocumentStatus(documentId: serverId)
+                if let index = documents.firstIndex(where: { $0.id == doc.id }) {
+                    documents[index].pipelineStatus = status.status
+                    if status.status == "analyzed" || status.status == "complete" {
+                        documents[index].isAnalyzed = true
+                    }
+                }
+            } catch {
+                // Polling failures are non-critical; silently continue
+            }
+        }
+
+        // Auto-stop when no documents remain in the pipeline
+        let remaining = documents.filter { doc in
+            doc.serverDocumentId != nil && !doc.isAnalyzed &&
+            doc.pipelineStatus != "complete" && doc.pipelineStatus != "analyzed"
+        }
+        if remaining.isEmpty {
+            stopPolling()
+        }
     }
 
     // MARK: - Data Refresh
