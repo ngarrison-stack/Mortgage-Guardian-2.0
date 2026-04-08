@@ -60,6 +60,30 @@ class APIClient {
             throw APIError.decodingError(error)
         }
     }
+
+    /// Polls the backend for the current pipeline status of a document.
+    func getDocumentStatus(documentId: String) async throws -> DocumentStatusResponse {
+        return try await request(
+            endpoint: "/v1/documents/\(documentId)/status",
+            method: .GET,
+            responseType: DocumentStatusResponse.self
+        )
+    }
+}
+
+/// Response model for document pipeline status polling.
+struct DocumentStatusResponse: Decodable {
+    let documentId: String?
+    let step: String?
+    let status: String?
+    let progress: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case documentId = "document_id"
+        case step
+        case status
+        case progress
+    }
 }
 
 enum HTTPMethod: String {
