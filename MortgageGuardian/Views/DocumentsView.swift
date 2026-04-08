@@ -7,6 +7,11 @@ struct DocumentsView: View {
     @State private var showingDocumentPicker = false
     @State private var showingFilterSheet = false
     @State private var selectedDocument: MortgageDocument?
+    @State private var documentToDelete: MortgageDocument?
+    @State private var showingDeleteConfirmation = false
+    @State private var isDeleting = false
+    @State private var errorMessage: String?
+    @State private var showingError = false
 
     private var filteredDocuments: [MortgageDocument] {
         var documents = userStore.documents
@@ -67,6 +72,28 @@ struct DocumentsView: View {
             }
             .refreshable {
                 userStore.refreshData()
+            }
+            .task {
+                await userStore.fetchDocumentsFromBackend()
+            }
+            .confirmationDialog(
+                "Delete Document?",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    confirmDelete()
+                }
+                Button("Cancel", role: .cancel) {
+                    documentToDelete = nil
+                }
+            } message: {
+                Text("Delete \"\(documentToDelete?.fileName ?? "this document")\"? This cannot be undone.")
+            }
+            .alert("Error", isPresented: $showingError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage ?? "An unexpected error occurred")
             }
         }
     }
@@ -209,14 +236,47 @@ struct DocumentsView: View {
 
     // MARK: - Actions
     private func deleteDocument(_ document: MortgageDocument) {
-        withAnimation {
-            userStore.removeDocument(document)
+        documentToDelete = document
+        showingDeleteConfirmation = true
+    }
+
+    private func confirmDelete() {
+        guard let document = documentToDelete else { return }
+        isDeleting = true
+        Task {
+            do {
+                try await userStore.deleteDocumentFromBackend(document)
+                withAnimation {
+                    isDeleting = false
+                    documentToDelete = nil
+                }
+            } catch {
+                isDeleting = false
+                errorMessage = "Couldn't delete document. Please try again."
+                showingError = true
+            }
         }
     }
 
     private func analyzeDocument(_ document: MortgageDocument) {
-        // TODO: Implement document analysis
-        print("Analyzing document: \(document.fileName)")
+        guard let serverId = document.serverDocumentId else {
+            errorMessage = "Document hasn't been uploaded yet."
+            showingError = true
+            return
+        }
+        Task {
+            do {
+                try await APIClient.shared.processDocument(
+                    documentId: serverId,
+                    documentText: document.originalText.isEmpty ? nil : document.originalText,
+                    documentType: document.documentType.rawValue
+                )
+                // Pipeline triggered -- polling will pick up status changes
+            } catch {
+                errorMessage = "Couldn't start analysis. Tap Analyze to try again."
+                showingError = true
+            }
+        }
     }
 }
 

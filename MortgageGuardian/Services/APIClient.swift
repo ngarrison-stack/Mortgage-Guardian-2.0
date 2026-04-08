@@ -62,6 +62,60 @@ class APIClient {
     }
 }
 
+// MARK: - Document API
+
+/// Represents a document as returned by the Express backend.
+struct ExpressDocument: Decodable {
+    let id: String?
+    let documentId: String?
+    let userId: String?
+    let fileName: String?
+    let documentType: String?
+    let status: String?
+    let storagePath: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case documentId = "document_id"
+        case userId = "user_id"
+        case fileName = "file_name"
+        case documentType = "document_type"
+        case status
+        case storagePath = "storage_path"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// Response wrapper for the Express backend document list endpoint.
+struct ExpressDocumentListResponse: Decodable {
+    let documents: [ExpressDocument]
+    let total: Int?
+    let userId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case documents
+        case total
+        case userId = "user_id"
+    }
+}
+
+extension APIClient {
+    /// Fetches the list of documents from the Express backend.
+    func fetchDocuments(limit: Int? = nil, offset: Int? = nil) async throws -> ExpressDocumentListResponse {
+        var endpoint = "/v1/documents"
+        var queryItems: [String] = []
+        if let limit = limit { queryItems.append("limit=\(limit)") }
+        if let offset = offset { queryItems.append("offset=\(offset)") }
+        if !queryItems.isEmpty {
+            endpoint += "?" + queryItems.joined(separator: "&")
+        }
+        return try await request(endpoint: endpoint, method: .GET, responseType: ExpressDocumentListResponse.self)
+    }
+}
+
 enum HTTPMethod: String {
     case GET = "GET"
     case POST = "POST"
