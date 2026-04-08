@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 33 of 40 (Authentication Flow Completion)
-Plan: 02 of 03 complete
-Status: In progress
-Last activity: 2026-04-07 - Plan 33-02 complete (iOS Token Lifecycle & Session Persistence)
+Plan: 03 of 03 complete
+Status: Phase 33 complete, ready for Phase 34
+Last activity: 2026-04-07 - Plan 33-03 complete (LoginView Polish & Bug Fixes)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -76,6 +76,7 @@ v6.0 Phase 32-03: All consumers migrated from AWSBackendClient to APIClient. Doc
 v6.0 Phase 32-04: Deleted 4 AWS files (2091 lines), extracted AnyCodable, fixed PlaidAccount→PlaidAPIAccount conflict, added 3 files to Xcode project, consolidated APIConfiguration. Phase 32 complete.
 v6.0 Phase 33-01: Dual-provider auth middleware — Clerk JWKS verification (jwks-rsa) tried first, Supabase fallback second. req.user includes provider field. __mocks__/jwks-rsa.js auto-mock prevents ESM/jose import failures. 26 auth tests, 1609 total passing.
 v6.0 Phase 33-02: AuthManager token lifecycle — 4-min periodic refresh, Clerk session restore on launch, handleAuthenticationRequired() for 401 re-auth. APIClient.onAuthenticationRequired callback. Three-state app launch (loading/auth/main). Removed setupCrashProtection().
+v6.0 Phase 33-03: LoginView polish — signUp calls prepareVerification, verifyEmail calls attemptVerification. Verification code entry UI. User-friendly error mapping. ProfileView fixed for Clerk.User properties. SignInView dead code deleted. Phase 33 complete.
 
 ### Deferred Issues
 
@@ -105,5 +106,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Phase 33, plan 02 complete, ready for plan 03
+Stopped at: Phase 33 complete, ready for Phase 34
 Resume file: None

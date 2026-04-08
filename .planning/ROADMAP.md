@@ -250,7 +250,7 @@ Plans:
 Plans:
 - [x] 33-01: Clerk JWT Verification in Express Middleware (dual-provider auth: Clerk JWKS + Supabase fallback, tests) — 2026-04-07
 - [x] 33-02: iOS Token Lifecycle & Session Persistence (AuthManager refresh, periodic refresh, 401 handling, app launch flow) — 2026-04-07
-- [ ] 33-03: LoginView Polish & Build Verification (error messages, sign-up flow, build check)
+- [x] 33-03: LoginView Polish & Build Verification (error messages, sign-up flow, build check) — 2026-04-07
 
 #### Phase 34: Document Upload & Processing Pipeline
 
