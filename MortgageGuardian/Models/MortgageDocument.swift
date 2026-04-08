@@ -6,10 +6,54 @@ struct MortgageDocument: Identifiable, Codable {
     let fileName: String
     let documentType: DocumentType
     let uploadDate: Date
-    let originalText: String
-    let extractedData: ExtractedData?
-    let analysisResults: [AuditResult]
-    let isAnalyzed: Bool
+    var originalText: String
+    var extractedData: ExtractedData?
+    var analysisResults: [AuditResult]
+    var isAnalyzed: Bool
+    var serverDocumentId: String? = nil
+    var pipelineStatus: String? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case id, fileName, documentType, uploadDate, originalText
+        case extractedData, analysisResults, isAnalyzed
+        case serverDocumentId, pipelineStatus
+    }
+
+    /// Creates a MortgageDocument from an Express backend document response.
+    init(from expressDocument: ExpressDocument) {
+        self.fileName = expressDocument.fileName ?? "Unknown"
+        self.documentType = DocumentType(rawValue: expressDocument.documentType ?? "") ?? .other
+        self.uploadDate = ISO8601DateFormatter().date(from: expressDocument.createdAt ?? "") ?? Date()
+        self.originalText = ""
+        self.extractedData = nil
+        self.analysisResults = []
+        self.isAnalyzed = expressDocument.status == "analyzed" || expressDocument.status == "complete"
+        self.serverDocumentId = expressDocument.id ?? expressDocument.documentId
+        self.pipelineStatus = expressDocument.status
+    }
+
+    /// Standard memberwise initializer for local document creation.
+    init(
+        fileName: String,
+        documentType: DocumentType,
+        uploadDate: Date,
+        originalText: String,
+        extractedData: ExtractedData?,
+        analysisResults: [AuditResult],
+        isAnalyzed: Bool,
+        serverDocumentId: String? = nil,
+        pipelineStatus: String? = nil
+    ) {
+        self.fileName = fileName
+        self.documentType = documentType
+        self.uploadDate = uploadDate
+        self.originalText = originalText
+        self.extractedData = extractedData
+        self.analysisResults = analysisResults
+        self.isAnalyzed = isAnalyzed
+        self.serverDocumentId = serverDocumentId
+        self.pipelineStatus = pipelineStatus
+    }
 
     enum DocumentType: String, CaseIterable, Codable {
         case mortgageStatement = "mortgage_statement"
