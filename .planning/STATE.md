@@ -8,10 +8,10 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 **Current focus:** v6.0 iOS App Completion
 ## Current Position
 
-Phase: 32 of 40 (Express Backend API Client Migration)
-Plan: 04 of 04 complete (Phase 32 DONE)
-Status: Phase complete
-Last activity: 2026-04-07 - Phase 32 complete (Express API Client Migration)
+Phase: 33 of 40 (Authentication Flow Completion)
+Plan: 01 of 03 complete
+Status: In progress
+Last activity: 2026-04-07 - Plan 33-01 complete (Clerk JWT Verification in Express Middleware)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -74,6 +74,7 @@ v6.0 Phase 32-01: APIConfiguration.swift with environment enum (#if DEBUG), APIC
 v6.0 Phase 32-02: APIClient+Documents.swift (8 methods) and APIClient+Plaid.swift (4 methods) with Express-aligned Codable models. New ExpressDocument type to avoid breaking views.
 v6.0 Phase 32-03: All consumers migrated from AWSBackendClient to APIClient. DocumentAnalysisService sends OCR text (not image) to Express Claude. Health URLs use APIConfiguration.baseURL.
 v6.0 Phase 32-04: Deleted 4 AWS files (2091 lines), extracted AnyCodable, fixed PlaidAccount→PlaidAPIAccount conflict, added 3 files to Xcode project, consolidated APIConfiguration. Phase 32 complete.
+v6.0 Phase 33-01: Dual-provider auth middleware — Clerk JWKS verification (jwks-rsa) tried first, Supabase fallback second. req.user includes provider field. __mocks__/jwks-rsa.js auto-mock prevents ESM/jose import failures. 26 auth tests, 1609 total passing.
 
 ### Deferred Issues
 
@@ -103,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Phase 32 complete, ready for Phase 33
+Stopped at: Phase 33, plan 01 complete, ready for plan 02
 Resume file: None
