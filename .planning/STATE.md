@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 34 of 40 (Document Upload & Processing Pipeline)
-Plan: 01 of 05 complete
-Status: Plan 34-01 complete, ready for Plan 34-02
-Last activity: 2026-04-07 - Plan 34-01 complete (Capture-to-Upload Pipeline)
+Plan: 04 of 05 complete (34-01, 34-02, 34-03, 34-05 done; 34-04 remaining)
+Status: Plans 34-02, 34-03, 34-05 complete (parallel execution), ready for Plan 34-04
+Last activity: 2026-04-07 - Plans 34-02/03/05 complete in parallel (Document List Sync, Status Polling, Delete & Errors)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -78,6 +78,9 @@ v6.0 Phase 33-01: Dual-provider auth middleware — Clerk JWKS verification (jwk
 v6.0 Phase 33-02: AuthManager token lifecycle — 4-min periodic refresh, Clerk session restore on launch, handleAuthenticationRequired() for 401 re-auth. APIClient.onAuthenticationRequired callback. Three-state app launch (loading/auth/main). Removed setupCrashProtection().
 v6.0 Phase 33-03: LoginView polish — signUp calls prepareVerification, verifyEmail calls attemptVerification. Verification code entry UI. User-friendly error mapping. ProfileView fixed for Clerk.User properties. SignInView dead code deleted. Phase 33 complete.
 v6.0 Phase 34-01: DocumentCaptureViewModel wired to upload to Express after Vision OCR. UploadProgress enum, uploadDocumentToBackend() helper, fire-and-forget pipeline trigger. Graceful degradation — each stage failure independent.
+v6.0 Phase 34-02: Backend document list sync — fetchDocumentsFromBackend() in UserStore, .task on DocumentsView, ExpressDocument→MortgageDocument bridging with serverDocumentId/pipelineStatus. Backend source of truth with local fallback.
+v6.0 Phase 34-03: 5-second periodic polling for in-pipeline documents. Auto-start/stop with view lifecycle. Pipeline status labels (uploaded→ocr→classifying→analyzing→complete) with spinner in document rows.
+v6.0 Phase 34-05: Delete syncs with backend via confirmation dialog. Consistent error handling — alert-based presentation, contextual upload error messages. Analyze button wired to processDocument API.
 
 ### Deferred Issues
 
@@ -107,5 +110,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-07
-Stopped at: Plan 34-01 complete, ready for Plan 34-02
+Stopped at: Plans 34-01/02/03/05 complete, ready for Plan 34-04
 Resume file: None
