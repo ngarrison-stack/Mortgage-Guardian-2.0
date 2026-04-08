@@ -16,6 +16,15 @@ const { createMockSupabaseClient } = require('../mocks/mockSupabaseClient');
 // Create the mock client BEFORE mocking the module
 const mockClient = createMockSupabaseClient();
 
+// Mock jwks-rsa to avoid ESM/jose import issues and control Clerk verification
+// By default, getSigningKey rejects so Clerk path fails and Supabase path is used
+const mockGetSigningKey = jest.fn().mockRejectedValue(new Error('Mock JWKS: no key'));
+jest.mock('jwks-rsa', () => {
+  return jest.fn(() => ({
+    getSigningKey: mockGetSigningKey
+  }));
+});
+
 // Mock @supabase/supabase-js so that when auth.js calls createClient(),
 // it receives our mock client instead of a real Supabase client
 jest.mock('@supabase/supabase-js', () => ({
@@ -98,9 +107,10 @@ describe('requireAuth middleware', () => {
 
       await requireAuth(req, res, next);
 
-      expect(req.user).toEqual(userData);
+      expect(req.user).toEqual({ ...userData, provider: 'supabase' });
       expect(req.user.id).toBe('user-456');
       expect(req.user.email).toBe('admin@mortguardian.com');
+      expect(req.user.provider).toBe('supabase');
     });
 
     test('calls next() exactly once', async () => {
@@ -246,7 +256,7 @@ describe('requireAuth middleware', () => {
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({
         error: 'Unauthorized',
-        message: 'Token validation failed'
+        message: 'Invalid or expired token'
       });
       expect(next).not.toHaveBeenCalled();
 

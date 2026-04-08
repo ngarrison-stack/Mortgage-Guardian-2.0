@@ -38,6 +38,7 @@
     "joi": "^18.0.1",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^4.0.1",
     "morgan": "^1.10.0",
     "pdf-parse": "^2.4.5",
     "plaid": "^41.3.0",
